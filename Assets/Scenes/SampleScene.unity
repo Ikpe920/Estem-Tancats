@@ -1082,7 +1082,9 @@ MonoBehaviour:
   legacyBackground: {fileID: 0}
   autoHideLegacyBackground: 1
   fadeDuration: 0.6
-  titleDuration: 2
+  titleDuration: 3.5
+  showTitleAtStart: 1
+  pauseForTitle: 1
 --- !u!1 &290632249
 GameObject:
   m_ObjectHideFlags: 0

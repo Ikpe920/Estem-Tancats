@@ -36,6 +36,8 @@ public class ActManager : MonoBehaviour
 
     public float fadeDuration = 0.6f;       // durada de la transició
     public float titleDuration = 3.5f;      // temps que dura el títol de l'acte
+    public bool showTitleAtStart = true;    // mostra el cartell de l'acte 1 en començar el joc
+    public bool pauseForTitle = true;       // el joc s'atura mentre es mostra el cartell
 
     public ActData Current
     {
@@ -54,13 +56,37 @@ public class ActManager : MonoBehaviour
         ApplyAct(currentAct);
     }
 
+    void Start()
+    {
+        // l'acte 1 també presenta el cartell, en començar el joc
+        if (showTitleAtStart && actPanel != null && actTitleText != null)
+            StartCoroutine(StartWithTitle());
+    }
+
+    IEnumerator StartWithTitle()
+    {
+        bool wasPaused = Time.timeScale == 0f;
+        if (pauseForTitle) Time.timeScale = 0f;
+
+        // el terra apareix des de la foscor
+        ActData act = Current;
+        Color tint = act != null ? act.tint : Color.white;
+        if (background != null) background.color = new Color(tint.r, tint.g, tint.b, 0f);
+        if (cam != null) cam.backgroundColor = Color.black;
+
+        yield return StartCoroutine(FadeTo(1f, tint * 0.4f));
+        yield return StartCoroutine(ShowTitle());
+
+        if (pauseForTitle && !wasPaused) Time.timeScale = 1f;
+    }
+
     void Reset()
     {
         acts = new ActData[]
         {
             MakeAct("LA SALA", "Les taules ja no serveixen per a ningú", "Sala", new Color(1f, 0.97f, 0.93f), 0, 0f, 1f),
-            MakeAct("LA BARRA", "Els copes s'han buidat... i ells no", "Barra", new Color(1f, 0.93f, 0.82f), 2, 0.15f, 1.2f),
-            MakeAct("LA CUINA", "A la cuina hi ha foc, i ells han vingut a apagar-lo", "Cuina", new Color(0.88f, 0.95f, 1f), 4, 0.3f, 1.4f),
+            MakeAct("LA BARRA", "Les copes s'han buidat... i ells no", "Barra", new Color(1f, 0.93f, 0.82f), 2, 0.15f, 1.2f),
+            MakeAct("LA CUINA", "A la cuina no hi ha foc, i ells han vingut a engegar-lo", "Cuina", new Color(0.88f, 0.95f, 1f), 4, 0.3f, 1.4f),
             MakeAct("LA TERRASSA", "Fins i tot fora, s'han quedat", "Terrassa", new Color(1f, 0.97f, 0.86f), 6, 0.45f, 1.6f),
             MakeAct("LA TEULADA", "L'últim recurs: el sostre", "Teulada", new Color(0.85f, 0.89f, 1f), 8, 0.6f, 1.8f),
         };
@@ -160,6 +186,9 @@ public class ActManager : MonoBehaviour
     {
         if (acts == null || acts.Length == 0) yield break;
 
+        bool wasPaused = Time.timeScale == 0f;
+        if (pauseForTitle) Time.timeScale = 0f;
+
         yield return StartCoroutine(FadeTo(0f, Color.black));
 
         ApplyAct(currentAct + 1);
@@ -172,6 +201,8 @@ public class ActManager : MonoBehaviour
         yield return StartCoroutine(FadeTo(1f, tint * 0.4f));
 
         yield return StartCoroutine(ShowTitle());
+
+        if (pauseForTitle && !wasPaused) Time.timeScale = 1f;
     }
 
     IEnumerator FadeTo(float targetAlpha, Color targetCamColor)
@@ -185,7 +216,7 @@ public class ActManager : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime; // el temps pot estar aturat (cartell)
             float k = Mathf.Clamp01(t / duration);
             background.color = new Color(start.r, start.g, start.b, Mathf.Lerp(start.a, targetAlpha, k));
             if (cam != null) cam.backgroundColor = Color.Lerp(startCam, targetCamColor, k);
@@ -209,7 +240,7 @@ public class ActManager : MonoBehaviour
         actPanel.SetActive(true);
 
         yield return FadeCanvas(cg, 0f, 1f, 0.45f);
-        yield return new WaitForSeconds(titleDuration);
+        yield return new WaitForSecondsRealtime(titleDuration); // el joc pot estar aturat
         yield return FadeCanvas(cg, 1f, 0f, 0.45f);
 
         actPanel.SetActive(false);
@@ -221,7 +252,7 @@ public class ActManager : MonoBehaviour
         cg.alpha = from;
         while (t < duration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             cg.alpha = Mathf.Lerp(from, to, Mathf.Clamp01(t / duration));
             yield return null;
         }
