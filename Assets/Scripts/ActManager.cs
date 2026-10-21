@@ -35,7 +35,7 @@ public class ActManager : MonoBehaviour
     public bool autoHideLegacyBackground = true;
 
     public float fadeDuration = 0.6f;       // durada de la transició
-    public float titleDuration = 2f;        // temps que dura el títol de l'acte
+    public float titleDuration = 3.5f;      // temps que dura el títol de l'acte
 
     public ActData Current
     {
@@ -208,9 +208,9 @@ public class ActManager : MonoBehaviour
         cg.alpha = 0f;
         actPanel.SetActive(true);
 
-        yield return FadeCanvas(cg, 0f, 1f, 0.35f);
+        yield return FadeCanvas(cg, 0f, 1f, 0.45f);
         yield return new WaitForSeconds(titleDuration);
-        yield return FadeCanvas(cg, 1f, 0f, 0.35f);
+        yield return FadeCanvas(cg, 1f, 0f, 0.45f);
 
         actPanel.SetActive(false);
     }
