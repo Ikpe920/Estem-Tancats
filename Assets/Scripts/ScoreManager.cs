@@ -4,6 +4,7 @@ public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
     public int score;
+    public int totalScore;
 
     void Awake()
     {
@@ -13,6 +14,7 @@ public class ScoreManager : MonoBehaviour
     public void AddScore(int amount)
     {
         score += amount;
+        totalScore += amount;
     }
     public bool TrySpend(int amount)
     {

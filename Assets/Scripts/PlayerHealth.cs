@@ -14,13 +14,12 @@ public class PlayerHealth : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
-        health -= amount;
+        health = Mathf.Max(health - amount, 0);
         Debug.Log("Vida: " + health);
 
         if (health <= 0)
         {
-            // Per ara, reinicia l'escena. Més endavant farem una pantalla de game over.
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            FindFirstObjectByType<GameOverManager>().ShowGameOver();
         }
     }
 
