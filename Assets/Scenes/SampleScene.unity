@@ -975,14 +975,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36db3e896b47682f995dd39bcc07f74b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaveSpawner
-  enemyPrefab: {fileID: 3035424927779291405, guid: 13d4eeaa71d717f77b9d44eb780f3a34, type: 3}
+  enemyTypes:
+  - name: Normal
+    prefab: {fileID: 3035424927779291405, guid: 13d4eeaa71d717f77b9d44eb780f3a34, type: 3}
+    firstWave: 1
+    weight: 10
+  - name: Rapid
+    prefab: {fileID: 3035424927779291405, guid: 26be92dfafcd02658af2bfc5c0925afb, type: 3}
+    firstWave: 2
+    weight: 6
+  - name: Tirador
+    prefab: {fileID: 3035424927779291405, guid: 83f87ed43242ccaaf869cbf9a6a8436a, type: 3}
+    firstWave: 3
+    weight: 4
+  - name: Tanc
+    prefab: {fileID: 3035424927779291405, guid: 2b5e773dcc16599f6b2c717f32b6beb6, type: 3}
+    firstWave: 4
+    weight: 3
   player: {fileID: 672883916}
+  shop: {fileID: 2090463949}
   startEnemies: 3
   enemiesPerWave: 2
   spawnInterval: 0.5
   timeBetweenWaves: 3
   spawnRadius: 10
-  shop: {fileID: 2090463949}
   currentWave: 0
 --- !u!1 &413754212
 GameObject:
