@@ -15,7 +15,7 @@ public class GameOverManager : MonoBehaviour
 
     public void ShowGameOver()
     {
-        resultText.text = "Onada: " + spawner.currentWave +
+        resultText.text = "Has arribat a l'onada " + spawner.currentWave +
                           "\nPunts: " + ScoreManager.Instance.totalScore;
         panel.SetActive(true);
         Time.timeScale = 0f; // pausa el joc

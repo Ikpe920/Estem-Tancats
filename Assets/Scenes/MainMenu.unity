@@ -762,7 +762,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'ESTEM TANCATS
+  m_text: ESTEM TANCATS
 
 '
   m_isRightToLeft: 0

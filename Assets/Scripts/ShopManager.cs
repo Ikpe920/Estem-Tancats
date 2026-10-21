@@ -86,8 +86,8 @@ public class ShopManager : MonoBehaviour
     void RefreshTexts()
     {
         int pts = ScoreManager.Instance.score;
-        damageText.text = "Més dany (" + damageCost + ")";
-        speedText.text = "Més velocitat (" + speedCost + ")";
+        damageText.text = "Més de dany (" + damageCost + ")";
+        speedText.text = "Més de velocitat (" + speedCost + ")";
         fireRateText.text = "Disparar més ràpid (" + fireRateCost + ")";
         healText.text = "Curar un cor (" + healCost + ")";
         if (dashCooldownText != null)

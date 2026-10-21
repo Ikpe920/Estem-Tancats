@@ -231,7 +231,7 @@ public class ActManager : MonoBehaviour
         ActData act = Current;
         if (act == null) yield break;
 
-        actTitleText.text = "ACTE " + (currentAct + 1) + " - " + act.name;
+        actTitleText.text = "ACTE " + (currentAct + 1) + " · " + act.name;
         if (actSubtitleText != null) actSubtitleText.text = act.subtitle;
 
         CanvasGroup cg = actPanel.GetComponent<CanvasGroup>();
