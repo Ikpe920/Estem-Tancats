@@ -5,6 +5,7 @@ public class ScoreManager : MonoBehaviour
     public static ScoreManager Instance;
     public int score;
     public int totalScore;
+    public float scoreMultiplier = 1f; // els boons de "boa fortuna" l'augmenten
 
     void Awake()
     {
@@ -13,8 +14,9 @@ public class ScoreManager : MonoBehaviour
 
     public void AddScore(int amount)
     {
-        score += amount;
-        totalScore += amount;
+        int points = Mathf.RoundToInt(amount * scoreMultiplier);
+        score += points;
+        totalScore += points;
     }
     public bool TrySpend(int amount)
     {

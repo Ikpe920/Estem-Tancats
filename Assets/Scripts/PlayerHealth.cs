@@ -34,7 +34,7 @@ public class PlayerHealth : MonoBehaviour
 
         if (lives <= 0)
         {
-            FindFirstObjectByType<GameOverManager>().ShowGameOver();
+            FindAnyObjectByType<GameOverManager>().ShowGameOver();
         }
     }
 

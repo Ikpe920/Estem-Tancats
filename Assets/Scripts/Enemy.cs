@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class Enemy : MonoBehaviour
 {
+    public static float speedMultiplier = 1f; // els boons de lentitud ho baixen per a tothom
+
     [Header("Estadístiques")]
     public float speed = 2f;
     public int maxHealth = 3;
@@ -85,7 +87,7 @@ public class Enemy : MonoBehaviour
         if (isShooter && toPlayer.magnitude <= stopDistance)
             rb.linearVelocity = Vector2.zero;
         else
-            rb.linearVelocity = toPlayer.normalized * speed;
+            rb.linearVelocity = toPlayer.normalized * speed * speedMultiplier;
     }
 
     // ---------- SPRITE SEGONS LA DIRECCIO ----------

@@ -39,12 +39,16 @@ public class WaveSpawner : MonoBehaviour
     [Header("Actes")]
     public ActManager actManager; // el canvi d'escenari cada 5 onades
 
+    [Header("Boons")]
+    public BoonManager boonManager; // les 3 opcions a triar entre onades
+
     public int currentWave = 0;
 
     void Start()
     {
         // si el component Act Manager és al mateix objecte, el trobem sols
         if (actManager == null) actManager = GetComponent<ActManager>();
+        if (boonManager == null) boonManager = GetComponent<BoonManager>();
 
         StartCoroutine(WaveLoop());
     }
@@ -82,7 +86,7 @@ public class WaveSpawner : MonoBehaviour
                 yield return new WaitForSeconds(spawnInterval);
             }
 
-            while (FindObjectsByType<Enemy>(FindObjectsSortMode.None).Length > 0)
+            while (FindObjectsByType<Enemy>().Length > 0)
             {
                 yield return null;
             }
@@ -90,6 +94,10 @@ public class WaveSpawner : MonoBehaviour
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
             if (isBossWave && actManager != null)
                 yield return StartCoroutine(actManager.TransitionToNextAct());
+
+            // boons: 3 opcions a triar entre onades
+            if (boonManager != null && boonManager.ShouldOffer(currentWave))
+                yield return StartCoroutine(boonManager.OfferBoons());
 
             if (shop != null)
             {
