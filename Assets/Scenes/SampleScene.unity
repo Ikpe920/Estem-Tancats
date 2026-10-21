@@ -998,7 +998,7 @@ MonoBehaviour:
   - name: "EL CRIT\xCDC GASTRON\xD2MIC"
     subtitle: "Quin menjar m\xE9s dolent"
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
-  bossEveryNWaves: 2
+  bossEveryNWaves: 5
   bossManager: {fileID: 2090463951}
   startEnemies: 3
   enemiesPerWave: 2
@@ -2870,6 +2870,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   speed: 5
+  dashSpeed: 16
+  dashDuration: 0.18
+  dashCooldown: 1
+  dashTowardsMouse: 0
+  showAfterImages: 1
+  afterImageColor: {r: 1, g: 0.85, b: 0.35, a: 0.6}
+  afterImageInterval: 0.02
+  afterImageLifetime: 0.25
 --- !u!114 &672883918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2889,7 +2897,7 @@ MonoBehaviour:
   - {fileID: 2339748943044446848, guid: 30232218323000597952c5f7f836a156, type: 3}
   projectileSpeed: 12
   fireRate: 0.3
-  spawnOffset: 0.7
+  spawnOffset: 0.85
   damage: 1
 --- !u!114 &672883919
 MonoBehaviour:
@@ -4681,6 +4689,7 @@ MonoBehaviour:
   speedText: {fileID: 206060248}
   fireRateText: {fileID: 1870632188}
   healText: {fileID: 550624467}
+  dashCooldownText: {fileID: 0}
 --- !u!114 &2090463950
 MonoBehaviour:
   m_ObjectHideFlags: 0

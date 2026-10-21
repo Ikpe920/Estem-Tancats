@@ -42,7 +42,8 @@ public class PlayerShooting : MonoBehaviour
         GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
 
         Vector2 spawnPos = (Vector2)transform.position + dir * spawnOffset;
-        GameObject p = Instantiate(prefab, spawnPos, Quaternion.identity);
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        GameObject p = Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle));
 
         Projectile proj = p.GetComponent<Projectile>();
         proj.damage += damage - 1; // dany del prefab + millores comprades

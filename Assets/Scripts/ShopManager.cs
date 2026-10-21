@@ -14,11 +14,13 @@ public class ShopManager : MonoBehaviour
     public TextMeshProUGUI speedText;
     public TextMeshProUGUI fireRateText;
     public TextMeshProUGUI healText;
+    public TextMeshProUGUI dashCooldownText; // opcional: si no el poses, no es mostra
 
     int damageCost = 40;
     int speedCost = 30;
     int fireRateCost = 40;
     int healCost = 20;
+    int dashCooldownCost = 50;
 
     void Start()
     {
@@ -71,6 +73,14 @@ public class ShopManager : MonoBehaviour
         RefreshTexts();
     }
 
+    public void BuyDashCooldown()
+    {
+        if (!ScoreManager.Instance.TrySpend(dashCooldownCost)) return;
+        movement.dashCooldown = Mathf.Max(0.25f, movement.dashCooldown - 0.15f);
+        dashCooldownCost += 40;
+        RefreshTexts();
+    }
+
     void RefreshTexts()
     {
         int pts = ScoreManager.Instance.score;
@@ -78,5 +88,7 @@ public class ShopManager : MonoBehaviour
         speedText.text = "Més velocitat (" + speedCost + ")";
         fireRateText.text = "Disparar més ràpid (" + fireRateCost + ")";
         healText.text = "Curar +30 (" + healCost + ")";
+        if (dashCooldownText != null)
+            dashCooldownText.text = "Dash més ràpid (" + dashCooldownCost + ")";
     }
 }
