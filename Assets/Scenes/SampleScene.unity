@@ -2878,6 +2878,10 @@ MonoBehaviour:
   afterImageColor: {r: 1, g: 0.85, b: 0.35, a: 0.6}
   afterImageInterval: 0.02
   afterImageLifetime: 0.25
+  spriteUp: {fileID: 21300000, guid: 703e1d3f351f4ef5f9e6d565710aca8a, type: 3}
+  spriteDown: {fileID: 21300000, guid: 50cb19fe6a2c9e811fe7eac5bc5ebd67, type: 3}
+  spriteLeft: {fileID: 21300000, guid: 11c0b71b085b8fdf91adaf2cf67fb6be, type: 3}
+  spriteRight: {fileID: 21300000, guid: 805a37a7919ad8ab8c77196d3607302f, type: 3}
 --- !u!114 &672883918
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2911,7 +2915,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ac1da44cd6c22ab3a82ea0913ff5d03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  maxHealth: 100
+  maxLives: 3
+  invulnerabilityTime: 1.2
 --- !u!1 &771787200
 GameObject:
   m_ObjectHideFlags: 0
@@ -3876,6 +3881,7 @@ GameObject:
   - component: {fileID: 1536069902}
   - component: {fileID: 1536069904}
   - component: {fileID: 1536069903}
+  - component: {fileID: 1536069905}
   m_Layer: 5
   m_Name: HealthText
   m_TagString: Untagged
@@ -4002,6 +4008,25 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1536069901}
   m_CullTransparentMesh: 1
+--- !u!114 &1536069905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1536069901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b41c8f2d6e7a4b1c9d3e5f8a2b7c6d41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LifeHearts
+  playerHealth: {fileID: 672883919}
+  heartSprite: {fileID: 21300000, guid: 5d397150b8994423bb602e6632d22e31, type: 3}
+  emptyHeartSprite: {fileID: 21300000, guid: 8721696e97034b4c86624f091c89f237, type: 3}
+  total: 3
+  size: 40
+  spacing: 44
+  offset: {x: 0, y: 0}
 --- !u!1 &1592596349
 GameObject:
   m_ObjectHideFlags: 0

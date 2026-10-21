@@ -84,8 +84,8 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Sprite: {fileID: 21300000, guid: ae5fe1c1a1dc65f2a98ad5c1121c95ba, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -174,3 +174,11 @@ MonoBehaviour:
   maxHealth: 3
   contactDamage: 10
   damageCooldown: 1
+  points: 10
+  isShooter: 0
+  stopDistance: 6
+  fireInterval: 2
+  shotSpeed: 6
+  shotPrefab: {fileID: 0}
+  spriteFront: {fileID: 21300000, guid: ae5fe1c1a1dc65f2a98ad5c1121c95ba, type: 3}
+  spriteBack: {fileID: 21300000, guid: eb2cf1c887af07abb5fd236a2ad77a1f, type: 3}

@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class EnemyProjectile : MonoBehaviour
 {
-    public int damage = 10;
+    public int damage = 10; // ja no compta: cada cop que toca, el jugador perd un cor
     public float lifetime = 4f;
 
     void Start()
@@ -15,7 +15,7 @@ public class EnemyProjectile : MonoBehaviour
         PlayerHealth ph = other.GetComponent<PlayerHealth>();
         if (ph != null)
         {
-            ph.TakeDamage(damage);
+            ph.TakeDamage(); // cada cop que toca el jugador, perdi un cor
             Destroy(gameObject);
         }
     }

@@ -4,7 +4,7 @@ using UnityEngine;
 public class BossMelee : MonoBehaviour
 {
     [Header("Atac")]
-    public int damage = 25;
+    public int damage = 25; // ja no compta: cada cop que toca, el jugador perd un cor
     public float range = 4.5f;
     public float arcAngle = 100f;
     public float triggerDistance = 5f;
@@ -104,7 +104,7 @@ public class BossMelee : MonoBehaviour
             if (Vector2.Angle(dir, closest - origin) > arcAngle / 2f) continue;
 
             PlayerHealth ph = h.GetComponent<PlayerHealth>();
-            if (ph != null) ph.TakeDamage(damage);
+            if (ph != null) ph.TakeDamage(); // cada cop que toca el jugador, perdi un cor
 
             PlayerMovement pm = h.GetComponent<PlayerMovement>();
             if (pm != null) pm.Knockback((Vector2)h.transform.position - origin, knockbackForce, knockbackTime);

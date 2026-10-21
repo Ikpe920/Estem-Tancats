@@ -17,7 +17,7 @@ public class PlayerMovement : MonoBehaviour
     private float dashEndTime;
     private float nextDashTime;
     private Vector2 dashDirection;
-    private Vector2 facing = Vector2.right; // ultima direccio on ha mirat el jugador
+    private Vector2 facing = Vector2.down; // ultima direccio on ha mirat el jugador
     private float afterImageTimer;
 
     public float dashSpeed = 16f;          // velocitat del dash
@@ -28,6 +28,10 @@ public class PlayerMovement : MonoBehaviour
     public Color afterImageColor = new Color(1f, 0.85f, 0.35f, 0.6f);
     public float afterImageInterval = 0.02f; // temps entre estela i estela
     public float afterImageLifetime = 0.25f; // durada de cada estela
+    public Sprite spriteUp;    // sprite del xef mirant amunt
+    public Sprite spriteDown;  // sprite del xef mirant avall
+    public Sprite spriteLeft;  // sprite del xef mirant a l'esquerra
+    public Sprite spriteRight; // sprite del xef mirant a la dreta
 
     public bool IsDashing => isDashing;
     public bool CanDash => Time.time >= nextDashTime;
@@ -38,6 +42,7 @@ public class PlayerMovement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         cam = Camera.main;
+        UpdateFacingSprite();
     }
 
     void Update()
@@ -46,7 +51,11 @@ public class PlayerMovement : MonoBehaviour
         input.y = Input.GetAxisRaw("Vertical");
         input = input.normalized; // perquè en diagonal no vagi més ràpid
 
-        if (input != Vector2.zero) facing = input;
+        if (input != Vector2.zero && input != facing)
+        {
+            facing = input;
+            UpdateFacingSprite();
+        }
 
         UpdateDash();
     }
@@ -114,6 +123,26 @@ public class PlayerMovement : MonoBehaviour
 
         if (input != Vector2.zero) return input; // cap on es mou el jugador
         return facing;                            // si esta parat, cap on mira
+    }
+
+    // ---------- SPRITE SEGONS LA DIRECCIO ----------
+
+    void UpdateFacingSprite()
+    {
+        if (spriteRenderer == null) return;
+
+        // l'eix dominant decideix si mira amunt/avall o a l'esquerra/dreta
+        Sprite target = null;
+        if (Mathf.Abs(facing.x) > Mathf.Abs(facing.y))
+        {
+            target = facing.x > 0f ? spriteRight : spriteLeft;
+        }
+        else
+        {
+            target = facing.y > 0f ? spriteUp : spriteDown;
+        }
+
+        if (target != null) spriteRenderer.sprite = target; // si no hi ha sprite assignat, deixa el que hi ha
     }
 
     void SpawnAfterImages()

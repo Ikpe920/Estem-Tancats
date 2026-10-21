@@ -68,8 +68,10 @@ public class ShopManager : MonoBehaviour
 
     public void BuyHeal()
     {
+        if (health == null) return;
+        if (health.CurrentLives >= health.maxLives) return; // ja té tots els cors
         if (!ScoreManager.Instance.TrySpend(healCost)) return;
-        health.Heal(30);
+        health.Heal(1); // cada compra Cura un cor
         RefreshTexts();
     }
 
@@ -87,7 +89,7 @@ public class ShopManager : MonoBehaviour
         damageText.text = "Més dany (" + damageCost + ")";
         speedText.text = "Més velocitat (" + speedCost + ")";
         fireRateText.text = "Disparar més ràpid (" + fireRateCost + ")";
-        healText.text = "Curar +30 (" + healCost + ")";
+        healText.text = "Curar un cor (" + healCost + ")";
         if (dashCooldownText != null)
             dashCooldownText.text = "Dash més ràpid (" + dashCooldownCost + ")";
     }
