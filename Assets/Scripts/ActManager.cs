@@ -227,4 +227,25 @@ public class ActManager : MonoBehaviour
         }
         cg.alpha = to;
     }
+
+    // ----- per provar els actes sense arribar al cap -----
+
+    [ContextMenu("Acte següent")]
+    void DebugNextAct()
+    {
+        ApplyAct(currentAct + 1);
+    }
+
+    [ContextMenu("Acte anterior")]
+    void DebugPrevAct()
+    {
+        ApplyAct(currentAct - 1);
+    }
+
+    [ContextMenu("Fer el canvi d'acte")]
+    void DebugTransition()
+    {
+        if (!Application.isPlaying) return;
+        StartCoroutine(TransitionToNextAct());
+    }
 }
