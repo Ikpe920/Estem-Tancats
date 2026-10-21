@@ -19,6 +19,12 @@ public class HUD : MonoBehaviour
             scoreText.text = "Punts: " + ScoreManager.Instance.score;
 
         if (spawner != null)
-            waveText.text = "Onada: " + spawner.currentWave;
+        {
+            string actName = "";
+            if (spawner.actManager != null && spawner.actManager.Current != null)
+                actName = " · " + spawner.actManager.Current.name;
+
+            waveText.text = "Onada: " + spawner.currentWave + actName;
+        }
     }
 }

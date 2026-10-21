@@ -50,6 +50,16 @@ public class Enemy : MonoBehaviour
         frozenUntil = Mathf.Max(frozenUntil, Time.time + duration);
     }
 
+    public void ApplyActDifficulty(float healthMultiplier, float speedBonus)
+    {
+        if (healthMultiplier != 1f)
+        {
+            maxHealth = Mathf.Max(1, Mathf.RoundToInt(maxHealth * healthMultiplier));
+            health = maxHealth;
+        }
+        if (speedBonus != 0f) speed += speedBonus;
+    }
+
     void FixedUpdate()
     {
         if (Time.time < knockbackUntil)
