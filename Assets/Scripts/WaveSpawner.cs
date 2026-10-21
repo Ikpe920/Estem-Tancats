@@ -11,6 +11,7 @@ public class WaveSpawner : MonoBehaviour
     public float spawnInterval = 0.5f;
     public float timeBetweenWaves = 3f;
     public float spawnRadius = 10f;   // distància al jugador
+    public ShopManager shop;
 
     public int currentWave = 0;
 
@@ -39,7 +40,15 @@ public class WaveSpawner : MonoBehaviour
                 yield return null;
             }
 
-            yield return new WaitForSeconds(timeBetweenWaves);
+            if (shop != null)
+            {   
+                shop.Open();
+                yield return new WaitUntil(() => !shop.isOpen);
+            }
+                else
+            {
+                yield return new WaitForSeconds(timeBetweenWaves);
+            }
         }
     }
 

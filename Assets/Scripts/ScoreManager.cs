@@ -14,4 +14,10 @@ public class ScoreManager : MonoBehaviour
     {
         score += amount;
     }
+    public bool TrySpend(int amount)
+    {
+        if (score < amount) return false;
+        score -= amount;
+        return true;
+    }
 }

@@ -7,6 +7,7 @@ public class PlayerShooting : MonoBehaviour
     public float projectileSpeed = 12f;
     public float fireRate = 0.3f;     // segons entre cada tret
     public float spawnOffset = 0.7f;  // distància davant del xef
+    public int damage = 1;
 
     private Camera cam;
     private float nextFireTime;
@@ -18,6 +19,8 @@ public class PlayerShooting : MonoBehaviour
 
     void Update()
     {
+        if (Time.timeScale == 0) return; // no disparar mentre la botiga està oberta
+
         if (Mouse.current == null) return;
 
         if (Mouse.current.leftButton.isPressed && Time.time >= nextFireTime)
@@ -35,6 +38,7 @@ public class PlayerShooting : MonoBehaviour
 
         Vector2 spawnPos = (Vector2)transform.position + dir * spawnOffset;
         GameObject p = Instantiate(projectilePrefab, spawnPos, Quaternion.identity);
+        p.GetComponent<Projectile>().damage = damage;
         p.GetComponent<Rigidbody2D>().linearVelocity = dir * projectileSpeed;
     }
 }
