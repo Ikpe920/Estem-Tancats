@@ -40,6 +40,7 @@ public class BoonManager : MonoBehaviour
 
     public GameObject panel;          // el panell (si el deixes buit, es crea sol)
     public TextMeshProUGUI takenText; // opcional: llista de boons actius
+    public ShopManager shop;           // els serveis (curar cor, +1 cor, canviar cartes)
 
     public PlayerShooting shooting;
     public PlayerMovement movement;
@@ -47,12 +48,17 @@ public class BoonManager : MonoBehaviour
 
     private readonly Dictionary<Boon, int> taken = new Dictionary<Boon, int>();
     private bool picking;
+    private Boon[] currentOffer;              // les cartes que s'estan oferint ara
+    private Button[] serviceButtons;           // els tres serveis de sota
+    private TextMeshProUGUI[] serviceLabels;
+    private TextMeshProUGUI titleText;
 
     void Awake()
     {
         if (shooting == null) shooting = FindAnyObjectByType<PlayerShooting>();
         if (movement == null) movement = FindAnyObjectByType<PlayerMovement>();
         if (health == null) health = FindAnyObjectByType<PlayerHealth>();
+        if (shop == null) shop = FindAnyObjectByType<ShopManager>();
 
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
         if (panel != null) panel.SetActive(false);
@@ -102,7 +108,12 @@ public class BoonManager : MonoBehaviour
         Boon[] picked = PickBoons(optionsPerOffer);
         if (picked == null || picked.Length == 0) yield break;
 
+        currentOffer = picked;
+
         BuildCards(picked);
+        BuildTitle();
+        BuildServices();
+        RefreshServices();
 
         panel.SetActive(true);
         bool wasPaused = Time.timeScale == 0f;
@@ -125,7 +136,36 @@ public class BoonManager : MonoBehaviour
         if (!wasPaused) Time.timeScale = 1f;
     }
 
-    Boon[] PickBoons(int howMany)
+    // ---------- REROLL (servei "Canviar les cartes") ----------
+
+    public bool CanReroll()
+    {
+        if (boons == null || boons.Length == 0) return false;
+        foreach (Boon b in boons)
+        {
+            if (b == null) continue;
+            int stacks = taken.ContainsKey(b) ? taken[b] : 0;
+            if (b.maxStacks > 0 && stacks >= b.maxStacks) continue; // ja el té al màxim
+            return true;
+        }
+        return false;
+    }
+
+    public bool RerollCards()
+    {
+        // intentem que les cartes noves no siguin les mateixes que ja s'estan oferint
+        List<Boon> exclou = currentOffer != null ? new List<Boon>(currentOffer) : null;
+        Boon[] picked = PickBoons(optionsPerOffer, exclou);
+        if (picked == null || picked.Length == 0) picked = PickBoons(optionsPerOffer);
+        if (picked == null || picked.Length == 0) return false;
+
+        currentOffer = picked;
+        BuildCards(picked);
+        RefreshServices();
+        return true;
+    }
+
+    Boon[] PickBoons(int howMany, List<Boon> exclou = null)
     {
         List<Boon> pool = new List<Boon>();
         foreach (Boon b in boons)
@@ -133,6 +173,7 @@ public class BoonManager : MonoBehaviour
             if (b == null) continue;
             int stacks = taken.ContainsKey(b) ? taken[b] : 0;
             if (b.maxStacks > 0 && stacks >= b.maxStacks) continue; // ja el té al màxim
+            if (exclou != null && exclou.Contains(b)) continue; // no repetim la mateixa carta
             pool.Add(b);
         }
         if (pool.Count == 0) return null;
@@ -244,7 +285,11 @@ public class BoonManager : MonoBehaviour
         for (int i = panel.transform.childCount - 1; i >= 0; i--)
         {
             GameObject child = panel.transform.GetChild(i).gameObject;
-            if (child.name.StartsWith("Carta")) Destroy(child);
+            if (child.name.StartsWith("Carta"))
+            {
+                child.SetActive(false); // així no es veu un parpelleig d'un fotograma
+                Destroy(child);
+            }
         }
 
         picking = false;
@@ -256,6 +301,7 @@ public class BoonManager : MonoBehaviour
         float h = Mathf.Clamp(sh * 0.42f, 190f, 460f);
         float gap = w * 0.07f;
         float iconSize = w * 0.22f;
+        float cardY = sh * 0.10f; // les cartes van una mica amunt, els serveis queden a sota
         int titleSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.125f, 16f, 34f));
         int descSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.085f, 12f, 24f));
 
@@ -274,7 +320,7 @@ public class BoonManager : MonoBehaviour
             rt.anchorMax = new Vector2(0.5f, 0.5f);
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.sizeDelta = new Vector2(w, h);
-            rt.anchoredPosition = new Vector2(-totalW / 2f + w / 2f + index * (w + gap), 0f);
+            rt.anchoredPosition = new Vector2(-totalW / 2f + w / 2f + index * (w + gap), cardY);
 
             Image bg = card.GetComponent<Image>();
             bg.color = new Color(0.13f, 0.12f, 0.15f, 0.98f);
@@ -338,6 +384,150 @@ public class BoonManager : MonoBehaviour
         bg.color = new Color(0f, 0f, 0f, 0.72f);
 
         panel = panelGo;
+    }
+
+    // ---------- EL TÍTOL ("Tria un boó") ----------
+
+    void BuildTitle()
+    {
+        if (panel == null) BuildPanel();
+        if (panel == null) return;
+        if (titleText != null) return;
+
+        float sh = Mathf.Max(240f, Screen.height);
+        int size = Mathf.RoundToInt(Mathf.Clamp(sh * 0.05f, 22f, 56f));
+
+        titleText = CreateText(panel.transform, "Titol", "Tria un boó", size, TextAlignmentOptions.Center,
+            new Vector2(0f, -30f), new Vector2(sh * 0.9f, size * 1.6f), Color.white);
+    }
+
+    // ---------- ELS SERVEIS (la botiga, a sota de les cartes) ----------
+
+    void BuildServices()
+    {
+        if (panel == null) BuildPanel();
+        if (panel == null) return;
+        if (serviceButtons != null && serviceButtons.Length == 3) return;
+
+        float sw = Mathf.Max(320f, Screen.width);
+        float sh = Mathf.Max(240f, Screen.height);
+        float w = Mathf.Clamp(sw * 0.19f, 180f, 320f);
+        float h = Mathf.Clamp(sh * 0.07f, 42f, 72f);
+        float gap = w * 0.06f;
+        float y = -sh * 0.30f; // la fila de serveis queda a sota de les cartes
+        float totalW = 3 * w + 2 * gap;
+
+        serviceButtons = new Button[3];
+        serviceLabels = new TextMeshProUGUI[3];
+
+        for (int i = 0; i < 3; i++)
+        {
+            int index = i;
+
+            GameObject go = new GameObject("Servei" + index, typeof(RectTransform), typeof(Image), typeof(Button));
+            go.transform.SetParent(panel.transform, false);
+
+            RectTransform rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(w, h);
+            rt.anchoredPosition = new Vector2(-totalW / 2f + w / 2f + index * (w + gap), y);
+
+            Image bg = go.GetComponent<Image>();
+            bg.color = new Color(0.16f, 0.15f, 0.18f, 0.98f);
+
+            Button btn = go.GetComponent<Button>();
+            btn.targetGraphic = bg;
+            ColorBlock colors = btn.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+            colors.disabledColor = new Color(0.55f, 0.55f, 0.55f, 0.7f);
+            colors.fadeDuration = 0.08f;
+            btn.colors = colors;
+            btn.onClick.AddListener(() => BuyService(index));
+
+            // el text del servei, centrat dins del botó
+            TextMeshProUGUI label = CreateText(go.transform, "Text", "", Mathf.RoundToInt(Mathf.Clamp(h * 0.32f, 13f, 24f)),
+                TextAlignmentOptions.Center, Vector2.zero, new Vector2(w - 14f, h), Color.white);
+            RectTransform lrt = label.rectTransform;
+            lrt.anchorMin = new Vector2(0.5f, 0.5f);
+            lrt.anchorMax = new Vector2(0.5f, 0.5f);
+            lrt.pivot = new Vector2(0.5f, 0.5f);
+            lrt.anchoredPosition = Vector2.zero;
+            label.raycastTarget = false;
+
+            serviceButtons[i] = btn;
+            serviceLabels[i] = label;
+        }
+    }
+
+    void RefreshServices()
+    {
+        if (serviceButtons == null || serviceLabels == null) return;
+
+        int pts = ScoreManager.Instance != null ? ScoreManager.Instance.score : 0;
+
+        for (int i = 0; i < serviceButtons.Length; i++)
+        {
+            int cost = ServiceCost(i);
+            bool usable = ServiceUsable(i);
+            bool canPay = pts >= cost;
+
+            serviceButtons[i].interactable = usable && canPay;
+            serviceLabels[i].text = ServiceName(i) + " (" + cost + ")";
+            serviceLabels[i].color = (usable && canPay) ? Color.white : new Color(0.62f, 0.62f, 0.62f, 1f);
+        }
+    }
+
+    public void BuyService(int index)
+    {
+        if (shop == null) shop = FindAnyObjectByType<ShopManager>();
+        if (shop == null) return;
+
+        bool bought = false;
+        if (index == 0) bought = shop.TryBuyHeal();
+        else if (index == 1) bought = shop.TryBuyMaxLife();
+        else if (index == 2) bought = shop.TryBuyReroll(this);
+
+        if (bought) RefreshServices();
+    }
+
+    int ServiceCost(int index)
+    {
+        if (shop != null)
+        {
+            if (index == 0) return shop.healCost;
+            if (index == 1) return shop.maxLifeCost;
+            return shop.rerollCost;
+        }
+        if (index == 0) return 20;
+        if (index == 1) return 60;
+        return 30;
+    }
+
+    string ServiceName(int index)
+    {
+        if (index == 0) return "Curar un cor";
+        if (index == 1) return "+1 cor màxim";
+        return "Canviar les cartes";
+    }
+
+    bool ServiceUsable(int index)
+    {
+        if (index == 0) // curar un cor
+        {
+            if (health == null) return false;
+            return health.CurrentLives < health.maxLives;
+        }
+        if (index == 1) // +1 cor màxim
+        {
+            if (health == null || shop == null) return false;
+            return health.maxLives < shop.maxLifeCap;
+        }
+        return CanReroll(); // canviar les cartes
     }
 
     // el llistat de boons actius (sota els cors, a dalt a l'esquerra)

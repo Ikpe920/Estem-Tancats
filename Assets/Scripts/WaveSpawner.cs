@@ -95,19 +95,11 @@ public class WaveSpawner : MonoBehaviour
             if (isBossWave && actManager != null)
                 yield return StartCoroutine(actManager.TransitionToNextAct());
 
-            // boons: 3 opcions a triar entre onades
+            // boons: 3 opcions a triar entre onades (amb els serveis de la botiga a sota)
             if (boonManager != null && boonManager.ShouldOffer(currentWave))
                 yield return StartCoroutine(boonManager.OfferBoons());
 
-            if (shop != null)
-            {
-                shop.Open();
-                yield return new WaitUntil(() => !shop.isOpen);
-            }
-            else
-            {
-                yield return new WaitForSeconds(timeBetweenWaves);
-            }
+            yield return new WaitForSeconds(timeBetweenWaves);
         }
     }
 

@@ -851,7 +851,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: M\xC3\xA9s de velocitat (30)
+  m_text: "M\xE9s de velocitat (30)"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -997,8 +997,8 @@ MonoBehaviour:
   player: {fileID: 672883916}
   shop: {fileID: 2090463949}
   bosses:
-  - name: "EL CRIT\xC3\x9C GASTRON\xC3\x92MIC"
-    subtitle: "Vine a tastar el men\xC3\xBA. Ell hi posar\xC3\xA0 nota."
+  - name: "EL CRIT\xDC GASTRON\xD2MIC"
+    subtitle: "Vine a tastar el men\xFA. Ell hi posar\xE0 nota."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
   bossEveryNWaves: 5
   bossManager: {fileID: 2090463951}
@@ -1023,7 +1023,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ActManager
   acts:
   - name: LA SALA
-    subtitle: "Les taules ja no serveixen per a ning\xC3\xBA"
+    subtitle: "Les taules ja no serveixen per a ning\xFA"
     resourceName: Sala
     background: {fileID: 0}
     tint: {r: 1, g: 0.97, b: 0.93, a: 1}
@@ -1063,7 +1063,7 @@ MonoBehaviour:
     enemySpeedBonus: 0.45
     enemyHealthMultiplier: 1.6
   - name: LA TEULADA
-    subtitle: "L'\xC3\xBAltim refugi: la teulada"
+    subtitle: "L'\xFAltim refugi: la teulada"
     resourceName: Teulada
     background: {fileID: 0}
     tint: {r: 0.85, g: 0.89, b: 1, a: 1}
@@ -1088,6 +1088,12 @@ MonoBehaviour:
   pauseForTitle: 1
 --- !u!114 &223980662
 MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223980658}
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 148e16fbbd7040b29987fd0ee56d688d, type: 3}
   m_Name: 
@@ -1101,8 +1107,8 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 12
     maxStacks: 0
-  - name: C\xC3\xA0mera r\xC3\xA0pida
-    description: "Disposes un 25% m\xC3\xA9s r\xC3\xA0pid"
+  - name: "C\xE0mera r\xE0pida"
+    description: "Disposes un 25% m\xE9s r\xE0pid"
     type: 1
     amount: 0.06
     color: {r: 0.95, g: 0.85, b: 0.45, a: 1}
@@ -1110,15 +1116,15 @@ MonoBehaviour:
     weight: 12
     maxStacks: 0
   - name: Sabates de roba
-    description: "Camines un 12% m\xC3\xA9s r\xC3\xA0pid"
+    description: "Camines un 12% m\xE9s r\xE0pid"
     type: 2
     amount: 0.6
     color: {r: 0.55, g: 0.85, b: 0.95, a: 1}
     icon: {fileID: 0}
     weight: 12
     maxStacks: 0
-  - name: Cora\xC3\xA7 de cuir
-    description: "+1 cor m\xC3\xA0xim (i el deixes ple)"
+  - name: "Cora\xE7 de cuir"
+    description: "+1 cor m\xE0xim (i el deixes ple)"
     type: 3
     amount: 1
     color: {r: 0.95, g: 0.45, b: 0.6, a: 1}
@@ -1133,7 +1139,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: Placa de refor\xC3\xA7
+  - name: "Placa de refor\xE7"
     description: "+0,5 s d'invulnerabilitat"
     type: 5
     amount: 0.5
@@ -1142,7 +1148,7 @@ MonoBehaviour:
     weight: 8
     maxStacks: 0
   - name: Dash de cucut
-    description: "-0,25 s de rec\xC3\xA0rrega del dash"
+    description: "-0,25 s de rec\xE0rrega del dash"
     type: 6
     amount: 0.25
     color: {r: 0.85, g: 0.6, b: 0.95, a: 1}
@@ -1166,7 +1172,7 @@ MonoBehaviour:
     weight: 6
     maxStacks: 0
   - name: Oli de malson
-    description: "Els clients van un 15% m\xC3\xA9s lents"
+    description: "Els clients van un 15% m\xE9s lents"
     type: 9
     amount: 0.15
     color: {r: 0.45, g: 0.55, b: 0.45, a: 1}
@@ -1860,7 +1866,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "Seg\xC3\xBCent onada"
+  m_text: "Seg\xFCent onada"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2687,7 +2693,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Men\xC3\xBA principal
+  m_text: "Men\xFA principal"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -3364,7 +3370,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: M\xC3\xA9s de dany (40)
+  m_text: "M\xE9s de dany (40)"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4499,7 +4505,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1848196863
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4646,7 +4652,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Disparar m\xC3\xA9s r\xC3\xA0pid (40)
+  m_text: "Disparar m\xE9s r\xE0pid (40)"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
