@@ -6,8 +6,16 @@ public class EnemyType
 {
     public string name;
     public GameObject prefab;
-    public int firstWave = 1;  // a partir de quina onada apareix
-    public int weight = 10;    // com de freqüent és (més alt = més sovint)
+    public int firstWave = 1;
+    public int weight = 10;
+}
+
+[System.Serializable]
+public class BossInfo
+{
+    public string name;
+    public string subtitle;
+    public GameObject prefab;
 }
 
 public class WaveSpawner : MonoBehaviour
@@ -16,6 +24,12 @@ public class WaveSpawner : MonoBehaviour
     public Transform player;
     public ShopManager shop;
 
+    [Header("Boss")]
+    public BossInfo[] bosses;
+    public int bossEveryNWaves = 5;
+    public BossManager bossManager;
+
+    [Header("Onades")]
     public int startEnemies = 3;
     public int enemiesPerWave = 2;
     public float spawnInterval = 0.5f;
@@ -37,6 +51,22 @@ public class WaveSpawner : MonoBehaviour
             Debug.Log("Onada " + currentWave);
 
             int count = startEnemies + (currentWave - 1) * enemiesPerWave;
+
+            bool isBossWave = bosses != null && bosses.Length > 0
+                              && currentWave % bossEveryNWaves == 0;
+
+            if (isBossWave)
+            {
+                int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
+                BossInfo info = bosses[index];
+
+                if (bossManager != null)
+                    yield return StartCoroutine(bossManager.PlayIntro(info.name, info.subtitle));
+
+                SpawnBoss(info);
+                count /= 2; // a l'onada del boss surten menys enemics normals
+            }
+
             for (int i = 0; i < count; i++)
             {
                 SpawnEnemy();
@@ -78,6 +108,15 @@ public class WaveSpawner : MonoBehaviour
         return null;
     }
 
+    Vector2 RandomSpawnPosition()
+    {
+        Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
+        Vector2 pos = (Vector2)player.position + offset;
+        pos.x = Mathf.Clamp(pos.x, -12f, 12f);
+        pos.y = Mathf.Clamp(pos.y, -8f, 8f);
+        return pos;
+    }
+
     void SpawnEnemy()
     {
         if (player == null) return;
@@ -85,13 +124,16 @@ public class WaveSpawner : MonoBehaviour
         GameObject prefab = PickEnemy();
         if (prefab == null) return;
 
-        Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
-        Vector2 pos = (Vector2)player.position + offset;
+        Instantiate(prefab, RandomSpawnPosition(), Quaternion.identity);
+    }
 
-        // mantenir-los dins de la sala (ajusta-ho a la mida del teu terra)
-        pos.x = Mathf.Clamp(pos.x, -14f, 14f);
-        pos.y = Mathf.Clamp(pos.y, -9f, 9f);
+    void SpawnBoss(BossInfo info)
+    {
+        if (player == null || info.prefab == null) return;
 
-        Instantiate(prefab, pos, Quaternion.identity);
+        GameObject b = Instantiate(info.prefab, RandomSpawnPosition(), Quaternion.identity);
+
+        if (bossManager != null)
+            bossManager.TrackBoss(b.GetComponent<Enemy>(), info.name);
     }
 }

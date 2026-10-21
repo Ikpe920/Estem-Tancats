@@ -21,6 +21,7 @@ public class Enemy : MonoBehaviour
     private Transform player;
     private float nextDamageTime;
     private float nextShotTime;
+    public int CurrentHealth => health;
 
     void Awake()
     {
