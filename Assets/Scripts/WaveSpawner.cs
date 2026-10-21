@@ -43,6 +43,9 @@ public class WaveSpawner : MonoBehaviour
 
     void Start()
     {
+        // si el component Act Manager és al mateix objecte, el trobem sols
+        if (actManager == null) actManager = GetComponent<ActManager>();
+
         StartCoroutine(WaveLoop());
     }
 
