@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 
 public enum BoonType
@@ -55,6 +56,7 @@ public class BoonManager : MonoBehaviour
 
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
         if (panel != null) panel.SetActive(false);
+        if (takenText == null) BuildTakenText();
     }
 
     void Reset()
@@ -106,7 +108,18 @@ public class BoonManager : MonoBehaviour
         bool wasPaused = Time.timeScale == 0f;
         Time.timeScale = 0f; // el joc s'atura per triar
 
-        while (!picking) yield return null; // espera que el jugador trii un boó
+        while (!picking) // espera que el jugador trii un boó
+        {
+            // es pot triar amb el ratolí o amb les tecles 1, 2 i 3
+            Keyboard kb = Keyboard.current;
+            if (kb != null)
+            {
+                if (kb.digit1Key.wasPressedThisFrame && picked.Length > 0) Choose(picked[0]);
+                else if (kb.digit2Key.wasPressedThisFrame && picked.Length > 1) Choose(picked[1]);
+                else if (kb.digit3Key.wasPressedThisFrame && picked.Length > 2) Choose(picked[2]);
+            }
+            yield return null;
+        }
 
         panel.SetActive(false);
         if (!wasPaused) Time.timeScale = 1f;
@@ -236,7 +249,16 @@ public class BoonManager : MonoBehaviour
 
         picking = false;
 
-        float w = 200f, h = 250f, gap = 20f;
+        // les cartes es dimensionen segons la pantalla (el Canvas treballa en píxels)
+        float sw = Mathf.Max(320f, Screen.width);
+        float sh = Mathf.Max(240f, Screen.height);
+        float w = Mathf.Clamp(sw * 0.17f, 150f, 320f);
+        float h = Mathf.Clamp(sh * 0.42f, 190f, 460f);
+        float gap = w * 0.07f;
+        float iconSize = w * 0.22f;
+        int titleSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.125f, 16f, 34f));
+        int descSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.085f, 12f, 24f));
+
         float totalW = picked.Length * w + (picked.Length - 1) * gap;
 
         for (int i = 0; i < picked.Length; i++)
@@ -275,15 +297,20 @@ public class BoonManager : MonoBehaviour
             irt.anchorMin = new Vector2(0.5f, 1f);
             irt.anchorMax = new Vector2(0.5f, 1f);
             irt.pivot = new Vector2(0.5f, 1f);
-            irt.sizeDelta = new Vector2(48f, 48f);
-            irt.anchoredPosition = new Vector2(0f, -24f);
+            irt.sizeDelta = new Vector2(iconSize, iconSize);
+            irt.anchoredPosition = new Vector2(0f, -iconSize * 0.5f - 12f);
             Image iimg = icon.GetComponent<Image>();
             iimg.color = b.icon != null ? Color.white : b.color;
 
             if (b.icon != null) iimg.sprite = b.icon;
 
-            CreateText(card.transform, "Nom", b.name, 28f, TextAlignmentOptions.Center, new Vector2(0f, -92f), new Vector2(w - 24f, 70f), Color.white);
-            CreateText(card.transform, "Descripcio", b.description, 19f, TextAlignmentOptions.Top, new Vector2(0f, -128f), new Vector2(w - 28f, 90f), new Color(0.85f, 0.85f, 0.85f));
+            // el nom, sota l'icono
+            CreateText(card.transform, "Nom", b.name, titleSize, TextAlignmentOptions.Center,
+                new Vector2(0f, -(iconSize + 24f)), new Vector2(w - 24f, titleSize * 1.8f), Color.white);
+
+            // la descripcio, sota el nom
+            CreateText(card.transform, "Descripcio", b.description, descSize, TextAlignmentOptions.Top,
+                new Vector2(0f, -(iconSize + 24f + titleSize * 1.9f)), new Vector2(w - 28f, descSize * 4.5f), new Color(0.85f, 0.85f, 0.85f));
         }
     }
 
@@ -313,15 +340,43 @@ public class BoonManager : MonoBehaviour
         panel = panelGo;
     }
 
+    // el llistat de boons actius (sota els cors, a dalt a l'esquerra)
+    void BuildTakenText()
+    {
+        Canvas canvas = FindAnyObjectByType<Canvas>();
+        if (canvas == null) return;
+
+        GameObject go = new GameObject("BoonsActius", typeof(RectTransform));
+        go.transform.SetParent(canvas.transform, false);
+        go.transform.SetAsLastSibling();
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot = new Vector2(0f, 1f);
+        rt.sizeDelta = new Vector2(Mathf.Max(240f, Screen.width * 0.32f), Mathf.Max(90f, Screen.height * 0.2f));
+        rt.anchoredPosition = new Vector2(12f, -60f);
+
+        TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
+        if (TMP_Settings.defaultFontAsset != null) tmp.font = TMP_Settings.defaultFontAsset;
+        tmp.text = "";
+        tmp.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * 0.022f, 14f, 26f));
+        tmp.alignment = TextAlignmentOptions.TopLeft;
+        tmp.color = new Color(1f, 0.88f, 0.55f);
+        tmp.textWrappingMode = TextWrappingModes.Normal;
+
+        takenText = tmp;
+    }
+
     TextMeshProUGUI CreateText(Transform parent, string objName, string text, float size, TextAlignmentOptions align, Vector2 pos, Vector2 box, Color color)
     {
         GameObject go = new GameObject(objName, typeof(RectTransform));
         go.transform.SetParent(parent, false);
 
         RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 0.5f);
-        rt.anchorMax = new Vector2(0.5f, 0.5f);
-        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
         rt.sizeDelta = box;
         rt.anchoredPosition = pos;
 

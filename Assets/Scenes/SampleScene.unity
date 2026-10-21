@@ -942,6 +942,7 @@ GameObject:
   - component: {fileID: 223980659}
   - component: {fileID: 223980660}
   - component: {fileID: 223980661}
+  - component: {fileID: 223980662}
   m_Layer: 0
   m_Name: WaveSpawner
   m_TagString: Untagged
@@ -1085,6 +1086,100 @@ MonoBehaviour:
   titleDuration: 3.5
   showTitleAtStart: 1
   pauseForTitle: 1
+--- !u!114 &223980662
+MonoBehaviour:
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 148e16fbbd7040b29987fd0ee56d688d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoonManager
+  boons:
+  - name: Punta de gelat
+    description: "+1 de dany a cada tret"
+    type: 0
+    amount: 1
+    color: {r: 0.95, g: 0.55, b: 0.45, a: 1}
+    icon: {fileID: 0}
+    weight: 12
+    maxStacks: 0
+  - name: C\xC3\xA0mera r\xC3\xA0pida
+    description: "Disposes un 25% m\xC3\xA9s r\xC3\xA0pid"
+    type: 1
+    amount: 0.06
+    color: {r: 0.95, g: 0.85, b: 0.45, a: 1}
+    icon: {fileID: 0}
+    weight: 12
+    maxStacks: 0
+  - name: Sabates de roba
+    description: "Camines un 12% m\xC3\xA9s r\xC3\xA0pid"
+    type: 2
+    amount: 0.6
+    color: {r: 0.55, g: 0.85, b: 0.95, a: 1}
+    icon: {fileID: 0}
+    weight: 12
+    maxStacks: 0
+  - name: Cora\xC3\xA7 de cuir
+    description: "+1 cor m\xC3\xA0xim (i el deixes ple)"
+    type: 3
+    amount: 1
+    color: {r: 0.95, g: 0.45, b: 0.6, a: 1}
+    icon: {fileID: 0}
+    weight: 5
+    maxStacks: 0
+  - name: Aigua fresca
+    description: "Cures 1 cor"
+    type: 4
+    amount: 1
+    color: {r: 0.5, g: 0.9, b: 0.55, a: 1}
+    icon: {fileID: 0}
+    weight: 8
+    maxStacks: 0
+  - name: Placa de refor\xC3\xA7
+    description: "+0,5 s d'invulnerabilitat"
+    type: 5
+    amount: 0.5
+    color: {r: 0.7, g: 0.7, b: 0.85, a: 1}
+    icon: {fileID: 0}
+    weight: 8
+    maxStacks: 0
+  - name: Dash de cucut
+    description: "-0,25 s de rec\xC3\xA0rrega del dash"
+    type: 6
+    amount: 0.25
+    color: {r: 0.85, g: 0.6, b: 0.95, a: 1}
+    icon: {fileID: 0}
+    weight: 8
+    maxStacks: 0
+  - name: Cope de sorts
+    description: "+75 punts de golpe"
+    type: 7
+    amount: 75
+    color: {r: 0.95, g: 0.95, b: 0.6, a: 1}
+    icon: {fileID: 0}
+    weight: 10
+    maxStacks: 0
+  - name: Boa fortuna
+    description: "+25% de punts"
+    type: 8
+    amount: 0.25
+    color: {r: 0.6, g: 0.95, b: 0.85, a: 1}
+    icon: {fileID: 0}
+    weight: 6
+    maxStacks: 0
+  - name: Oli de malson
+    description: "Els clients van un 15% m\xC3\xA9s lents"
+    type: 9
+    amount: 0.15
+    color: {r: 0.45, g: 0.55, b: 0.45, a: 1}
+    icon: {fileID: 0}
+    weight: 7
+    maxStacks: 0
+  optionsPerOffer: 3
+  everyNWaves: 1
+  panel: {fileID: 0}
+  takenText: {fileID: 0}
+  shooting: {fileID: 0}
+  movement: {fileID: 0}
+  health: {fileID: 0}
 --- !u!1 &290632249
 GameObject:
   m_ObjectHideFlags: 0
