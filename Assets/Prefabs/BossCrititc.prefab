@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 1709882929413030315}
   - component: {fileID: 911797431304534747}
   - component: {fileID: 687621993967282606}
+  - component: {fileID: -894405838423730229}
   m_Layer: 0
   m_Name: BossCrititc
   m_TagString: Untagged
@@ -181,6 +182,7 @@ MonoBehaviour:
   fireInterval: 2
   shotSpeed: 6
   shotPrefab: {fileID: 0}
+  canBeKnockedBack: 0
 --- !u!114 &687621993967282606
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -199,3 +201,26 @@ MonoBehaviour:
   shotSpeed: 5
   phase2Shots: 16
   phase2Interval: 1.6
+--- !u!114 &-894405838423730229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3035424927779291405}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7942e2d7b430d704384d0e2ce66b3919, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossMelee
+  damage: 25
+  range: 4.5
+  arcAngle: 100
+  triggerDistance: 5
+  cooldown: 3.5
+  windupTime: 0.8
+  recoverTime: 0.4
+  knockbackForce: 16
+  knockbackTime: 0.25
+  swingPrefab: {fileID: 90931672796833248, guid: 8a43aff8f5f78017c8e6adadf53d89f3, type: 3}
+  swingDesignRange: 2.2

@@ -22,6 +22,10 @@ public class Enemy : MonoBehaviour
     private float nextDamageTime;
     private float nextShotTime;
     public int CurrentHealth => health;
+    public bool canBeKnockedBack = true;
+    private Vector2 knockbackVelocity;
+    private float knockbackUntil;
+    private float frozenUntil;
 
     void Awake()
     {
@@ -35,9 +39,23 @@ public class Enemy : MonoBehaviour
         if (p != null) player = p.transform;
         nextShotTime = Time.time + Random.Range(0.5f, fireInterval);
     }
+    public void Freeze(float duration)
+    {
+        frozenUntil = Mathf.Max(frozenUntil, Time.time + duration);
+    }
 
     void FixedUpdate()
     {
+        if (Time.time < knockbackUntil)
+        {
+            rb.linearVelocity = knockbackVelocity;
+            return;
+        }
+        if (Time.time < frozenUntil)
+        {
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
         if (player == null)
         {
             rb.linearVelocity = Vector2.zero;
@@ -80,6 +98,12 @@ public class Enemy : MonoBehaviour
                 ScoreManager.Instance.AddScore(points);
             Destroy(gameObject);
         }
+    }
+    public void Knockback(Vector2 direction, float force, float duration)
+    {
+        if (!canBeKnockedBack) return;
+        knockbackVelocity = direction.normalized * force;
+        knockbackUntil = Time.time + duration;
     }
 
     void OnCollisionStay2D(Collision2D collision)

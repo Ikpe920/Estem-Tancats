@@ -996,9 +996,9 @@ MonoBehaviour:
   shop: {fileID: 2090463949}
   bosses:
   - name: "EL CRIT\xCDC GASTRON\xD2MIC"
-    subtitle: "Ning\xFA se'n va sense pagarNing\xFA se'n va sense pagar"
+    subtitle: "Quin menjar m\xE9s dolent"
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
-  bossEveryNWaves: 5
+  bossEveryNWaves: 2
   bossManager: {fileID: 2090463951}
   startEnemies: 3
   enemiesPerWave: 2
@@ -1165,8 +1165,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 120
-  m_fontSizeBase: 120
+  m_fontSize: 80
+  m_fontSizeBase: 80
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1290,7 +1290,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -1353,7 +1353,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: -35}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 1400, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &413754212
 GameObject:

@@ -6,6 +6,8 @@ public class PlayerMovement : MonoBehaviour
 
     private Rigidbody2D rb;
     private Vector2 input;
+    private Vector2 knockbackVelocity;
+    private float knockbackUntil;
 
     void Awake()
     {
@@ -18,9 +20,19 @@ public class PlayerMovement : MonoBehaviour
         input.y = Input.GetAxisRaw("Vertical");
         input = input.normalized; // perquè en diagonal no vagi més ràpid
     }
+    public void Knockback(Vector2 direction, float force, float duration)
+    {
+        knockbackVelocity = direction.normalized * force;
+        knockbackUntil = Time.time + duration;
+    }
 
     void FixedUpdate()
     {
+        if (Time.time < knockbackUntil)
+    {
+        rb.linearVelocity = knockbackVelocity;
+        return;
+    }
         rb.linearVelocity = input * speed;
     }
 }
