@@ -4,6 +4,7 @@ public class Projectile : MonoBehaviour
 {
     public float lifetime = 2f;
     public int damage = 1;
+    public float spinSpeed = 360f;
 
     void Start()
     {
@@ -18,5 +19,9 @@ public class Projectile : MonoBehaviour
             enemy.TakeDamage(damage);
             Destroy(gameObject);
         }
+    }
+    void Update()
+    {
+        transform.Rotate(0f, 0f, spinSpeed * Time.deltaTime);
     }
 }

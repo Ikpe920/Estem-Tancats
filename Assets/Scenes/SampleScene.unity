@@ -212,7 +212,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -615,7 +615,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -1075,7 +1075,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 4
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -2509,7 +2509,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e4be12acd9ec0429a5ba89abbf0b689, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerShooting
-  projectilePrefab: {fileID: 2339748943044446848, guid: 04b876624b156e9adaf992a9c9f3a7ce, type: 3}
+  projectilePrefabs:
+  - {fileID: 2339748943044446848, guid: 04b876624b156e9adaf992a9c9f3a7ce, type: 3}
+  - {fileID: 2339748943044446848, guid: ff09e132612d0779380f3f446b6cfa25, type: 3}
+  - {fileID: 2339748943044446848, guid: 8b5a51af39937049db370a646aef859d, type: 3}
+  - {fileID: 2339748943044446848, guid: 30232218323000597952c5f7f836a156, type: 3}
   projectileSpeed: 12
   fireRate: 0.3
   spawnOffset: 0.7
