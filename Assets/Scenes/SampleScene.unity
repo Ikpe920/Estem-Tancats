@@ -705,7 +705,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArenaWalls
   size: {x: 30, y: 20}
   thickness: 2
-  showWalls: 0
+  showWalls: 1
   wallColor: {r: 0.25, g: 0.15, b: 0.1, a: 1}
   sortingOrder: -5
 --- !u!1 &181171940
@@ -1044,8 +1044,8 @@ MonoBehaviour:
   player: {fileID: 672883916}
   shop: {fileID: 2090463949}
   bosses:
-  - name: "EL CRIT\xDC GASTRON\xD2MIC"
-    subtitle: "Vine a tastar el men\xFA. Ell hi posar\xE0 nota."
+  - name: "EL CRITIC GASTRON\xD2MIC"
+    subtitle: "Ve a criticar el men\xFA. Ell hi posar\xE0 nota."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
   bossEveryNWaves: 5
   bossManager: {fileID: 2090463951}
