@@ -793,7 +793,7 @@ MonoBehaviour:
     tint: {r: 1, g: 0.85, b: 0.75, a: 1}
     projectilePrefab: {fileID: 0}
   - name: EL XEF RENEGAT
-    subtitle: "Ha canviat la cuina pels clients. Ara et vol al forn."
+    subtitle: Ha canviat la cuina pels clients. Ara et vol al forn.
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 2
     health: 100
@@ -832,7 +832,7 @@ MonoBehaviour:
   actManager: {fileID: 0}
   boonManager: {fileID: 0}
   finalWave: 25
-  currentWave: 0
+  currentWave: 24
 --- !u!114 &223980661
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -994,7 +994,7 @@ MonoBehaviour:
     weight: 8
     maxStacks: 0
   - name: "Men\xFA del dia"
-    description: "+75 punts"
+    description: +75 punts
     type: 7
     amount: 75
     type2: 17
