@@ -18,6 +18,7 @@ public class BossInfo
     public GameObject prefab;
 }
 
+
 public class WaveSpawner : MonoBehaviour
 {
     public EnemyType[] enemyTypes;
@@ -41,6 +42,9 @@ public class WaveSpawner : MonoBehaviour
 
     [Header("Boons")]
     public BoonManager boonManager; // les 3 opcions a triar entre onades
+
+    [Header("Final del joc")]
+    public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
 
     public int currentWave = 0;
 
@@ -89,6 +93,13 @@ public class WaveSpawner : MonoBehaviour
             while (FindObjectsByType<Enemy>().Length > 0)
             {
                 yield return null;
+            }
+            // final del joc: en acabar l'última onada, guanyes
+            if (finalWave > 0 && currentWave >= finalWave)
+            {
+                GameOverManager gom = FindAnyObjectByType<GameOverManager>();
+                if (gom != null) gom.ShowVictory();
+                yield break; // la partida s'acaba: no hi ha més onades
             }
 
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
