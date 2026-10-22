@@ -11,12 +11,28 @@ public class EnemyType
     public int weight = 10;
 }
 
+public enum BossType
+{
+    Critic,    // cop de safata i ràfega radial (el de sempre)
+    Borratxo,  // càrregues en línia recta i atordiment
+    Cuiner,    // invoca clients i llança ventalls de ganivets
+    Pallas,    // es teletransporta i deixa bombes al terra
+    Inspector  // espiral de trets i fase enfadada
+}
+
 [System.Serializable]
 public class BossInfo
 {
     public string name;
     public string subtitle;
     public GameObject prefab;
+    public BossType type = BossType.Critic;
+    public int health = 0;               // 0 = la vida que té el prefab
+    public float speed = 0f;             // 0 = la velocitat del prefab
+    public float scale = 0f;             // 0 = l'escala del prefab
+    public Sprite sprite;                // opcional: canvia la imatge del cap
+    public Color tint = Color.white;     // blanc = sense tenyir
+    public GameObject projectilePrefab;  // per als caps que disparen
 }
 
 
@@ -48,6 +64,13 @@ public class WaveSpawner : MonoBehaviour
     public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
 
     public int currentWave = 0;
+
+    public static WaveSpawner Instance; // perquè els caps puguin invocar clients
+
+    void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
@@ -176,8 +199,92 @@ public class WaveSpawner : MonoBehaviour
         if (player == null || info.prefab == null) return;
 
         GameObject b = Instantiate(info.prefab, RandomSpawnPosition(), Quaternion.identity);
+        Enemy e = b.GetComponent<Enemy>();
 
-        if (bossManager != null)
-            bossManager.TrackBoss(b.GetComponent<Enemy>(), info.name);
+        if (e != null)
+        {
+            // vida i velocitat pròpies del cap (si les posa l'escena)
+            if (info.health > 0 || info.speed > 0)
+                e.OverrideStats(info.health > 0 ? info.health : e.maxHealth,
+                                info.speed > 0f ? info.speed : e.speed);
+
+            // imatge i color
+            if (info.sprite != null)
+            {
+                e.spriteFront = info.sprite;
+                e.spriteBack = info.sprite;
+                SpriteRenderer sr = b.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.sprite = info.sprite;
+            }
+            if (info.tint != Color.white) e.SetTint(info.tint);
+        }
+
+        // mida
+        if (info.scale > 0f) b.transform.localScale = Vector3.one * info.scale;
+
+        // cada cap té el seu comportament
+        ConfigureBoss(b, e, info);
+
+        if (bossManager != null && e != null)
+            bossManager.TrackBoss(e, info.name);
+    }
+
+    // afegeix el comportament propi de cada cap
+    void ConfigureBoss(GameObject b, Enemy e, BossInfo info)
+    {
+        if (e == null) return;
+
+        BossMelee melee = b.GetComponent<BossMelee>();
+        BossAttack attack = b.GetComponent<BossAttack>();
+
+        switch (info.type)
+        {
+            case BossType.Critic:
+                // el Crític fa servir el cop de safata i la ràfega del prefab
+                break;
+
+            case BossType.Borratxo:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                b.AddComponent<BossCharger>();
+                break;
+
+            case BossType.Cuiner:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                BossSummoner summoner = b.AddComponent<BossSummoner>();
+                summoner.projectilePrefab = info.projectilePrefab;
+                break;
+
+            case BossType.Pallas:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                b.AddComponent<BossTeleporter>();
+                break;
+
+            case BossType.Inspector:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                BossPhases phases = b.AddComponent<BossPhases>();
+                phases.projectilePrefab = info.projectilePrefab;
+                break;
+        }
+    }
+
+    // els caps poden fer sortir clients normals (el Xef i la Inspectora)
+    public void SpawnMinions(Vector2 around, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            GameObject prefab = PickEnemy();
+            if (prefab == null) return;
+
+            Vector2 pos = around + Random.insideUnitCircle.normalized * 2.5f;
+            Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
+
+            ActData act = actManager != null ? actManager.Current : null;
+            if (e != null && act != null)
+                e.ApplyActDifficulty(act.enemyHealthMultiplier, act.enemySpeedBonus);
+        }
     }
 }

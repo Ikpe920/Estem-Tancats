@@ -10,6 +10,7 @@ public class Enemy : MonoBehaviour
     public int contactDamage = 10; // ja no compta: cada cop que toca, el jugador perd un cor
     public float damageCooldown = 1f;
     public int points = 10;
+    public float damageMultiplier = 1f; // 1 = mal normal (els caps estabornits poden rebre'n més)
 
     [Header("Tirador (opcional)")]
     public bool isShooter = false;
@@ -29,6 +30,7 @@ public class Enemy : MonoBehaviour
     private float nextShotTime;
     public int CurrentHealth => health;
     public bool canBeKnockedBack = true;
+    [HideInInspector] public bool externalMovement; // si és true, un altre script mou el client (els caps)
     private Vector2 knockbackVelocity;
     private float knockbackUntil;
     private float frozenUntil;
@@ -75,6 +77,21 @@ public class Enemy : MonoBehaviour
         if (speedBonus != 0f) speed += speedBonus;
     }
 
+    // el WaveSpawner configura la vida i la velocitat dels caps des de l'escena
+    public void OverrideStats(int newMaxHealth, float newSpeed)
+    {
+        maxHealth = Mathf.Max(1, newMaxHealth);
+        health = maxHealth;
+        speed = newSpeed;
+    }
+
+    // el WaveSpawner canvia el color dels caps
+    public void SetTint(Color color)
+    {
+        baseColor = color;
+        if (spriteRenderer != null) spriteRenderer.color = color;
+    }
+
     void FixedUpdate()
     {
         if (Time.time < knockbackUntil)
@@ -96,6 +113,9 @@ public class Enemy : MonoBehaviour
         Vector2 toPlayer = (Vector2)player.position - rb.position;
 
         UpdateFacingSprite(toPlayer);
+
+        // si un cap controla el seu moviment, no li posem nosaltres la velocitat
+        if (externalMovement) return;
 
         if (isShooter && toPlayer.magnitude <= stopDistance)
         {
@@ -153,7 +173,7 @@ public class Enemy : MonoBehaviour
     {
         if (dead) return;
 
-        health -= amount;
+        health -= Mathf.RoundToInt(amount * damageMultiplier);
         if (health <= 0)
         {
             dead = true;
