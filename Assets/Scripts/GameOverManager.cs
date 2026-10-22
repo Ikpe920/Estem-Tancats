@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+// NO usat amb GameOver en un altra escena
 public class GameOverManager : MonoBehaviour
 {
     public GameObject panel;

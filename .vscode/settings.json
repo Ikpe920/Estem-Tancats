@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Estem Tancats.slnx"
+    "dotnet.defaultSolution": "Estem-Tancats.slnx"
 }

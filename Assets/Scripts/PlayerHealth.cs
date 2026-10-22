@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System;
 
 public class PlayerHealth : MonoBehaviour
@@ -34,7 +35,7 @@ public class PlayerHealth : MonoBehaviour
 
         if (lives <= 0)
         {
-            FindAnyObjectByType<GameOverManager>().ShowGameOver();
+            SceneManager.LoadScene("GameOver");
         }
     }
 
