@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 [System.Serializable]
 public class EnemyType
@@ -97,8 +98,10 @@ public class WaveSpawner : MonoBehaviour
             // final del joc: en acabar l'última onada, guanyes
             if (finalWave > 0 && currentWave >= finalWave)
             {
-                GameOverManager gom = FindAnyObjectByType<GameOverManager>();
-                if (gom != null) gom.ShowVictory();
+                // guardem el resultat i anem a la pantalla de victòria
+                int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
+                RunStats.Save(currentWave, points);
+                SceneManager.LoadScene("Win");
                 yield break; // la partida s'acaba: no hi ha més onades
             }
 

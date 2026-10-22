@@ -35,6 +35,11 @@ public class PlayerHealth : MonoBehaviour
 
         if (lives <= 0)
         {
+            // guardem el resultat per a la pantalla de Game Over
+            WaveSpawner spawner = FindAnyObjectByType<WaveSpawner>();
+            int wave = spawner != null ? spawner.currentWave : 0;
+            int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
+            RunStats.Save(wave, points);
             SceneManager.LoadScene("GameOver");
         }
     }
