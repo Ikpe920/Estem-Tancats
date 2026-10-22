@@ -34,11 +34,19 @@ public class Enemy : MonoBehaviour
     private float frozenUntil;
     private bool mirarAmunt = false; // true = el client puja cap al jugador, es veu l'esquena
 
+    public static event System.Action<Enemy> OnKilled; // s'avisa cada cop que mor un client
+
+    private float slowUntil;
+    private float slowFactor = 1f;
+    private Color baseColor = Color.white;
+    private bool dead;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         health = maxHealth;
+        if (spriteRenderer != null) baseColor = spriteRenderer.color;
     }
 
     void Start()
@@ -50,6 +58,11 @@ public class Enemy : MonoBehaviour
     public void Freeze(float duration)
     {
         frozenUntil = Mathf.Max(frozenUntil, Time.time + duration);
+    }
+    public void Slow(float factor, float duration)
+    {
+        slowFactor = factor;
+        slowUntil = Time.time + duration;
     }
 
     public void ApplyActDifficulty(float healthMultiplier, float speedBonus)
@@ -85,9 +98,14 @@ public class Enemy : MonoBehaviour
         UpdateFacingSprite(toPlayer);
 
         if (isShooter && toPlayer.magnitude <= stopDistance)
+        {
             rb.linearVelocity = Vector2.zero;
+        }
         else
-            rb.linearVelocity = toPlayer.normalized * speed * speedMultiplier;
+        {
+            float slow = Time.time < slowUntil ? slowFactor : 1f;
+            rb.linearVelocity = toPlayer.normalized * speed * speedMultiplier * slow;
+        }
     }
 
     // ---------- SPRITE SEGONS LA DIRECCIO ----------
@@ -110,6 +128,10 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
+        if (spriteRenderer != null)
+            spriteRenderer.color = Time.time < slowUntil
+                ? Color.Lerp(baseColor, new Color(0.5f, 0.8f, 1f), 0.6f)
+                : baseColor;
         if (!isShooter || player == null || shotPrefab == null) return;
 
         float dist = Vector2.Distance(transform.position, player.position);
@@ -129,11 +151,15 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
+        if (dead) return;
+
         health -= amount;
         if (health <= 0)
         {
+            dead = true;
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddScore(points);
+            OnKilled?.Invoke(this);
             Destroy(gameObject);
         }
     }

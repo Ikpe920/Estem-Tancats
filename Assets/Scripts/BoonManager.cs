@@ -16,7 +16,15 @@ public enum BoonType
     DashCooldown,    // -recàrrega del dash
     Score,           // punts immediats
     ScoreBoost,      // +% de punts
-    SlowEnemies      // els clients van més lents
+    SlowEnemies,      // els clients van més lents
+    MultiShot,       // projectils extra en ventall
+    Pierce,          // els projectils travessen clients
+    Explosive,       // els projectils exploten
+    SlowOnHit,       // els projectils frenen els clients
+    DashDamage,      // el dash fa mal
+    HealOnKills,     // cures un cor cada X clients
+    MoreChoices,     // una carta més a triar
+    None             // sense segon efecte
 }
 
 [System.Serializable]
@@ -26,6 +34,8 @@ public class Boon
     public string description = "+1 de dany";      // què fa
     public BoonType type = BoonType.Damage;
     public float amount = 1f;                      // quantitat
+    public BoonType type2 = BoonType.None; // segon efecte (per als plats amb risc)
+    public float amount2 = 0f;
     public Color color = new Color(0.95f, 0.75f, 0.45f); // color de la carta
     public Sprite icon;                            // opcional
     public int weight = 10;                        // probabilitat que aparegui
@@ -46,6 +56,9 @@ public class BoonManager : MonoBehaviour
     public PlayerMovement movement;
     public PlayerHealth health;
 
+    private int killsPerHeal = 0;
+    private int killCounter = 0;
+
     private readonly Dictionary<Boon, int> taken = new Dictionary<Boon, int>();
     private bool picking;
     private Boon[] currentOffer;              // les cartes que s'estan oferint ara
@@ -63,26 +76,60 @@ public class BoonManager : MonoBehaviour
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
         if (panel != null) panel.SetActive(false);
         if (takenText == null) BuildTakenText();
+        Enemy.OnKilled += HandleKill;
+        
+    }
+
+        void OnDestroy()
+    {
+        Enemy.OnKilled -= HandleKill;
+    }
+
+    void HandleKill(Enemy e)
+    {
+        if (killsPerHeal <= 0 || health == null) return;
+
+        killCounter++;
+        if (killCounter >= killsPerHeal)
+        {
+            killCounter = 0;
+            health.Heal(1);
+        }
     }
 
     void Reset()
     {
         boons = new Boon[]
         {
-            MakeBoon("Punta de gelat", "+1 de dany a cada tret", BoonType.Damage, 1f, new Color(0.95f, 0.55f, 0.45f), 12),
-            MakeBoon("Càmera ràpida", "Disposes un 25% més ràpid", BoonType.FireRate, 0.06f, new Color(0.95f, 0.85f, 0.45f), 12),
-            MakeBoon("Sabates de roba", "Camines un 12% més ràpid", BoonType.MoveSpeed, 0.6f, new Color(0.55f, 0.85f, 0.95f), 12),
-            MakeBoon("Coraç de cuir", "+1 cor màxim (i el deixes ple)", BoonType.MaxLives, 1f, new Color(0.95f, 0.45f, 0.6f), 5),
-            MakeBoon("Aigua fresca", "Cures 1 cor", BoonType.Heal, 1f, new Color(0.5f, 0.9f, 0.55f), 8),
-            MakeBoon("Placa de reforç", "+0,5 s d'invulnerabilitat", BoonType.Invulnerability, 0.5f, new Color(0.7f, 0.7f, 0.85f), 8),
-            MakeBoon("Dash de cucut", "-0,25 s de recàrrega del dash", BoonType.DashCooldown, 0.25f, new Color(0.85f, 0.6f, 0.95f), 8),
-            MakeBoon("Cope de sorts", "+75 punts de golpe", BoonType.Score, 75f, new Color(0.95f, 0.95f, 0.6f), 10),
-            MakeBoon("Boa fortuna", "+25% de punts", BoonType.ScoreBoost, 0.25f, new Color(0.6f, 0.95f, 0.85f), 6),
-            MakeBoon("Oli de malson", "Els clients van un 15% més lents", BoonType.SlowEnemies, 0.15f, new Color(0.45f, 0.55f, 0.45f), 7),
+            // ---- plats que donen un buff ----
+            MakeBoon("Salsa brava", "+1 de dany a cada tret", BoonType.Damage, 1f, new Color(0.95f, 0.45f, 0.35f), 12),
+            MakeBoon("Cafè sol", "Disposes un 25% més ràpid", BoonType.FireRate, 0.06f, new Color(0.65f, 0.45f, 0.3f), 12),
+            MakeBoon("Macarrons amb tomàquet", "Camines més ràpid", BoonType.MoveSpeed, 0.6f, new Color(0.95f, 0.6f, 0.4f), 12),
+            MakeBoon("Escudella i carn d'olla", "+1 cor màxim (i el deixes ple)", BoonType.MaxLives, 1f, new Color(0.95f, 0.45f, 0.6f), 5),
+            MakeBoon("Gaspatxo fresquet", "Cures 1 cor", BoonType.Heal, 1f, new Color(0.5f, 0.9f, 0.55f), 8),
+            MakeBoon("Croquetes cruixents", "+0,5 s d'invulnerabilitat", BoonType.Invulnerability, 0.5f, new Color(0.9f, 0.75f, 0.45f), 8),
+            MakeBoon("Xurros amb xocolata", "-0,25 s de recàrrega del dash", BoonType.DashCooldown, 0.25f, new Color(0.7f, 0.45f, 0.35f), 8),
+            MakeBoon("Menú del dia", "+75 punts", BoonType.Score, 75f, new Color(0.95f, 0.95f, 0.6f), 10),
+            MakeBoon("Safrà", "+25% de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.8f, 0.2f), 6),
+            MakeBoon("Oli d'oliva verge", "Els clients van un 15% més lents", BoonType.SlowEnemies, 0.15f, new Color(0.65f, 0.75f, 0.3f), 7),
+
+            // ---- plats que canvien com es juga ----
+            MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 2),
+            MakeBoon("Bunyols de bacallà", "Els teus projectils travessen 1 client", BoonType.Pierce, 1f, new Color(0.9f, 0.85f, 0.6f), 6, 3),
+            MakeBoon("Calçots amb salvitxada", "Els teus projectils exploten i fan mal als clients de prop", BoonType.Explosive, 1.5f, new Color(0.95f, 0.4f, 0.2f), 5, 1),
+            MakeBoon("Sorbet de llimona", "Els teus projectils frenen els clients durant 2 s", BoonType.SlowOnHit, 0.4f, new Color(0.7f, 0.95f, 0.9f), 6, 2),
+            MakeBoon("Pollastre al curri", "El dash crema els clients que travessis", BoonType.DashDamage, 2f, new Color(0.95f, 0.65f, 0.15f), 5, 3),
+            MakeBoon("Botifarra amb mongetes", "Cada 12 clients que despatxis, cures 1 cor", BoonType.HealOnKills, 12f, new Color(0.75f, 0.5f, 0.4f), 5, 2),
+            MakeBoon("Menú de degustació", "A partir d'ara pots triar entre una carta més", BoonType.MoreChoices, 1f, new Color(0.85f, 0.7f, 0.9f), 3, 2),
+
+            // ---- plats amb risc i recompensa ----
+            MakeBoon("Xili amb carn", "+2 de dany, però els clients van un 15% més ràpids", BoonType.Damage, 2f, new Color(0.85f, 0.25f, 0.2f), 6, 0, BoonType.SlowEnemies, -0.15f),
+            MakeBoon("Fondue de formatge", "Dispares molt més ràpid, però camines més lent", BoonType.FireRate, 0.1f, new Color(0.98f, 0.9f, 0.5f), 6, 0, BoonType.MoveSpeed, -0.8f),
         };
     }
 
-    static Boon MakeBoon(string n, string d, BoonType t, float a, Color c, int w)
+    static Boon MakeBoon(string n, string d, BoonType t, float a, Color c, int w,
+                         int maxStacks = 0, BoonType t2 = BoonType.None, float a2 = 0f)
     {
         Boon b = new Boon();
         b.name = n;
@@ -91,7 +138,17 @@ public class BoonManager : MonoBehaviour
         b.amount = a;
         b.color = c;
         b.weight = w;
+        b.maxStacks = maxStacks;
+        b.type2 = t2;
+        b.amount2 = a2;
         return b;
+    }
+
+    // clic dret sobre el component → "Regenerar plats": posa la llista nova sense tocar la resta
+    [ContextMenu("Regenerar plats")]
+    void RegenerateDishes()
+    {
+        Reset();
     }
 
     // ---------- OFERIR BOONS ----------
@@ -207,55 +264,98 @@ public class BoonManager : MonoBehaviour
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
         Apply(boon);
         RefreshTakenText();
-        Debug.Log("Boón: " + boon.name + " (" + boon.description + ")");
+        Debug.Log("Plats: " + boon.name + " (" + boon.description + ")");
     }
 
     void Apply(Boon boon)
     {
-        switch (boon.type)
+        ApplyEffect(boon.type, boon.amount);
+        if (boon.type2 != BoonType.None) ApplyEffect(boon.type2, boon.amount2);
+    }
+
+    void ApplyEffect(BoonType type, float amount)
+    {
+        switch (type)
         {
             case BoonType.Damage:
-                if (shooting != null) shooting.damage += Mathf.RoundToInt(boon.amount);
+                if (shooting != null) shooting.damage = Mathf.Max(1, shooting.damage + Mathf.RoundToInt(amount));
                 break;
 
             case BoonType.FireRate:
-                if (shooting != null) shooting.fireRate = Mathf.Max(0.06f, shooting.fireRate - boon.amount);
+                if (shooting != null) shooting.fireRate = Mathf.Clamp(shooting.fireRate - amount, 0.06f, 1f);
                 break;
 
             case BoonType.MoveSpeed:
-                if (movement != null) movement.speed += boon.amount;
+                if (movement != null) movement.speed = Mathf.Max(2f, movement.speed + amount);
                 break;
 
             case BoonType.MaxLives:
                 if (health != null)
                 {
-                    health.maxLives += Mathf.RoundToInt(boon.amount);
-                    health.Heal(Mathf.RoundToInt(boon.amount));
+                    health.maxLives += Mathf.RoundToInt(amount);
+                    health.Heal(Mathf.RoundToInt(amount));
                 }
                 break;
 
             case BoonType.Heal:
-                if (health != null) health.Heal(Mathf.RoundToInt(boon.amount));
+                if (health != null) health.Heal(Mathf.RoundToInt(amount));
                 break;
 
             case BoonType.Invulnerability:
-                if (health != null) health.invulnerabilityTime += boon.amount;
+                if (health != null) health.invulnerabilityTime += amount;
                 break;
 
             case BoonType.DashCooldown:
-                if (movement != null) movement.dashCooldown = Mathf.Max(0.15f, movement.dashCooldown - boon.amount);
+                if (movement != null) movement.dashCooldown = Mathf.Max(0.15f, movement.dashCooldown - amount);
                 break;
 
             case BoonType.Score:
-                if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(Mathf.RoundToInt(boon.amount));
+                if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(Mathf.RoundToInt(amount));
                 break;
 
             case BoonType.ScoreBoost:
-                if (ScoreManager.Instance != null) ScoreManager.Instance.scoreMultiplier += boon.amount;
+                if (ScoreManager.Instance != null) ScoreManager.Instance.scoreMultiplier += amount;
                 break;
 
             case BoonType.SlowEnemies:
-                Enemy.speedMultiplier *= (1f - boon.amount);
+                Enemy.speedMultiplier *= (1f - amount); // amb amount negatiu, els clients van més ràpid
+                break;
+
+            case BoonType.MultiShot:
+                if (shooting != null) shooting.extraShots += Mathf.RoundToInt(amount);
+                break;
+
+            case BoonType.Pierce:
+                if (shooting != null) shooting.pierce += Mathf.RoundToInt(amount);
+                break;
+
+            case BoonType.Explosive:
+                if (shooting != null) shooting.explosionRadius += amount;
+                break;
+
+            case BoonType.SlowOnHit:
+                if (shooting != null)
+                {
+                    shooting.slowFactor = Mathf.Max(0.3f, Mathf.Min(shooting.slowFactor, 1f - amount));
+                    shooting.slowDuration = 2f;
+                }
+                break;
+
+            case BoonType.DashDamage:
+                if (movement != null)
+                {
+                    DashDamage dd = movement.GetComponent<DashDamage>();
+                    if (dd == null) dd = movement.gameObject.AddComponent<DashDamage>();
+                    dd.damage += Mathf.RoundToInt(amount);
+                }
+                break;
+
+            case BoonType.HealOnKills:
+                killsPerHeal = killsPerHeal == 0 ? Mathf.RoundToInt(amount) : Mathf.Max(5, killsPerHeal - 3);
+                break;
+
+            case BoonType.MoreChoices:
+                optionsPerOffer = Mathf.Min(5, optionsPerOffer + Mathf.RoundToInt(amount));
                 break;
         }
     }
@@ -386,7 +486,7 @@ public class BoonManager : MonoBehaviour
         panel = panelGo;
     }
 
-    // ---------- EL TÍTOL ("Tria un boó") ----------
+    // ---------- EL TÍTOL ("Tria un plat") ----------
 
     void BuildTitle()
     {
@@ -530,7 +630,7 @@ public class BoonManager : MonoBehaviour
         return CanReroll(); // canviar les cartes
     }
 
-    // el llistat de boons actius (sota els cors, a dalt a l'esquerra)
+    // el llistat de plats actius (sota els cors, a dalt a l'esquerra)
     void BuildTakenText()
     {
         Canvas canvas = FindAnyObjectByType<Canvas>();
@@ -580,11 +680,4 @@ public class BoonManager : MonoBehaviour
         return tmp;
     }
 
-    // ----- per provar els boons sense arribar al final de l'onada -----
-    [ContextMenu("Oferir boons")]
-    void DebugOfferBoons()
-    {
-        if (!Application.isPlaying) return;
-        StartCoroutine(OfferBoons());
-    }
 }

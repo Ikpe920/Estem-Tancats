@@ -12,6 +12,14 @@ public class PlayerShooting : MonoBehaviour
     private Camera cam;
     private float nextFireTime;
 
+    // efectes dels plats (els posa el BoonManager)
+    public int extraShots = 0;        // projectils extra en ventall
+    public float spreadAngle = 12f;   // graus entre projectils
+    public int pierce = 0;
+    public float explosionRadius = 0f;
+    public float slowFactor = 1f;
+    public float slowDuration = 0f;
+
     void Awake()
     {
         cam = Camera.main;
@@ -34,20 +42,29 @@ public class PlayerShooting : MonoBehaviour
     {
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
 
-        Vector2 mouseScreen = Mouse.current.position.ReadValue();
-        Vector2 mouseWorld = cam.ScreenToWorldPoint(mouseScreen);
-        Vector2 dir = (mouseWorld - (Vector2)transform.position).normalized;
+        Vector2 mouseWorld = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector2 baseDir = (mouseWorld - (Vector2)transform.position).normalized;
+        float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 
-        // triar un projectil a l'atzar
-        GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
+        int total = 1 + extraShots;
+        for (int i = 0; i < total; i++)
+        {
+            // els projectils es reparteixen en ventall, centrats cap al ratolí
+            float angle = baseAngle + (i - (total - 1) / 2f) * spreadAngle;
+            Vector2 dir = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
 
-        Vector2 spawnPos = (Vector2)transform.position + dir * spawnOffset;
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        GameObject p = Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle));
+            GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
+            Vector2 spawnPos = (Vector2)transform.position + dir * spawnOffset;
+            GameObject p = Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle));
 
-        Projectile proj = p.GetComponent<Projectile>();
-        proj.damage += damage - 1; // dany del prefab + millores comprades
+            Projectile proj = p.GetComponent<Projectile>();
+            proj.damage += damage - 1; // dany del prefab + millores
+            proj.pierce = pierce;
+            proj.explosionRadius = explosionRadius;
+            proj.slowFactor = slowFactor;
+            proj.slowDuration = slowDuration;
 
-        p.GetComponent<Rigidbody2D>().linearVelocity = dir * projectileSpeed;
+            p.GetComponent<Rigidbody2D>().linearVelocity = dir * projectileSpeed;
+        }
     }
 }
