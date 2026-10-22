@@ -370,7 +370,7 @@ public class BoonManager : MonoBehaviour
     void RefreshTakenText()
     {
         if (takenText == null) return;
-        string s = "Boons: ";
+        string s = "Plats: ";
         bool first = true;
         foreach (Boon b in taken.Keys)
         {
@@ -504,7 +504,7 @@ public class BoonManager : MonoBehaviour
         float sh = Mathf.Max(240f, Screen.height);
         int size = Mathf.RoundToInt(Mathf.Clamp(sh * 0.05f, 22f, 56f));
 
-        titleText = CreateText(panel.transform, "Titol", "Tria un boó", size, TextAlignmentOptions.Center,
+        titleText = CreateText(panel.transform, "Titol", "Tria un plat", size, TextAlignmentOptions.Center,
             new Vector2(0f, -30f), new Vector2(sh * 0.9f, size * 1.6f), Color.white);
     }
 

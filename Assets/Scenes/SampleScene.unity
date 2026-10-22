@@ -876,7 +876,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoonManager
   boons:
-  - name: Punta de gelat
+  - name: Salsa brava
     description: +1 de dany a cada tret
     type: 0
     amount: 1
@@ -916,7 +916,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 5
     maxStacks: 0
-  - name: Aigua fresca
+  - name: Gaspatxo fresquet
     description: Cures 1 cor
     type: 4
     amount: 1
@@ -926,7 +926,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: "Placa de refor\xE7"
+  - name: Croquetes cruixents
     description: +0,5 s d'invulnerabilitat
     type: 5
     amount: 0.5
@@ -946,8 +946,8 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: Cope de sorts
-    description: +75 punts de golpe
+  - name: "Men\xFA del dia"
+    description: "+75 punts"
     type: 7
     amount: 75
     type2: 17
@@ -956,7 +956,7 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 10
     maxStacks: 0
-  - name: Boa fortuna
+  - name: "Safr\xE0"
     description: +25% de punts
     type: 8
     amount: 0.25
