@@ -28,6 +28,7 @@ public class Projectile : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
         Enemy enemy = other.GetComponent<Enemy>();
         if (enemy == null || alreadyHit.Contains(enemy)) return;
         alreadyHit.Add(enemy);

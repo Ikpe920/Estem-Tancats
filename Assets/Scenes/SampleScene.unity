@@ -177,11 +177,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: LA BOTIGA
-
-'
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 0}
+  m_sharedMaterial: {fileID: 0}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -200,19 +198,19 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: -1183493901
+  m_TextStyleHashCode: 0
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
+  m_fontSize: -99
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMin: 0
+  m_fontSizeMax: 0
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -222,19 +220,19 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656bu
+  m_ActiveFontFeatures: 00000000u
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
   m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
-  m_isOrthographic: 1
+  m_isOrthographic: 0
   m_isCullingEnabled: 0
   m_horizontalMapping: 0
   m_verticalMapping: 0
@@ -661,6 +659,55 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 127806982}
   m_CullTransparentMesh: 1
+--- !u!1 &162779100
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 162779101}
+  - component: {fileID: 162779102}
+  m_Layer: 0
+  m_Name: ArenaWalls
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &162779101
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162779100}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &162779102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162779100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9ba4e8ae8a0bc90a882adcbfa868b3d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArenaWalls
+  size: {x: 30, y: 20}
+  thickness: 2
+  showWalls: 0
+  wallColor: {r: 0.25, g: 0.15, b: 0.1, a: 1}
+  sortingOrder: -5
 --- !u!1 &181171940
 GameObject:
   m_ObjectHideFlags: 0
@@ -1008,6 +1055,7 @@ MonoBehaviour:
   timeBetweenWaves: 3
   spawnRadius: 10
   actManager: {fileID: 0}
+  boonManager: {fileID: 0}
   currentWave: 0
 --- !u!114 &223980661
 MonoBehaviour:
@@ -1033,7 +1081,7 @@ MonoBehaviour:
     enemySpeedBonus: 0
     enemyHealthMultiplier: 1
   - name: LA BARRA
-    subtitle: "S'han begut tots els copes. Fins i tot els gerres"
+    subtitle: S'han begut tots els copes. Fins i tot els gerres
     resourceName: Barra
     background: {fileID: 0}
     tint: {r: 1, g: 0.93, b: 0.82, a: 1}
@@ -1043,7 +1091,7 @@ MonoBehaviour:
     enemySpeedBonus: 0.15
     enemyHealthMultiplier: 1.2
   - name: LA CUINA
-    subtitle: "Hi ha foc al forn i ells han vingut a apagar-lo"
+    subtitle: Hi ha foc al forn i ells han vingut a apagar-lo
     resourceName: Cuina
     background: {fileID: 0}
     tint: {r: 0.88, g: 0.95, b: 1, a: 1}
@@ -1099,90 +1147,201 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BoonManager
   boons:
-  - name: Punta de gelat
-    description: "+1 de dany a cada tret"
+  - name: Salsa brava
+    description: +1 de dany a cada tret
     type: 0
     amount: 1
-    color: {r: 0.95, g: 0.55, b: 0.45, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.95, g: 0.45, b: 0.35, a: 1}
     icon: {fileID: 0}
     weight: 12
     maxStacks: 0
-  - name: "C\xE0mera r\xE0pida"
+  - name: "Caf\xE8 sol"
     description: "Disposes un 25% m\xE9s r\xE0pid"
     type: 1
     amount: 0.06
-    color: {r: 0.95, g: 0.85, b: 0.45, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.65, g: 0.45, b: 0.3, a: 1}
     icon: {fileID: 0}
     weight: 12
     maxStacks: 0
-  - name: Sabates de roba
-    description: "Camines un 12% m\xE9s r\xE0pid"
+  - name: "Macarrons amb tom\xE0quet"
+    description: "Camines m\xE9s r\xE0pid"
     type: 2
     amount: 0.6
-    color: {r: 0.55, g: 0.85, b: 0.95, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.95, g: 0.6, b: 0.4, a: 1}
     icon: {fileID: 0}
     weight: 12
     maxStacks: 0
-  - name: "Cora\xE7 de cuir"
+  - name: Escudella i carn d'olla
     description: "+1 cor m\xE0xim (i el deixes ple)"
     type: 3
     amount: 1
+    type2: 17
+    amount2: 0
     color: {r: 0.95, g: 0.45, b: 0.6, a: 1}
     icon: {fileID: 0}
     weight: 5
     maxStacks: 0
-  - name: Aigua fresca
-    description: "Cures 1 cor"
+  - name: Gaspatxo fresquet
+    description: Cures 1 cor
     type: 4
     amount: 1
+    type2: 17
+    amount2: 0
     color: {r: 0.5, g: 0.9, b: 0.55, a: 1}
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: "Placa de refor\xE7"
-    description: "+0,5 s d'invulnerabilitat"
+  - name: Croquetes cruixents
+    description: +0,5 s d'invulnerabilitat
     type: 5
     amount: 0.5
-    color: {r: 0.7, g: 0.7, b: 0.85, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.9, g: 0.75, b: 0.45, a: 1}
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: Dash de cucut
+  - name: Xurros amb xocolata
     description: "-0,25 s de rec\xE0rrega del dash"
     type: 6
     amount: 0.25
-    color: {r: 0.85, g: 0.6, b: 0.95, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.7, g: 0.45, b: 0.35, a: 1}
     icon: {fileID: 0}
     weight: 8
     maxStacks: 0
-  - name: Cope de sorts
-    description: "+75 punts de golpe"
+  - name: "Men\xFA del dia"
+    description: +75 punts
     type: 7
     amount: 75
+    type2: 17
+    amount2: 0
     color: {r: 0.95, g: 0.95, b: 0.6, a: 1}
     icon: {fileID: 0}
     weight: 10
     maxStacks: 0
-  - name: Boa fortuna
-    description: "+25% de punts"
+  - name: "Safr\xE0"
+    description: +25% de punts
     type: 8
     amount: 0.25
-    color: {r: 0.6, g: 0.95, b: 0.85, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.98, g: 0.8, b: 0.2, a: 1}
     icon: {fileID: 0}
     weight: 6
     maxStacks: 0
-  - name: Oli de malson
+  - name: Oli d'oliva verge
     description: "Els clients van un 15% m\xE9s lents"
     type: 9
     amount: 0.15
-    color: {r: 0.45, g: 0.55, b: 0.45, a: 1}
+    type2: 17
+    amount2: 0
+    color: {r: 0.65, g: 0.75, b: 0.3, a: 1}
     icon: {fileID: 0}
     weight: 7
+    maxStacks: 0
+  - name: Paella mixta
+    description: "Cada tret en llen\xE7a 2 m\xE9s, en ventall"
+    type: 10
+    amount: 2
+    type2: 17
+    amount2: 0
+    color: {r: 0.95, g: 0.75, b: 0.25, a: 1}
+    icon: {fileID: 0}
+    weight: 5
+    maxStacks: 2
+  - name: "Bunyols de bacall\xE0"
+    description: Els teus projectils travessen 1 client
+    type: 11
+    amount: 1
+    type2: 17
+    amount2: 0
+    color: {r: 0.9, g: 0.85, b: 0.6, a: 1}
+    icon: {fileID: 0}
+    weight: 6
+    maxStacks: 3
+  - name: "Cal\xE7ots amb salvitxada"
+    description: Els teus projectils exploten i fan mal als clients de prop
+    type: 12
+    amount: 1.5
+    type2: 17
+    amount2: 0
+    color: {r: 0.95, g: 0.4, b: 0.2, a: 1}
+    icon: {fileID: 0}
+    weight: 5
+    maxStacks: 1
+  - name: Sorbet de llimona
+    description: Els teus projectils frenen els clients durant 2 s
+    type: 13
+    amount: 0.4
+    type2: 17
+    amount2: 0
+    color: {r: 0.7, g: 0.95, b: 0.9, a: 1}
+    icon: {fileID: 0}
+    weight: 6
+    maxStacks: 2
+  - name: Pollastre al curri
+    description: El dash crema els clients que travessis
+    type: 14
+    amount: 2
+    type2: 17
+    amount2: 0
+    color: {r: 0.95, g: 0.65, b: 0.15, a: 1}
+    icon: {fileID: 0}
+    weight: 5
+    maxStacks: 3
+  - name: Botifarra amb mongetes
+    description: Cada 12 clients que despatxis, cures 1 cor
+    type: 15
+    amount: 12
+    type2: 17
+    amount2: 0
+    color: {r: 0.75, g: 0.5, b: 0.4, a: 1}
+    icon: {fileID: 0}
+    weight: 5
+    maxStacks: 2
+  - name: "Men\xFA de degustaci\xF3"
+    description: "A partir d'ara pots triar entre una carta m\xE9s"
+    type: 16
+    amount: 1
+    type2: 17
+    amount2: 0
+    color: {r: 0.85, g: 0.7, b: 0.9, a: 1}
+    icon: {fileID: 0}
+    weight: 3
+    maxStacks: 2
+  - name: Xili amb carn
+    description: "+2 de dany, per\xF2 els clients van un 15% m\xE9s r\xE0pids"
+    type: 0
+    amount: 2
+    type2: 9
+    amount2: -0.15
+    color: {r: 0.85, g: 0.25, b: 0.2, a: 1}
+    icon: {fileID: 0}
+    weight: 6
+    maxStacks: 0
+  - name: Fondue de formatge
+    description: "Dispares molt m\xE9s r\xE0pid, per\xF2 camines m\xE9s lent"
+    type: 1
+    amount: 0.1
+    type2: 2
+    amount2: -0.8
+    color: {r: 0.98, g: 0.9, b: 0.5, a: 1}
+    icon: {fileID: 0}
+    weight: 6
     maxStacks: 0
   optionsPerOffer: 3
   everyNWaves: 1
   panel: {fileID: 0}
   takenText: {fileID: 0}
+  shop: {fileID: 0}
   shooting: {fileID: 0}
   movement: {fileID: 0}
   health: {fileID: 0}
@@ -3083,6 +3242,12 @@ MonoBehaviour:
   fireRate: 0.3
   spawnOffset: 0.85
   damage: 1
+  extraShots: 0
+  spreadAngle: 12
+  pierce: 0
+  explosionRadius: 0
+  slowFactor: 1
+  slowDuration: 0
 --- !u!114 &672883919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4781,6 +4946,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
   score: 0
   totalScore: 0
+  scoreMultiplier: 1
 --- !u!114 &2090463949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4803,6 +4969,10 @@ MonoBehaviour:
   fireRateText: {fileID: 1870632188}
   healText: {fileID: 550624467}
   dashCooldownText: {fileID: 0}
+  healCost: 20
+  maxLifeCost: 60
+  rerollCost: 30
+  maxLifeCap: 5
 --- !u!114 &2090463950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4882,5 +5052,6 @@ SceneRoots:
   - {fileID: 672883916}
   - {fileID: 223980659}
   - {fileID: 2090463947}
+  - {fileID: 162779101}
   - {fileID: 586144848}
   - {fileID: 818977908}
