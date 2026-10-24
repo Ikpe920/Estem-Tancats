@@ -789,8 +789,8 @@ MonoBehaviour:
     health: 400
     speed: 1.8
     scale: 3.2
-    sprite: {fileID: 21300000, guid: ce0d20736c08166b69f61d556c9a55c6, type: 3}
-    tint: {r: 1, g: 0.85, b: 0.75, a: 1}
+    sprite: {fileID: 21300000, guid: 90220a7f090c417eb1bbdd522dda72fe, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
     projectilePrefab: {fileID: 0}
   - name: EL XEF RENEGAT
     subtitle: Ha canviat la cuina pels clients. Ara et vol al forn.
@@ -799,8 +799,8 @@ MonoBehaviour:
     health: 650
     speed: 1.6
     scale: 3
-    sprite: {fileID: 21300000, guid: 02a94e78a42d85301c16be2041409935, type: 3}
-    tint: {r: 0.85, g: 0.9, b: 1, a: 1}
+    sprite: {fileID: 21300000, guid: 5b62ea532276445f8e284629becebc1a, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
     projectilePrefab: {fileID: 8865756378172706860, guid: 1b8244d38744645608f4c3fe18460a1e, type: 3}
   - name: EL CLIENT VIP
     subtitle: "T\xE9 reserva per a tots els teus cors. I no pensa marxar."
@@ -809,8 +809,8 @@ MonoBehaviour:
     health: 900
     speed: 1.7
     scale: 2.8
-    sprite: {fileID: 21300000, guid: 602fac4b98315f52f3a36c2c6f47136a, type: 3}
-    tint: {r: 1, g: 0.9, b: 0.5, a: 1}
+    sprite: {fileID: 21300000, guid: 49c67e691ad249a1aa3a65437ca9d380, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
     projectilePrefab: {fileID: 0}
   - name: LA INSPECTORA
     subtitle: "Ha vingut a tancar el local. Comen\xE7ar\xE0 per tu."
@@ -819,8 +819,8 @@ MonoBehaviour:
     health: 1200
     speed: 1.8
     scale: 3.4
-    sprite: {fileID: 21300000, guid: ae5fe1c1a1dc65f2a98ad5c1121c95ba, type: 3}
-    tint: {r: 0.95, g: 0.75, b: 1, a: 1}
+    sprite: {fileID: 21300000, guid: af5d1d799c6d43bbb95a28ca889d01a1, type: 3}
+    tint: {r: 1, g: 1, b: 1, a: 1}
     projectilePrefab: {fileID: 8865756378172706860, guid: 1b8244d38744645608f4c3fe18460a1e, type: 3}
   bossEveryNWaves: 5
   bossManager: {fileID: 2090463951}
