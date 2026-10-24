@@ -54,6 +54,10 @@ public class WaveSpawner : MonoBehaviour
     public float timeBetweenWaves = 3f;
     public float spawnRadius = 10f;
 
+    [Header("Dificultat progressiva")]
+    public float healthPerWave = 0.14f;   // +14% de vida (sobre la base) a cada onada
+    public float speedPerWave = 0.03f;    // +0,03 de velocitat a cada onada
+
     [Header("Actes")]
     public ActManager actManager; // el canvi d'escenari cada 5 onades
 
@@ -111,7 +115,8 @@ public class WaveSpawner : MonoBehaviour
             for (int i = 0; i < count; i++)
             {
                 SpawnEnemy();
-                yield return new WaitForSeconds(spawnInterval);
+                // les onades altes surten en un degoteig més ràpid
+                yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
             }
 
             while (FindObjectsByType<Enemy>().Length > 0)
@@ -187,11 +192,30 @@ public class WaveSpawner : MonoBehaviour
         if (prefab == null) return;
 
         Enemy e = Instantiate(prefab, RandomSpawnPosition(), Quaternion.identity).GetComponent<Enemy>();
+        ApplyWaveDifficulty(e);
+    }
 
-        // l'acte endureix els clients (més vida i més pressa)
+    // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
+    void ApplyWaveDifficulty(Enemy e)
+    {
+        if (e == null) return;
+
+        int level = Mathf.Max(0, currentWave - 1);
+        float healthMul = 1f + healthPerWave * level;
+        float speedBonus = speedPerWave * level;
+
         ActData act = actManager != null ? actManager.Current : null;
-        if (e != null && act != null)
-            e.ApplyActDifficulty(act.enemyHealthMultiplier, act.enemySpeedBonus);
+        if (act != null)
+        {
+            healthMul *= act.enemyHealthMultiplier;
+            speedBonus += act.enemySpeedBonus;
+        }
+
+        e.ApplyActDifficulty(healthMul, speedBonus);
+
+        // els tiradors disparen més sovint a les onades altes
+        if (e.isShooter)
+            e.fireInterval = Mathf.Max(0.7f, e.fireInterval * Mathf.Max(0.55f, 1f - 0.015f * currentWave));
     }
 
     void SpawnBoss(BossInfo info)
@@ -240,7 +264,17 @@ public class WaveSpawner : MonoBehaviour
         switch (info.type)
         {
             case BossType.Critic:
-                // el Crític fa servir el cop de safata i la ràfega del prefab
+                // el Crític fa servir el cop de safata i la ràfega del prefab, però més de pressa
+                if (attack != null)
+                {
+                    attack.fireInterval = 1.8f;
+                    attack.phase2Interval = 1.1f;
+                }
+                if (melee != null)
+                {
+                    melee.cooldown = 2.4f;
+                    melee.windupTime = 0.6f;
+                }
                 break;
 
             case BossType.Borratxo:
@@ -281,10 +315,7 @@ public class WaveSpawner : MonoBehaviour
 
             Vector2 pos = around + Random.insideUnitCircle.normalized * 2.5f;
             Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
-
-            ActData act = actManager != null ? actManager.Current : null;
-            if (e != null && act != null)
-                e.ApplyActDifficulty(act.enemyHealthMultiplier, act.enemySpeedBonus);
+            ApplyWaveDifficulty(e);
         }
     }
 }

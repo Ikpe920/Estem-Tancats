@@ -109,11 +109,11 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Macarrons amb tomàquet", "Camines més ràpid", BoonType.MoveSpeed, 0.6f, new Color(0.95f, 0.6f, 0.4f), 12),
             MakeBoon("Escudella i carn d'olla", "+1 cor màxim (i el deixes ple)", BoonType.MaxLives, 1f, new Color(0.95f, 0.45f, 0.6f), 5),
             MakeBoon("Gaspatxo fresquet", "Cures 1 cor", BoonType.Heal, 1f, new Color(0.5f, 0.9f, 0.55f), 8),
-            MakeBoon("Croquetes cruixents", "+0,5 s d'invulnerabilitat", BoonType.Invulnerability, 0.5f, new Color(0.9f, 0.75f, 0.45f), 8),
+            MakeBoon("Croquetes cruixents", "+0,3 s d'invulnerabilitat", BoonType.Invulnerability, 0.3f, new Color(0.9f, 0.75f, 0.45f), 8),
             MakeBoon("Xurros amb xocolata", "-0,25 s de recàrrega del dash", BoonType.DashCooldown, 0.25f, new Color(0.7f, 0.45f, 0.35f), 8),
             MakeBoon("Menú del dia", "+75 punts", BoonType.Score, 75f, new Color(0.95f, 0.95f, 0.6f), 10),
             MakeBoon("Safrà", "+25% de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.8f, 0.2f), 6),
-            MakeBoon("Oli d'oliva verge", "Els clients van un 15% més lents", BoonType.SlowEnemies, 0.15f, new Color(0.65f, 0.75f, 0.3f), 7),
+            MakeBoon("Oli d'oliva verge", "Els clients van un 10% més lents", BoonType.SlowEnemies, 0.1f, new Color(0.65f, 0.75f, 0.3f), 7),
 
             // ---- plats que canvien com es juga ----
             MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 2),
@@ -195,6 +195,59 @@ public class BoonManager : MonoBehaviour
         if (!wasPaused) Time.timeScale = 1f;
     }
 
+    // ---------- TOPALLS DELS PLATS ----------
+
+    // quantes còpies d'un tipus de plat es poden acumular (encara que el plat no porti topall propi)
+    int MaxStacks(Boon b)
+    {
+        if (b.maxStacks > 0) return b.maxStacks;
+
+        switch (b.type)
+        {
+            case BoonType.Damage: return 4;
+            case BoonType.FireRate: return 3;
+            case BoonType.MoveSpeed: return 2;
+            case BoonType.Invulnerability: return 1;
+            case BoonType.DashCooldown: return 3;
+            case BoonType.SlowEnemies: return 2;
+            case BoonType.ScoreBoost: return 4;
+            case BoonType.MultiShot: return 1;
+            case BoonType.Pierce: return 2;
+            case BoonType.Explosive: return 1;
+            case BoonType.SlowOnHit: return 2;
+            case BoonType.DashDamage: return 2;
+            case BoonType.HealOnKills: return 1;
+            case BoonType.MoreChoices: return 1;
+            default: return 0; // sense topall (curar, punts...)
+        }
+    }
+
+    // còpies acumulades de tots els plats que fan el mateix efecte
+    int TypeStacks(BoonType type)
+    {
+        int total = 0;
+        foreach (KeyValuePair<Boon, int> kv in taken)
+        {
+            if (kv.Key != null && kv.Key.type == type) total += kv.Value;
+        }
+        return total;
+    }
+
+    // aquest plat encara es pot oferir?
+    bool CanPick(Boon b)
+    {
+        if (b == null) return false;
+
+        int stacks = taken.ContainsKey(b) ? taken[b] : 0;
+        if (b.maxStacks > 0 && stacks >= b.maxStacks) return false; // ja el té al màxim
+
+        int cap = MaxStacks(b);
+        if (cap > 0 && TypeStacks(b.type) >= cap) return false; // el tipus ja està al màxim
+
+        if (b.type == BoonType.MaxLives && health != null && health.maxLives >= maxHeartsCap) return false;
+        return true;
+    }
+
     // ---------- REROLL (servei "Canviar les cartes") ----------
 
     public bool CanReroll()
@@ -203,9 +256,7 @@ public class BoonManager : MonoBehaviour
         foreach (Boon b in boons)
         {
             if (b == null) continue;
-            int stacks = taken.ContainsKey(b) ? taken[b] : 0;
-            if (b.maxStacks > 0 && stacks >= b.maxStacks) continue; // ja el té al màxim
-            return true;
+            if (CanPick(b)) return true;
         }
         return false;
     }
@@ -230,10 +281,8 @@ public class BoonManager : MonoBehaviour
         foreach (Boon b in boons)
         {
             if (b == null) continue;
-            int stacks = taken.ContainsKey(b) ? taken[b] : 0;
-            if (b.maxStacks > 0 && stacks >= b.maxStacks) continue; // ja el té al màxim
+            if (!CanPick(b)) continue; // topall propi o del tipus
             if (exclou != null && exclou.Contains(b)) continue; // no repetim la mateixa carta
-            if (b.type == BoonType.MaxLives && health != null && health.maxLives >= maxHeartsCap) continue;
             pool.Add(b);
         }
         if (pool.Count == 0) return null;

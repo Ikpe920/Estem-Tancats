@@ -5,12 +5,12 @@ using UnityEngine;
 public class BossSummoner : MonoBehaviour
 {
     public GameObject projectilePrefab;      // el projectil dels clients (EnemyShot)
-    public float fanInterval = 3.2f;         // cada quant llança el ventall
-    public int fanShots = 5;                 // ganivets per ventall
+    public float fanInterval = 2.2f;         // cada quant llança el ventall
+    public int fanShots = 7;                 // ganivets per ventall
     public float fanAngle = 45f;             // obertura del ventall
-    public float shotSpeed = 6f;
-    public float summonInterval = 8f;        // cada quant invoca clients
-    public int minionsPerSummon = 2;
+    public float shotSpeed = 7f;
+    public float summonInterval = 6f;        // cada quant invoca clients
+    public int minionsPerSummon = 3;
     public float summonTelegraph = 0.9f;     // avís abans que surtin els clients
     public float summonRadius = 2.9f;
 

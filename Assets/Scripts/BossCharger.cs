@@ -4,11 +4,11 @@ using UnityEngine;
 // El Borratxo: embesteix en línia recta i, quan s'atura, queda estabornit (rep el doble de mal)
 public class BossCharger : MonoBehaviour
 {
-    public float windupTime = 0.9f;          // avís abans d'embestir
-    public float chargeSpeed = 14f;          // velocitat de la càrrega
-    public float chargeTime = 0.55f;         // durada de la càrrega
-    public float stunTime = 1.4f;            // temps que queda estabornit
-    public float pauseBetween = 2.2f;        // descans entre càrregues
+    public float windupTime = 0.7f;          // avís abans d'embestir
+    public float chargeSpeed = 16f;          // velocitat de la càrrega
+    public float chargeTime = 0.65f;         // durada de la càrrega
+    public float stunTime = 1.1f;            // temps que queda estabornit
+    public float pauseBetween = 1.4f;        // descans entre càrregues
     public float chargeDistance = 9f;        // llargada de la línia d'avís
     public float lineWidth = 0.8f;
     public float stunDamageMultiplier = 2f;  // mal extra mentre està estabornit

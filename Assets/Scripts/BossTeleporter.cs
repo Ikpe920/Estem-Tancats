@@ -3,11 +3,11 @@ using UnityEngine;
 // El Client VIP: es teletransporta quan se li acosta el jugador i deixa bombes amb avís al terra
 public class BossTeleporter : MonoBehaviour
 {
-    public float bombInterval = 2.4f;     // cada quant deixa una bomba
-    public int bombsPerVolley = 2;
+    public float bombInterval = 1.6f;     // cada quant deixa una bomba
+    public int bombsPerVolley = 3;
     public float bombRadius = 1.8f;
-    public float bombDelay = 1.3f;
-    public float teleportCooldown = 4.5f;
+    public float bombDelay = 1.1f;
+    public float teleportCooldown = 3.2f;
     public float keepDistance = 6f;       // distància a què reapareix del jugador
     public float fleeDistance = 3.5f;     // si el jugador se li acosta, s'escapa
 

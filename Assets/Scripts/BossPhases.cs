@@ -4,13 +4,13 @@ using UnityEngine;
 public class BossPhases : MonoBehaviour
 {
     public GameObject projectilePrefab;       // el projectil dels clients (EnemyShot)
-    public float spiralInterval = 0.16f;      // cada quant surt un projectil
+    public float spiralInterval = 0.12f;      // cada quant surt un projectil
     public float spiralStep = 24f;            // graus que gira l'espiral
-    public float shotSpeed = 5.5f;
-    public float rageHealth = 0.5f;           // percentatge de vida en què s'enfada
-    public int minionsOnRage = 2;
-    public float rageSpeedMultiplier = 1.35f;
-    public float rageSpiralInterval = 0.1f;
+    public float shotSpeed = 6.5f;
+    public float rageHealth = 0.55f;           // percentatge de vida en què s'enfada
+    public int minionsOnRage = 3;
+    public float rageSpeedMultiplier = 1.5f;
+    public float rageSpiralInterval = 0.075f;
 
     private Enemy enemy;
     private float angle;
