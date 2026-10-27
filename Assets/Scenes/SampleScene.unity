@@ -829,6 +829,8 @@ MonoBehaviour:
   spawnInterval: 0.5
   timeBetweenWaves: 3
   spawnRadius: 10
+  healthPerWave: 0.14
+  speedPerWave: 0.03
   actManager: {fileID: 0}
   boonManager: {fileID: 0}
   finalWave: 25
@@ -857,7 +859,7 @@ MonoBehaviour:
     enemySpeedBonus: 0
     enemyHealthMultiplier: 1
   - name: LA BARRA
-    subtitle: S'han begut tots els copes. Fins i tot els gerres
+    subtitle: "S'han begut totes les copes. Encara volen m\xE9s"
     resourceName: Barra
     background: {fileID: 0}
     tint: {r: 1, g: 0.93, b: 0.82, a: 1}
@@ -867,7 +869,7 @@ MonoBehaviour:
     enemySpeedBonus: 0.15
     enemyHealthMultiplier: 1.2
   - name: LA CUINA
-    subtitle: Hi ha foc al forn i ells han vingut a apagar-lo
+    subtitle: Hem apagat el foc i ells venen a engegar-lo
     resourceName: Cuina
     background: {fileID: 0}
     tint: {r: 0.88, g: 0.95, b: 1, a: 1}

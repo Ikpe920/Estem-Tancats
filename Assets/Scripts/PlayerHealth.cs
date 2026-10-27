@@ -22,6 +22,17 @@ public class PlayerHealth : MonoBehaviour
         if (spriteRenderer != null) baseColor = spriteRenderer.color;
     }
 
+    void Start()
+    {
+        // assegurar CameraShaker
+        if (CameraShaker.Instance == null)
+        {
+            GameObject g = new GameObject("CameraShaker");
+            g.AddComponent<CameraShaker>();
+        }
+        CameraShaker.Instance.Shake(0.01f, 0.01f);
+    }
+
     // cada cop que rep mal, perdi un cor (la quantitat de dany ja no compta)
     public void TakeDamage()
     {
@@ -31,6 +42,9 @@ public class PlayerHealth : MonoBehaviour
         lives--;
         nextDamageTime = Time.time + invulnerabilityTime;
         OnLivesChanged?.Invoke(lives);
+        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.18f, 0.16f);
+        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.18f, 0.16f);
+        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.18f, 0.16f);
         Debug.Log("Cors restants: " + lives);
 
         if (lives <= 0)

@@ -30,7 +30,9 @@ public class Projectile : MonoBehaviour
     {
         if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
         Enemy enemy = other.GetComponent<Enemy>();
-        if (enemy == null || alreadyHit.Contains(enemy)) return;
+        if (enemy == null) enemy = other.GetComponentInParent<Enemy>();
+        if (enemy == null) return;
+        if (alreadyHit.Contains(enemy)) return;
         alreadyHit.Add(enemy);
 
         HitEnemy(enemy);
@@ -45,6 +47,10 @@ public class Projectile : MonoBehaviour
     {
         e.TakeDamage(damage);
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
+        if (e != null)
+        {
+            e.Flash(Color.white, 0.12f);
+        }
     }
 
     void Explode(Enemy center)

@@ -246,6 +246,25 @@ public class ActManager : MonoBehaviour
         actPanel.SetActive(false);
     }
 
+    public IEnumerator ShowRoundComplete(int wave)
+    {
+        if (actPanel == null || actTitleText == null) yield break;
+
+        actTitleText.text = "ONADA " + wave + " COMPLETADA";
+        if (actSubtitleText != null) actSubtitleText.text = "PREPARA'T PER ALS PLATS";
+
+        CanvasGroup cg = actPanel.GetComponent<CanvasGroup>();
+        if (cg == null) cg = actPanel.AddComponent<CanvasGroup>();
+        cg.alpha = 0f;
+        actPanel.SetActive(true);
+
+        yield return FadeCanvas(cg, 0f, 1f, 0.35f);
+        yield return new WaitForSecondsRealtime(1.4f);
+        yield return FadeCanvas(cg, 1f, 0f, 0.4f);
+
+        actPanel.SetActive(false);
+    }
+
     IEnumerator FadeCanvas(CanvasGroup cg, float from, float to, float duration)
     {
         float t = 0f;

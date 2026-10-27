@@ -39,6 +39,10 @@ public class BossPhases : MonoBehaviour
         if (Time.time < nextShot) return;
         nextShot = Time.time + (raging ? rageSpiralInterval : spiralInterval);
 
+        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.14f, 0.12f);
+        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.14f, 0.12f);
+        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.14f, 0.12f);
+
         // espiral de trets
         angle += spiralStep;
         float a = angle * Mathf.Deg2Rad;

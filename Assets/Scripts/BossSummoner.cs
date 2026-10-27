@@ -58,6 +58,10 @@ public class BossSummoner : MonoBehaviour
     {
         if (projectilePrefab == null) return;
 
+        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.16f, 0.14f);
+        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.16f, 0.14f);
+        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.16f, 0.14f);
+
         Vector2 origin = transform.position;
         Vector2 dir = ((Vector2)player.position - origin).normalized;
         float baseAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
@@ -93,6 +97,10 @@ public class BossSummoner : MonoBehaviour
             yield return null;
         }
         Destroy(warn);
+
+        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.2f, 0.16f);
+        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.2f, 0.16f);
+        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.2f, 0.16f);
 
         if (WaveSpawner.Instance != null)
             WaveSpawner.Instance.SpawnMinions(pos, minionsPerSummon);

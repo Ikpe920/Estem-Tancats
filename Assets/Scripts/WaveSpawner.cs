@@ -123,6 +123,12 @@ public class WaveSpawner : MonoBehaviour
             {
                 yield return null;
             }
+
+            // petit descans perquè el jugador pugui respirar abans de triar un plat
+            if (actManager != null)
+                yield return StartCoroutine(actManager.ShowRoundComplete(currentWave));
+            yield return new WaitForSeconds(0.4f);
+
             // final del joc: en acabar l'última onada, guanyes
             if (finalWave > 0 && currentWave >= finalWave)
             {
