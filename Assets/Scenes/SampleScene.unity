@@ -2560,6 +2560,7 @@ GameObject:
   - component: {fileID: 672883917}
   - component: {fileID: 672883918}
   - component: {fileID: 672883919}
+  - component: {fileID: 672883920}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -2718,6 +2719,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   speed: 5
+  externalPush: {x: 0, y: 0}
+  slipUntil: 0
+  slipAcceleration: 7
   dashSpeed: 16
   dashDuration: 0.18
   dashCooldown: 1
@@ -2771,6 +2775,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxLives: 3
   invulnerabilityTime: 1.2
+--- !u!114 &672883920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 672883912}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 984f610cc3d9bea058b4fce2d02dc19a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ChefApplier
 --- !u!1 &818977905
 GameObject:
   m_ObjectHideFlags: 0

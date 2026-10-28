@@ -5,6 +5,10 @@ public class PlayerMovement : MonoBehaviour
 {
     public float speed = 5f;
 
+    [HideInInspector] public Vector2 externalPush; // el vent
+    [HideInInspector] public float slipUntil;      // terra relliscós fins aquest moment
+    public float slipAcceleration = 7f;            // com més baix, més llisca
+
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Camera cam;
@@ -78,8 +82,18 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocity = knockbackVelocity;
             return;
         }
-        rb.linearVelocity = input * speed;
-    }
+        Vector2 target = input * speed + externalPush;
+
+        if (Time.time < slipUntil)
+        {
+            // terra relliscós: la velocitat canvia a poc a poc (inèrcia)
+            rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, target, slipAcceleration * Time.fixedDeltaTime);
+        }
+        else
+        {
+            rb.linearVelocity = target;
+        }
+        }
 
     // ---------- DASH ----------
 

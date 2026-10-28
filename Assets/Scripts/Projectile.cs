@@ -29,6 +29,14 @@ public class Projectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
+        Breakable prop = other.GetComponent<Breakable>();
+        if (prop != null)
+            {
+                prop.Hit(damage);
+                if (pierce > 0) pierce--;
+                else Destroy(gameObject);
+                return;
+            }
         Enemy enemy = other.GetComponent<Enemy>();
         if (enemy == null) enemy = other.GetComponentInParent<Enemy>();
         if (enemy == null) return;

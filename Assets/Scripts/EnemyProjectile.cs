@@ -13,6 +13,15 @@ public class EnemyProjectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
+
+        BlocksShots shield = other.GetComponent<BlocksShots>();
+        if (shield != null)
+        {
+            shield.OnShotBlocked();
+            Destroy(gameObject);
+            return;
+        }
+
         PlayerHealth ph = other.GetComponent<PlayerHealth>();
         if (ph != null)
         {

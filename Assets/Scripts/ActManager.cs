@@ -39,6 +39,8 @@ public class ActManager : MonoBehaviour
     public bool showTitleAtStart = true;    // mostra el cartell de l'acte 1 en començar el joc
     public bool pauseForTitle = true;       // el joc s'atura mentre es mostra el cartell
 
+    public static event System.Action<int> OnActChanged;
+
     public ActData Current
     {
         get
@@ -157,6 +159,7 @@ public class ActManager : MonoBehaviour
     {
         if (acts == null || acts.Length == 0) return;
         currentAct = ((index % acts.Length) + acts.Length) % acts.Length;
+        OnActChanged?.Invoke(currentAct);
 
         ActData act = Current;
         if (act == null) return;

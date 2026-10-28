@@ -183,6 +183,8 @@ public class WaveSpawner : MonoBehaviour
 
     Vector2 RandomSpawnPosition()
     {
+        if (DoorManager.Instance != null)
+            return DoorManager.Instance.GetSpawnPoint(player.position);
         Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
         Vector2 pos = (Vector2)player.position + offset;
         pos.x = Mathf.Clamp(pos.x, -12f, 12f);
