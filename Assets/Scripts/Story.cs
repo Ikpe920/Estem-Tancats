@@ -7,6 +7,6 @@ public class Story : MonoBehaviour
     {
         Time.timeScale = 1f;
         RunStats.Reset(); // comença una partida nova
-        SceneManager.LoadScene("ChefSelect");
+        SceneManager.LoadScene("SampleScene");
     }
 }
