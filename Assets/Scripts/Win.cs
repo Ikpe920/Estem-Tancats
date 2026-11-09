@@ -24,11 +24,11 @@ public class Win : MonoBehaviour
     public void Restart()
     {
         RunStats.Reset();
-        SceneManager.LoadScene(SceneNames.Game);
+        Iris.LoadScene(SceneNames.Game);
     }
 
     public void Menu()
     {
-        SceneManager.LoadScene(SceneNames.MainMenu);
+        Iris.LoadScene(SceneNames.MainMenu);
     }
 }

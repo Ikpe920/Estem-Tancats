@@ -124,14 +124,14 @@ public class PauseMenu : MonoBehaviour
         IsOpen = false;
         Time.timeScale = 1f;
         RunStats.Reset();
-        SceneManager.LoadScene(SceneNames.Game);
+        Iris.LoadScene(SceneNames.Game);
     }
 
     void GoToMenu()
     {
         IsOpen = false;
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneNames.MainMenu);
+        Iris.LoadScene(SceneNames.MainMenu);
     }
 
     void EnableTutorial()

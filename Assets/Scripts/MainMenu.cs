@@ -8,7 +8,7 @@ public class MainMenu : MonoBehaviour
     {
         Time.timeScale = 1f;
         if (ChefSelectScreen.IsOpen) return;
-        ChefSelectScreen.Open(() => SceneManager.LoadScene(SceneNames.Story));
+        ChefSelectScreen.Open(() => Iris.LoadScene(SceneNames.Story));
     }
 
     public void Quit()
