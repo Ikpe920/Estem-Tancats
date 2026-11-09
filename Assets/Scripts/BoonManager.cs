@@ -66,7 +66,6 @@ public class BoonManager : MonoBehaviour
     private TextMeshProUGUI healLabel;
     private TextMeshProUGUI titleText;
     public int healAmount = 1;     // cors que cura l'opció de curar
-    public int maxHeartsCap = 5;   // màxim de cors possibles (3 inicials + 2 plats)
 
     void Awake()
     {
@@ -244,7 +243,7 @@ public class BoonManager : MonoBehaviour
         int cap = MaxStacks(b);
         if (cap > 0 && TypeStacks(b.type) >= cap) return false; // el tipus ja està al màxim
 
-        if (b.type == BoonType.MaxLives && health != null && health.maxLives >= maxHeartsCap) return false;
+        if (b.type == BoonType.MaxLives && health != null && health.maxLives >= PlayerHealth.MaxLivesCap) return false;
         return true;
     }
 
@@ -344,7 +343,7 @@ public class BoonManager : MonoBehaviour
             case BoonType.MaxLives:
                 if (health != null)
                 {
-                    int add = Mathf.Min(Mathf.RoundToInt(amount), maxHeartsCap - health.maxLives);
+                    int add = Mathf.Min(Mathf.RoundToInt(amount), PlayerHealth.MaxLivesCap - health.maxLives);
                     if (add > 0)
                     {
                         health.maxLives += add;

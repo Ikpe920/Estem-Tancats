@@ -1,14 +1,30 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Enemy : MonoBehaviour
 {
     public static float speedMultiplier = 1f;
+    public static int Alive;   // enemics vius a l'escena (el WaveSpawner el fa servir en lloc de FindObjectsByType)
+
+    // reseteja els estàtics a l'inici i cada cop que es carrega una escena
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics()
+    {
+        speedMultiplier = 1f;
+        Alive = 0;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        speedMultiplier = 1f; // els boons de lentitud no s'arrosseguen entre partides
+    }
 
     [Header("Estadístiques")]
     public float speed = 2f;
     public int maxHealth = 3;
-    public int contactDamage = 10;
     public float damageCooldown = 1f;
     public int points = 10;
     public float damageMultiplier = 1f;
@@ -46,6 +62,9 @@ public class Enemy : MonoBehaviour
     private bool dead;
     private float hitFlashUntil;
 
+    private enum ColorState { Unset, Base, Flash, Slow }
+    private ColorState colorState = ColorState.Unset;
+
     private readonly List<SpriteRenderer> spriteRenderers = new List<SpriteRenderer>();
     private readonly List<Color> baseColors = new List<Color>();
     private bool renderersCached;
@@ -53,9 +72,13 @@ public class Enemy : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        if (rb != null) rb.interpolation = RigidbodyInterpolation2D.Interpolate; // moviment suau
         health = maxHealth;
         CacheRenderers();
     }
+
+    void OnEnable()  { Alive++; }
+    void OnDisable() { Alive--; }
 
     void CacheRenderers()
     {
@@ -138,6 +161,7 @@ public class Enemy : MonoBehaviour
                 spriteRenderers[i].color = color;
             }
         }
+        colorState = ColorState.Unset;
     }
 
     void FixedUpdate()
@@ -194,34 +218,38 @@ public class Enemy : MonoBehaviour
         if (!renderersCached || spriteRenderers.Count == 0)
             CacheRenderers();
 
+        UpdateColor();
+        UpdateShooting(); // abans el "return" del flaix/frenat se saltava el tir
+    }
+
+    // només toca els sprites quan canvia l'estat (abans els reescrivia cada frame)
+    void UpdateColor()
+    {
         float now = Time.time;
-        if (now < hitFlashUntil)
-        {
-            for (int i = 0; i < spriteRenderers.Count; i++)
-            {
-                if (spriteRenderers[i] != null)
-                    spriteRenderers[i].color = Color.white;
-            }
-            return;
-        }
-        if (now < slowUntil)
-        {
-            Color slowColor = new Color(0.5f, 0.8f, 1f);
-            for (int i = 0; i < spriteRenderers.Count; i++)
-            {
-                if (spriteRenderers[i] == null) continue;
-                Color baseCol = baseColors.Count > i ? baseColors[i] : (hasBaseColor ? baseColor : spriteRenderers[i].color);
-                spriteRenderers[i].color = Color.Lerp(baseCol, slowColor, 0.6f);
-            }
-            return;
-        }
+        ColorState wanted = now < hitFlashUntil ? ColorState.Flash
+                          : now < slowUntil ? ColorState.Slow
+                          : ColorState.Base;
+        if (wanted == colorState) return;
+        colorState = wanted;
+
+        Color slowColor = new Color(0.5f, 0.8f, 1f);
         for (int i = 0; i < spriteRenderers.Count; i++)
         {
             if (spriteRenderers[i] == null) continue;
-            Color baseCol = baseColors.Count > i ? baseColors[i] : (hasBaseColor ? baseColor : spriteRenderers[i].color);
-            spriteRenderers[i].color = baseCol;
-        }
 
+            if (wanted == ColorState.Flash)
+            {
+                spriteRenderers[i].color = Color.white;
+                continue;
+            }
+
+            Color baseCol = baseColors.Count > i ? baseColors[i] : (hasBaseColor ? baseColor : spriteRenderers[i].color);
+            spriteRenderers[i].color = wanted == ColorState.Slow ? Color.Lerp(baseCol, slowColor, 0.6f) : baseCol;
+        }
+    }
+
+    void UpdateShooting()
+    {
         if (!isShooter || player == null || shotPrefab == null) return;
         float d = Vector2.Distance(transform.position, player.position);
         if (d <= stopDistance + 1f && Time.time >= nextShotTime)
@@ -250,9 +278,7 @@ public class Enemy : MonoBehaviour
             dead = true;
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddScore(points);
-            if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.14f, 0.12f);
-            else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.14f, 0.12f);
-            else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.14f, 0.12f);
+            CameraFX.Shake(0.14f, 0.12f);
             OnKilled?.Invoke(this);
             Destroy(gameObject);
         }
@@ -276,6 +302,7 @@ public class Enemy : MonoBehaviour
                 spriteRenderers[i].color = color;
         }
         hitFlashUntil = Time.time + duration;
+        colorState = ColorState.Flash;
     }
 
     public void Knockback(Vector2 direction, float force, float duration)

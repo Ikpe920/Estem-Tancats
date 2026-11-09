@@ -90,7 +90,6 @@ public class WaveSpawner : MonoBehaviour
         while (true)
         {
             currentWave++;
-            Debug.Log("Onada " + currentWave);
 
             ActData act = actManager != null ? actManager.Current : null;
 
@@ -119,7 +118,7 @@ public class WaveSpawner : MonoBehaviour
                 yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
             }
 
-            while (FindObjectsByType<Enemy>().Length > 0)
+            while (Enemy.Alive > 0)
             {
                 yield return null;
             }
@@ -135,7 +134,7 @@ public class WaveSpawner : MonoBehaviour
                 // guardem el resultat i anem a la pantalla de victòria
                 int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
                 RunStats.Save(currentWave, points);
-                SceneManager.LoadScene("Win");
+                SceneManager.LoadScene(SceneNames.Win);
                 yield break; // la partida s'acaba: no hi ha més onades
             }
 
@@ -187,8 +186,11 @@ public class WaveSpawner : MonoBehaviour
             return DoorManager.Instance.GetSpawnPoint(player.position);
         Vector2 offset = Random.insideUnitCircle.normalized * spawnRadius;
         Vector2 pos = (Vector2)player.position + offset;
-        pos.x = Mathf.Clamp(pos.x, -12f, 12f);
-        pos.y = Mathf.Clamp(pos.y, -8f, 8f);
+        // els límits surten de la mida real de l'arena (abans eren números fixos)
+        Vector2 half = HazardManager.ArenaSize * 0.5f - Vector2.one * 2f;
+        Vector2 c = HazardManager.ArenaCenter;
+        pos.x = Mathf.Clamp(pos.x, c.x - half.x, c.x + half.x);
+        pos.y = Mathf.Clamp(pos.y, c.y - half.y, c.y + half.y);
         return pos;
     }
 

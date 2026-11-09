@@ -44,6 +44,8 @@ public class PlayerMovement : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        // la física va a 50 Hz i la pantalla a més: sense interpolació el jugador va a tirones
+        if (rb != null) rb.interpolation = RigidbodyInterpolation2D.Interpolate;
         spriteRenderer = GetComponent<SpriteRenderer>();
         cam = Camera.main;
         UpdateFacingSprite();
@@ -51,9 +53,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        input.x = Input.GetAxisRaw("Horizontal");
-        input.y = Input.GetAxisRaw("Vertical");
-        input = input.normalized; // perquè en diagonal no vagi més ràpid
+        input = ReadMoveInput().normalized; // perquè en diagonal no vagi més ràpid
 
         if (input != Vector2.zero && input != facing)
         {
@@ -63,6 +63,29 @@ public class PlayerMovement : MonoBehaviour
 
         UpdateDash();
     }
+    // moviment amb el nou Input System: WASD, fletxes i joystick esquerre
+    Vector2 ReadMoveInput()
+    {
+        Vector2 v = Vector2.zero;
+
+        Keyboard kb = Keyboard.current;
+        if (kb != null)
+        {
+            if (kb.aKey.isPressed || kb.leftArrowKey.isPressed)  v.x -= 1f;
+            if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) v.x += 1f;
+            if (kb.sKey.isPressed || kb.downArrowKey.isPressed)  v.y -= 1f;
+            if (kb.wKey.isPressed || kb.upArrowKey.isPressed)    v.y += 1f;
+        }
+
+        if (v == Vector2.zero && Gamepad.current != null)
+        {
+            Vector2 stick = Gamepad.current.leftStick.ReadValue();
+            if (stick.magnitude > 0.2f) v = stick; // zona morta
+        }
+
+        return v;
+    }
+
     public void Knockback(Vector2 direction, float force, float duration)
     {
         knockbackVelocity = direction.normalized * force;

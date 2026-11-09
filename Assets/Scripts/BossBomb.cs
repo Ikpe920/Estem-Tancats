@@ -45,9 +45,7 @@ public class BossBomb : MonoBehaviour
         // 2. explosió
         if (sr != null) sr.color = new Color(1f, 0.85f, 0.2f, 0.85f);
 
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.26f, 0.22f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.26f, 0.22f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.26f, 0.22f);
+        CameraFX.Shake(0.26f, 0.22f);
 
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, radius);
         foreach (Collider2D h in hits)

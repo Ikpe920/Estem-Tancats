@@ -69,9 +69,7 @@ public class BossTeleporter : MonoBehaviour
 
     void DropBombs()
     {
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.18f, 0.14f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.18f, 0.14f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.18f, 0.14f);
+        CameraFX.Shake(0.18f, 0.14f);
         for (int i = 0; i < bombsPerVolley; i++)
         {
             // la primera cau als peus del jugador; les altres, a prop del cap

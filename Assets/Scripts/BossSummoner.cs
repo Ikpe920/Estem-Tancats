@@ -58,9 +58,7 @@ public class BossSummoner : MonoBehaviour
     {
         if (projectilePrefab == null) return;
 
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.16f, 0.14f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.16f, 0.14f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.16f, 0.14f);
+        CameraFX.Shake(0.16f, 0.14f);
 
         Vector2 origin = transform.position;
         Vector2 dir = ((Vector2)player.position - origin).normalized;
@@ -98,9 +96,7 @@ public class BossSummoner : MonoBehaviour
         }
         Destroy(warn);
 
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.2f, 0.16f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.2f, 0.16f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.2f, 0.16f);
+        CameraFX.Shake(0.2f, 0.16f);
 
         if (WaveSpawner.Instance != null)
             WaveSpawner.Instance.SpawnMinions(pos, minionsPerSummon);

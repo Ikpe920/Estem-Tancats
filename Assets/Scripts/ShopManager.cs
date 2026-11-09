@@ -25,7 +25,6 @@ public class ShopManager : MonoBehaviour
     public int healCost = 20;     // servei: curar un cor
     public int maxLifeCost = 60;  // servei: +1 cor màxim
     public int rerollCost = 30;   // servei: canviar les cartes dels boons
-    public int maxLifeCap = 5;    // topall de cors (per no fer la partida massa fàcil)
 
     void Start()
     {
@@ -63,7 +62,7 @@ public class ShopManager : MonoBehaviour
     public bool TryBuyMaxLife()
     {
         if (health == null) return false;
-        if (health.maxLives >= maxLifeCap) return false; // ja té el màxim de cors
+        if (health.maxLives >= PlayerHealth.MaxLivesCap) return false; // ja té el màxim de cors
         if (!TrySpend(maxLifeCost)) return false;
         health.maxLives += 1;
         health.Heal(1);

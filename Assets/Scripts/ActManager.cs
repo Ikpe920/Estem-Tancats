@@ -25,6 +25,7 @@ public class ActManager : MonoBehaviour
     public SpriteRenderer background;       // el fons del terra (si el deixes buit, es crea sol)
     public Camera cam;                      // la càmera (per moure el fons i el color de fons)
     public int sortingOrder = -100;         // el fons ha d'anar darrere de tot
+    public bool tileFloor = true;           // true: el terra es repeteix com a rajola; false: s'estira per cobrir tota la sala
     public AudioSource musicSource;         // opcional: per posar la música de cada acte
 
     public GameObject actPanel;             // opcional: panell on es mostra el títol de l'acte
@@ -115,24 +116,48 @@ public class ActManager : MonoBehaviour
         {
             GameObject go = new GameObject("FonsActe");
             background = go.AddComponent<SpriteRenderer>();
-            if (cam != null)
-            {
-                background.transform.SetParent(cam.transform, false);
-                background.transform.localPosition = new Vector3(0f, 0f, 10f);
-                background.transform.localScale = Vector3.one;
-            }
         }
         background.sortingOrder = sortingOrder;
-        background.drawMode = SpriteDrawMode.Tiled;
-        UpdateBackgroundSize();
+        FitBackgroundToArena();
     }
 
-    void UpdateBackgroundSize()
+    // el terra és fix al món: cobreix tota la sala (parets incloses) i no segueix la càmera,
+    // així quan el jugador es mou, el terra passa per sota seu i no marea
+    void FitBackgroundToArena()
     {
-        if (background == null || cam == null) return;
-        float h = cam.orthographic ? cam.orthographicSize * 2f : 20f;
-        float w = h * cam.aspect;
-        background.size = new Vector2(w + 0.5f, h + 0.5f);
+        if (background == null) return;
+
+        Vector2 size;
+        Vector2 center;
+        ArenaWalls walls = ArenaWalls.Instance != null ? ArenaWalls.Instance : FindAnyObjectByType<ArenaWalls>();
+        if (walls != null)
+        {
+            size = walls.size + Vector2.one * walls.thickness * 2f;
+            center = walls.transform.position;
+        }
+        else
+        {
+            size = HazardManager.ArenaSize + Vector2.one * 4f;
+            center = HazardManager.ArenaCenter;
+        }
+
+        Transform t = background.transform;
+        if (t.parent != null) t.SetParent(null, true); // abans estava enganxat a la càmera
+        t.position = new Vector3(center.x, center.y, 5f);
+        t.rotation = Quaternion.identity;
+
+        if (tileFloor)
+        {
+            t.localScale = Vector3.one;
+            background.drawMode = SpriteDrawMode.Tiled;
+            background.size = size;
+        }
+        else if (background.sprite != null)
+        {
+            background.drawMode = SpriteDrawMode.Simple;
+            Vector2 native = background.sprite.bounds.size;
+            t.localScale = new Vector3(size.x / native.x, size.y / native.y, 1f);
+        }
     }
 
     void HideLegacyBackground()
@@ -140,17 +165,6 @@ public class ActManager : MonoBehaviour
         if (!autoHideLegacyBackground) return;
         if (legacyBackground == null) legacyBackground = GameObject.Find("Background");
         if (legacyBackground != null) legacyBackground.SetActive(false);
-    }
-
-    void LateUpdate()
-    {
-        if (background == null || cam == null) return;
-        if (background.transform.parent != cam.transform)
-        {
-            Vector3 p = cam.transform.position;
-            background.transform.position = new Vector3(p.x, p.y, background.transform.position.z);
-        }
-        UpdateBackgroundSize();
     }
 
     // ---------- ELS ACTES ----------
@@ -169,6 +183,7 @@ public class ActManager : MonoBehaviour
             Sprite sprite = GetActSprite(act);
             if (sprite != null) background.sprite = sprite;
             background.color = act.tint;
+            FitBackgroundToArena();
         }
         if (cam != null) cam.backgroundColor = act.tint * 0.4f;
         if (musicSource != null && act.music != null)

@@ -105,9 +105,7 @@ public class BossCharger : MonoBehaviour
         // 2. la càrrega en línia recta
         chargeDir = follow;
         charging = true;
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.24f, 0.2f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.24f, 0.2f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.24f, 0.2f);
+        CameraFX.Shake(0.24f, 0.2f);
         float end = Time.time + chargeTime;
         while (Time.time < end) yield return null;
         charging = false;

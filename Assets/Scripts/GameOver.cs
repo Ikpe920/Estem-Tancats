@@ -32,11 +32,11 @@ public class GameOver : MonoBehaviour
     public void Restart()
     {
         RunStats.Reset();
-        SceneManager.LoadScene("SampleScene");
+        SceneManager.LoadScene(SceneNames.Game);
     }
 
     public void Menu()
     {
-        SceneManager.LoadScene("MainMenu");
+        SceneManager.LoadScene(SceneNames.MainMenu);
     }
 }

@@ -14,7 +14,7 @@ public class HazardManager : MonoBehaviour
     {
         SceneManager.sceneLoaded += (scene, mode) =>
         {
-            if (scene.name != "SampleScene") return;
+            if (scene.name != SceneNames.Game) return;
 
             new GameObject("Perills").AddComponent<HazardManager>();
             new GameObject("Portes").AddComponent<DoorManager>();

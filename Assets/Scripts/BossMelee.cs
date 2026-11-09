@@ -103,9 +103,7 @@ public class BossMelee : MonoBehaviour
             Vector2 closest = h.ClosestPoint(origin);
             if (Vector2.Angle(dir, closest - origin) > arcAngle / 2f) continue;
 
-            if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.18f, 0.16f);
-            else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.18f, 0.16f);
-            else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.18f, 0.16f);
+            CameraFX.Shake(0.18f, 0.16f);
 
             PlayerHealth ph = h.GetComponent<PlayerHealth>();
             if (ph != null) ph.TakeDamage(); // cada cop que toca el jugador, perdi un cor

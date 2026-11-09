@@ -14,11 +14,13 @@ public class Projectile : MonoBehaviour
     [HideInInspector] public float slowDuration = 0f;
 
     private readonly HashSet<Enemy> alreadyHit = new HashSet<Enemy>();
-    private static Sprite circleSprite;
 
     void Start()
     {
         Destroy(gameObject, lifetime);
+
+        Rigidbody2D prb = GetComponent<Rigidbody2D>();
+        if (prb != null) prb.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
     void Update()
@@ -31,12 +33,12 @@ public class Projectile : MonoBehaviour
         if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
         Breakable prop = other.GetComponent<Breakable>();
         if (prop != null)
-            {
-                prop.Hit(damage);
-                if (pierce > 0) pierce--;
-                else Destroy(gameObject);
-                return;
-            }
+        {
+            prop.Hit(damage);
+            if (pierce > 0) pierce--;
+            else Destroy(gameObject);
+            return;
+        }
         Enemy enemy = other.GetComponent<Enemy>();
         if (enemy == null) enemy = other.GetComponentInParent<Enemy>();
         if (enemy == null) return;
@@ -67,6 +69,7 @@ public class Projectile : MonoBehaviour
         foreach (Collider2D h in hits)
         {
             Enemy e = h.GetComponent<Enemy>();
+            if (e == null) e = h.GetComponentInParent<Enemy>(); // igual que a l'impacte directe
             if (e == null || e == center || alreadyHit.Contains(e)) continue;
             alreadyHit.Add(e);
             HitEnemy(e);
@@ -77,31 +80,11 @@ public class Projectile : MonoBehaviour
     // cercle taronja que es veu un instant (es genera sol, no cal cap imatge)
     void SpawnExplosionFx()
     {
-        if (circleSprite == null)
-        {
-            int size = 64;
-            Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
-            Color32[] px = new Color32[size * size];
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    Vector2 p = new Vector2(x - size / 2f + 0.5f, y - size / 2f + 0.5f);
-                    px[y * size + x] = p.magnitude <= size / 2f
-                        ? new Color32(255, 255, 255, 255)
-                        : new Color32(255, 255, 255, 0);
-                }
-            }
-            tex.SetPixels32(px);
-            tex.Apply();
-            circleSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
-        }
-
         GameObject fx = new GameObject("Explosio");
         fx.transform.position = transform.position;
         fx.transform.localScale = Vector3.one * explosionRadius * 2f;
         SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
-        sr.sprite = circleSprite;
+        sr.sprite = SpriteFactory.Circle();
         sr.color = new Color(1f, 0.55f, 0.1f, 0.5f);
         sr.sortingOrder = 5;
         Destroy(fx, 0.15f);

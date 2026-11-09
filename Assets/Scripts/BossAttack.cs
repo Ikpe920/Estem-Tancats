@@ -32,9 +32,7 @@ public class BossAttack : MonoBehaviour
         int shots = phase2 ? phase2Shots : shotsPerBurst;
         nextShot = Time.time + (phase2 ? phase2Interval : fireInterval);
 
-        if (CameraShaker.Instance != null) CameraShaker.Instance.Shake(0.18f, 0.16f);
-        else if (CameraFollow.Instance != null) CameraFollow.Instance.Shake(0.18f, 0.16f);
-        else if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.18f, 0.16f);
+        CameraFX.Shake(0.18f, 0.16f);
 
         float step = 360f / shots;
         float startAngle = Random.Range(0f, step); // perquè no sempre surti igual
