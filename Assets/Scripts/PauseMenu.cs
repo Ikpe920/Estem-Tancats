@@ -154,7 +154,9 @@ public class PauseMenu : MonoBehaviour
     {
         if (vibrationButton == null) return;
         TextMeshProUGUI t = vibrationButton.GetComponentInChildren<TextMeshProUGUI>();
-        if (t != null) t.text = "Vibració del comandament: " + (GamepadInput.Vibration ? "Sí" : "No");
+        if (t != null) t.text = GamepadInput.UsingGamepad && !GamepadInput.CanRumble
+            ? "Vibració: no disponible en aquest comandament"
+            : "Vibració del comandament: " + (GamepadInput.Vibration ? "Sí" : "No");
         if (helpText != null)
             helpText.text = GamepadInput.UsingGamepad
                 ? GamepadInput.StartButton() + " o " + GamepadInput.East() + " per continuar"

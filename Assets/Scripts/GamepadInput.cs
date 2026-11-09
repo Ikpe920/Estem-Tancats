@@ -227,12 +227,26 @@ public class GamepadInput : MonoBehaviour
 
     // ---------- VIBRACIÓ ----------
 
+    // la vibració està engegada ara mateix (només s'atura si s'ha engegat: cada ordre s'envia al comandament)
+    static bool rumbling;
+
+    // es pot fer vibrar aquest comandament? Amb els de PlayStation, al Windows (sobretot per Bluetooth),
+    // enviar-los ordres de vibració pot fer petar Unity: no se n'hi envia cap.
+    public static bool CanRumble
+    {
+        get
+        {
+            Gamepad g = Gamepad.current;
+            return g != null && Kind() != PadKind.PlayStation;
+        }
+    }
+
     // low = motor gros (cops sords), high = motor petit (vibració fina), seconds = durada
     public static void Rumble(float low, float high, float seconds)
     {
-        if (Instance == null || !Vibration || !UsingGamepad) return;
+        if (Instance == null || !Vibration || !UsingGamepad || !CanRumble) return;
         Gamepad g = Gamepad.current;
-        if (g == null) return;
+        rumbling = true;
         g.SetMotorSpeeds(Mathf.Clamp01(low), Mathf.Clamp01(high));
         if (Instance.rumbleStop != null) Instance.StopCoroutine(Instance.rumbleStop);
         Instance.rumbleStop = Instance.StartCoroutine(Instance.StopAfter(seconds));
@@ -247,7 +261,9 @@ public class GamepadInput : MonoBehaviour
 
     public static void StopRumble()
     {
+        if (!rumbling) return;
+        rumbling = false;
         Gamepad g = Gamepad.current;
-        if (g != null) g.SetMotorSpeeds(0f, 0f);
+        if (g != null && Kind() != PadKind.PlayStation) g.SetMotorSpeeds(0f, 0f);
     }
 }
