@@ -18,6 +18,18 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 
+### Onades especials
+
+A partir de l'onada 3, un 30% de les onades (mai la d'un cap ni dues seguides) tenen un esdeveniment:
+
+| Esdeveniment | Què passa |
+|---|---|
+| Hora punta | el doble de clients, que surten el doble de ràpid (×1,5 punts) |
+| Tall de llum | se'n va la llum: només veus al teu voltant (no a la Teulada) |
+| Client VIP | un client daurat amb corona fuig de tu: si el despatxes abans de 15 s, dona molts punts i monedes |
+| Happy hour | els clients deixen premis en morir |
+| Racions gegants | la meitat de clients, però enormes i resistents (×3 punts) |
+
 ### Clients especials
 
 A partir de certes onades, alguns clients surten amb un comportament propi:
@@ -52,6 +64,7 @@ A partir de certes onades, alguns clients surten amb un comportament propi:
 | F6 | Invencible sí / no |
 | F7 | Obre ara la pantalla de triar plat |
 | F8 | Fa sortir un client especial de cada tipus |
+| F9 | La propera onada tindrà un esdeveniment (cada cop que el prems, en tria un altre) |
 
 ## Obrir el projecte
 

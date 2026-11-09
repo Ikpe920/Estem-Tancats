@@ -115,6 +115,10 @@ public class WaveSpawner : MonoBehaviour
             bool isBossWave = bosses != null && bosses.Length > 0
                               && currentWave % bossEveryNWaves == 0;
 
+            // potser és una onada especial (hora punta, tall de llum, client VIP...)
+            WaveEvents.Begin(WaveEvents.Roll(currentWave, isBossWave, actManager != null ? actManager.currentAct : 0), this);
+            count = WaveEvents.AdjustCount(count);
+
             if (isBossWave)
             {
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
@@ -132,12 +136,13 @@ public class WaveSpawner : MonoBehaviour
                 if (debugAbort) break;
                 SpawnEnemy();
                 // les onades altes surten en un degoteig més ràpid
-                yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
+                yield return new WaitForSeconds(WaveEvents.AdjustInterval(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1))));
             }
 
             yield return StartCoroutine(WaitForWaveCleared());
 
             inWave = false;
+            WaveEvents.End();
 
             // mode de prova: s'ha demanat saltar a una altra onada (sense bonus ni plats entremig)
             if (debugAbort)
@@ -330,6 +335,31 @@ public class WaveSpawner : MonoBehaviour
         Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
         ApplyWaveDifficulty(e);
         EnemyVariants.MaybeApply(e, prefab, currentWave);
+        WaveEvents.OnEnemySpawned(e);
+    }
+
+    // un client de més, ara mateix i sense variants ni esdeveniments (el client VIP)
+    public Enemy SpawnExtra(GameObject prefab)
+    {
+        if (prefab == null || player == null) return null;
+        Enemy e = Instantiate(prefab, RandomSpawnPosition(), Quaternion.identity).GetComponent<Enemy>();
+        ApplyWaveDifficulty(e);
+        return e;
+    }
+
+    // el client que camina més ràpid (no tirador) de la llista: el VIP en fa servir l'aspecte
+    public GameObject FastestWalkerPrefab()
+    {
+        GameObject best = null;
+        float bestSpeed = -1f;
+        if (enemyTypes == null) return null;
+        foreach (EnemyType t in enemyTypes)
+        {
+            Enemy e = t.prefab != null ? t.prefab.GetComponent<Enemy>() : null;
+            if (e == null || e.isShooter) continue;
+            if (e.speed > bestSpeed) { bestSpeed = e.speed; best = t.prefab; }
+        }
+        return best;
     }
 
     // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
