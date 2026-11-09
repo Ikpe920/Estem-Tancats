@@ -53,6 +53,7 @@ public static class EndScreenUI
         tmp.color = Color.white;
         tmp.raycastTarget = false;
 
+        UIStyle.StyleButton(btn, color); // aspecte en píxel, com la resta del joc
         return btn;
     }
 
