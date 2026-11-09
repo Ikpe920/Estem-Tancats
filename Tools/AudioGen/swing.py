@@ -307,7 +307,7 @@ def riff(T, key, prog, bar, lo, hi, inst, gain, seed):
 # ---------------------------------------------------------------------
 
 def compose(name, bpm, key, scale, prog, bars=32, seed=1, lead='clarinet', answer='trumpet', swing=0.66,
-            comp='stride', drums='brush', stabs=False, density=0.6, lead_range=(65, 84), form='AABA'):
+            comp='stride', drums='brush', stabs=False, density=0.6, lead_range=(65, 84), form='AABA', shout=False, bright=False):
     T = Track(bpm, bars, swing)
     r = np.random.default_rng(seed)
 
@@ -372,6 +372,17 @@ def compose(name, bpm, key, scale, prog, bars=32, seed=1, lead='clarinet', answe
             T.add(brush_swish(T.dur(1.8)), b * 4, 0.012)
             T.add(brush_swish(T.dur(1.8)), b * 4 + 2, 0.012)
 
+        # redoblament cada 4 compassos (bateria "hot")
+        if drums in ('hot', 'toms') and b % 4 == 3:
+            for k, bt in enumerate((2.5, 3.0, 3.5)):
+                T.add(brush_slap(), b * 4 + bt, 0.10 + k * 0.03)
+            T.add(kick(), b * 4 + 3.5, 0.18)
+        # "shout": a la segona part del tema, la secció de metalls fa el ritme Charleston
+        if shout and (b // max(1, bars // 4)) % 2 == 1:
+            ch = chords_at(prog, b, 0)
+            for v in sorted(nearest(t, {t % 12}, 58, 72) for t in chord_tones(key, ch)[:4]):
+                T.add(brass(note(v), T.dur(0.35)), b * 4, 0.06)
+                T.add(brass(note(v), T.dur(0.35)), b * 4 + 1.5, 0.07)
         # cops de metalls al final de cada frase de 4 compassos (anticipant el següent)
         if stabs and b % 4 == 3:
             ch = chords_at(prog, b + 1, 0)
@@ -399,7 +410,7 @@ def compose(name, bpm, key, scale, prog, bars=32, seed=1, lead='clarinet', answe
             if not final:
                 riff(T, key, prog, b0 + ph + 3, lo - 5, hi - 5, ans_fn, 0.16, sseed + ph + 51)
 
-    save_ogg(name, record(T.buf))
+    save_ogg(name, record(T.buf, bright=bright))
 
 
 # ---------------------------------------------------------------------
@@ -415,16 +426,17 @@ def onepole_lp(x, cutoff):
     return y
 
 
-def record(y, crackle=True):
+def record(y, crackle=True, bright=False):
     y = y - np.mean(y)
     y = y - onepole_lp(y, 160)              # fora els greus més baixos
-    y = onepole_lp(onepole_lp(y, 4300), 5200)  # i els aguts: sona com un gramòfon
+    # i els aguts: sona com un gramòfon (una mica més obert als temes animats)
+    y = onepole_lp(onepole_lp(y, 6500 if bright else 4300), 7500 if bright else 5200)
     y = norm(y, 0.8)
     if crackle:
         n = len(y)
         c = np.zeros(n)
         pos = rng.integers(0, n, int(n / SR * 9))          # uns 9 espetecs per segon
-        amp = rng.uniform(0.02, 0.12, len(pos)) * rng.choice([-1, 1], len(pos))
+        amp = rng.uniform(0.02, 0.12, len(pos)) * (0.6 if bright else 1.0) * rng.choice([-1, 1], len(pos))
         c[pos] = amp
         pops = rng.integers(0, n, int(n / SR * 0.5))        # i algun de més fort
         c[pops] = rng.uniform(0.15, 0.3, len(pops))
@@ -499,22 +511,23 @@ if __name__ == '__main__':
     compose('menu', 118, 53, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'),
                                      (I, 'maj7'), (I, '7'), (IV, '6'), (IV, 'm6'), (I, '6'), (V, '7'), (I, '6'), (V, '7')],
             bars=32, seed=3, lead='clarinet', answer='trumpet', drums='brush', density=0.45)
+    # LES SALES: animades (més ràpides, bateria "hot", redoblaments i metalls que responen)
     # la sala: swing alegre (els "rhythm changes")
-    compose('act0', 150, 58, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (iii, 'm7'), (vi, '7'), (ii, 'm7'), (V, '7')],
-            bars=32, seed=12, lead='clarinet', answer='trumpet', drums='brush', density=0.6)
-    # la barra: un blues de 12 compassos, amb la trompeta amb sordina
+    compose('act0', 176, 58, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (iii, 'm7'), (vi, '7'), (ii, 'm7'), (V, '7')],
+            bars=32, seed=12, lead='clarinet', answer='open', drums='hot', density=0.8, stabs=True, shout=True, bright=True)
+    # la barra: un blues ràpid de 12 compassos, amb la trompeta amb sordina
     blues = [(I, '7'), (IV, '7'), (I, '7'), (I, '7'), (IV, '7'), (IV, '7'), (I, '7'), (vi, '7'), (ii, 'm7'), (V, '7'), [(I, '7'), (vi, '7')], [(ii, 'm7'), (V, '7')]]
-    compose('act1', 116, 55, BLUES, blues, bars=24, seed=21, lead='trumpet', answer='clarinet', comp='charleston',
-            drums='brush', density=0.5, form='blues', lead_range=(62, 80))
-    # la cuina: swing gitano en menor, ràpid i frenètic
-    compose('act2', 190, 62, HMINOR, [(0, 'm6'), (0, 'm6'), (5, 'm6'), (5, 'm6'), (0, 'm6'), (0, 'm6'), (7, '7'), (7, '7')],
-            bars=32, seed=33, lead='clarinet', answer='open', drums='hot', density=0.75, stabs=True)
-    # la terrassa: aire de ragtime (cercle de quintes), amb banjo
-    compose('act3', 132, 60, MAJOR, [(iii, '7'), (iii, '7'), (vi, '7'), (vi, '7'), (ii, '7'), (ii, '7'), (V, '7'), (V, '7')],
-            bars=32, seed=44, lead='open', answer='banjo', drums='brush', density=0.55, form='AB')
-    # la teulada: swing menor tens
-    compose('act4', 164, 52, HMINOR, [(0, 'm6'), (8, '7'), (2, 'm7b5'), (7, '7'), (0, 'm6'), (5, 'm6'), (2, 'm7b5'), (7, '7')],
-            bars=32, seed=55, lead='trumpet', answer='clarinet', drums='hot', density=0.65, stabs=True)
+    compose('act1', 152, 55, BLUES, blues, bars=24, seed=21, lead='trumpet', answer='clarinet', comp='stride',
+            drums='hot', density=0.75, form='blues', lead_range=(62, 80), stabs=True, shout=True, bright=True)
+    # la cuina: swing gitano en menor, molt ràpid i frenètic
+    compose('act2', 212, 62, HMINOR, [(0, 'm6'), (0, 'm6'), (5, 'm6'), (5, 'm6'), (0, 'm6'), (0, 'm6'), (7, '7'), (7, '7')],
+            bars=32, seed=33, lead='clarinet', answer='open', drums='hot', density=0.85, stabs=True, shout=True, bright=True)
+    # la terrassa: ragtime alegre (cercle de quintes), amb banjo
+    compose('act3', 168, 60, MAJOR, [(iii, '7'), (iii, '7'), (vi, '7'), (vi, '7'), (ii, '7'), (ii, '7'), (V, '7'), (V, '7')],
+            bars=32, seed=44, lead='open', answer='banjo', drums='hot', density=0.8, form='AB', stabs=True, shout=True, bright=True)
+    # la teulada: swing menor, ràpid i tens
+    compose('act4', 188, 52, HMINOR, [(0, 'm6'), (8, '7'), (2, 'm7b5'), (7, '7'), (0, 'm6'), (5, 'm6'), (2, 'm7b5'), (7, '7')],
+            bars=32, seed=55, lead='trumpet', answer='clarinet', drums='hot', density=0.8, stabs=True, shout=True, bright=True)
     # el cap: timbales de la selva, metalls i clarinet esgarrifós
     compose('boss', 184, 48, HMINOR, [(0, 'm6'), (0, 'm6'), (8, '7'), (7, '7')],
             bars=32, seed=66, lead='clarinet', answer='open', drums='toms', density=0.8, stabs=True, lead_range=(67, 86), form='AB')
