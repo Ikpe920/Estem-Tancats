@@ -123,6 +123,7 @@ Scripts principals:
 - `ScoreManager` i `RunStats`: els punts, les ratxes i el rècord.
 - `AudioManager`: els efectes de so (`AudioManager.Play("nom")`) i la música de cada escena i cada acte. Els sons es generen amb `Tools/AudioGen`.
 - Personatges: tots els xefs, clients i caps es dibuixen amb `Tools/SpriteGen/characters.py` (estil dibuixos animats dels anys 30, 64x64). Per canviar-ne un, toca el seu diccionari a `CHARACTERS` i torna a executar l'script (necessita Pillow).
+- `StoryBackdrop`: el fons animat de la pantalla de la història (el restaurant de nit, el cartell "TANCAT", els llums i els clients que envolten el xef).
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).
 - `GamepadInput`: detecta si es juga amb comandament, els noms dels botons, la vibració i la selecció de botons als menús.
 - `ChefRoster` i `ChefSelectScreen`: els xefs que es poden triar i la pantalla per triar-los.

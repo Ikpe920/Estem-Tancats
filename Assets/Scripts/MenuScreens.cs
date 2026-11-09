@@ -223,7 +223,8 @@ public class MainMenuDecor : MonoBehaviour
 }
 
 // ---------- HISTÒRIA ----------
-// Un panell darrere del text, el text que s'escriu sol (un clic o una tecla l'acaben), i un rellotge "23:59".
+// El fons animat (StoryBackdrop), un panell darrere del text, el text que s'escriu sol (un clic o una tecla
+// l'acaben), i un rellotge "23:59".
 public class StoryDecor : MonoBehaviour
 {
     const float CharsPerSecond = 45f;
@@ -235,6 +236,10 @@ public class StoryDecor : MonoBehaviour
     void Start()
     {
         Transform c = transform;
+        // el fons animat: el restaurant de nit amb els clients que no marxen
+        try { gameObject.AddComponent<StoryBackdrop>().Build(); }
+        catch (System.Exception e) { Debug.LogException(e); }
+
         foreach (TextMeshProUGUI t in GetComponentsInChildren<TextMeshProUGUI>(true))
             if (t.text.Length > 60) { story = t; break; }
 
