@@ -37,7 +37,7 @@ public class BossMelee : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
         nextAttackTime = Time.time + 2f;
     }

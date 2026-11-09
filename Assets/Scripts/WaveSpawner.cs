@@ -148,7 +148,7 @@ public class WaveSpawner : MonoBehaviour
             // bonus d'onada (doble si no t'han tocat)
             if (ScoreManager.Instance != null)
             {
-                PlayerHealth ph = FindAnyObjectByType<PlayerHealth>();
+                PlayerHealth ph = PlayerRef.Health;
                 Vector2 at = ph != null ? (Vector2)ph.transform.position + Vector2.up * 1.2f : Vector2.zero;
                 ScoreManager.Instance.EndWave(currentWave, at);
             }

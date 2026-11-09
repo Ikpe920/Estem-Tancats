@@ -201,17 +201,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!showAfterImages || spriteRenderer == null || spriteRenderer.sprite == null) return;
 
-        GameObject ghost = new GameObject("DashAfterImage");
-        ghost.transform.position = transform.position;
-        ghost.transform.rotation = transform.rotation;
-        ghost.transform.localScale = transform.lossyScale;
-
-        SpriteRenderer sr = ghost.AddComponent<SpriteRenderer>();
-        sr.sprite = spriteRenderer.sprite;
-        sr.sortingLayerID = spriteRenderer.sortingLayerID;
-        sr.sortingOrder = spriteRenderer.sortingOrder - 1;
-        sr.color = afterImageColor;
-
-        ghost.AddComponent<DashAfterImage>().Init(afterImageLifetime, afterImageColor);
+        DashAfterImage.Spawn(spriteRenderer, afterImageColor, afterImageLifetime);
     }
 }

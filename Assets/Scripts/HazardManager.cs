@@ -84,7 +84,7 @@ public class HazardManager : MonoBehaviour
         for (int i = transform.childCount - 1; i >= 0; i--)
             Destroy(transform.GetChild(i).gameObject);
 
-        PlayerMovement pm = FindAnyObjectByType<PlayerMovement>();
+        PlayerMovement pm = PlayerRef.Movement;
         if (pm != null)
         {
             pm.externalPush = Vector2.zero;

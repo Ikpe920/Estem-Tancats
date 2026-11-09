@@ -115,10 +115,8 @@ public class PlayerShooting : MonoBehaviour
 
             GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
             Vector2 spawnPos = (Vector2)transform.position + dir * spawnOffset;
-            GameObject p = Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle));
-
-            Projectile proj = p.GetComponent<Projectile>();
-            if (proj == null) { Destroy(p); continue; } // prefab mal configurat
+            Projectile proj = Projectile.Get(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle)); // de la reserva
+            if (proj == null) continue; // prefab mal configurat
             proj.damage += damage - 1; // dany del prefab + millores
             bool isCenter = total % 2 == 1 && i == total / 2;
             if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideDamage));
@@ -133,8 +131,7 @@ public class PlayerShooting : MonoBehaviour
             proj.slowFactor = slowFactor;
             proj.slowDuration = slowDuration;
 
-            Rigidbody2D prb = p.GetComponent<Rigidbody2D>();
-            if (prb != null) prb.linearVelocity = dir * projectileSpeed;
+            proj.Launch(dir * projectileSpeed);
         }
 
         // Cigaló: un crític et deixa tornar a disparar de seguida

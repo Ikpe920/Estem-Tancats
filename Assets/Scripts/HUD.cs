@@ -24,36 +24,56 @@ public class HUD : MonoBehaviour
         }
     }
 
+    // els últims valors mostrats: el text només es refà quan canvien (abans es reconstruïa cada fotograma)
+    private int shownLives = -1, shownMaxLives = -1, shownScore = -1, shownCombo = -1, shownWave = -1;
+    private float shownMultiplier = -1f;
+    private string shownAct;
+
     void Update()
     {
-        if (playerHealth != null && healthText != null)
-            healthText.text = "Cors: " + playerHealth.CurrentLives + " / " + playerHealth.maxLives;
+        if (playerHealth != null && healthText != null
+            && (playerHealth.CurrentLives != shownLives || playerHealth.maxLives != shownMaxLives))
+        {
+            shownLives = playerHealth.CurrentLives;
+            shownMaxLives = playerHealth.maxLives;
+            healthText.text = "Cors: " + shownLives + " / " + shownMaxLives;
+        }
 
         if (ScoreManager.Instance != null)
         {
             ScoreManager sm = ScoreManager.Instance;
-            scoreText.text = "Punts: " + sm.totalScore;
+            if (scoreText != null && sm.totalScore != shownScore)
+            {
+                shownScore = sm.totalScore;
+                scoreText.text = "Punts: " + shownScore;
+            }
 
             if (comboText != null)
             {
-                if (sm.Combo >= 2)
+                int combo = sm.Combo >= 2 ? sm.Combo : 0;
+                float mul = sm.ComboMultiplier;
+                if (combo != shownCombo || !Mathf.Approximately(mul, shownMultiplier))
                 {
-                    // el color passa a vermell quan la ratxa està a punt de caure
-                    Color c = Color.Lerp(new Color(1f, 0.35f, 0.3f), new Color(1f, 0.85f, 0.35f), Mathf.Clamp01(sm.ComboTimeLeft / 1.5f));
-                    comboText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(c) + ">Ratxa " + sm.Combo
-                        + " · ×" + sm.ComboMultiplier.ToString("0.00").Replace('.', ',') + "</color>";
+                    shownCombo = combo;
+                    shownMultiplier = mul;
+                    comboText.text = combo > 0 ? "Ratxa " + combo + " · ×" + mul.ToString("0.00").Replace('.', ',') : "";
                 }
-                else comboText.text = "";
+
+                // el color passa a vermell quan la ratxa està a punt de caure (només el color, sense refer el text)
+                if (combo > 0)
+                    comboText.color = Color.Lerp(new Color(1f, 0.35f, 0.3f), new Color(1f, 0.85f, 0.35f), Mathf.Clamp01(sm.ComboTimeLeft / 1.5f));
             }
         }
 
-        if (spawner != null)
+        if (spawner != null && waveText != null)
         {
-            string actName = "";
-            if (spawner.actManager != null && spawner.actManager.Current != null)
-                actName = " · " + spawner.actManager.Current.name;
-
-            waveText.text = "Onada: " + spawner.currentWave + actName;
+            string act = spawner.actManager != null && spawner.actManager.Current != null ? spawner.actManager.Current.name : "";
+            if (spawner.currentWave != shownWave || act != shownAct)
+            {
+                shownWave = spawner.currentWave;
+                shownAct = act;
+                waveText.text = "Onada: " + shownWave + (act.Length > 0 ? " · " + act : "");
+            }
         }
     }
 }

@@ -110,7 +110,7 @@ public class Enemy : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
         nextShotTime = Time.time + Random.Range(0.5f, fireInterval);
     }

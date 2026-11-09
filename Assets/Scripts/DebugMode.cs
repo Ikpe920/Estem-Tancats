@@ -52,7 +52,7 @@ public class DebugMode : MonoBehaviour
     {
         spawner = FindAnyObjectByType<WaveSpawner>();
         boonManager = FindAnyObjectByType<BoonManager>();
-        health = FindAnyObjectByType<PlayerHealth>();
+        health = PlayerRef.Health;
     }
 
     void OnDestroy()
