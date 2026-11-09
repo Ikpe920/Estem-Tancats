@@ -311,7 +311,7 @@ public class WaveEventBanner : MonoBehaviour
         instance.title.text = t;
         instance.title.color = color;
         instance.subtitle.text = sub;
-        instance.tag.text = "★ " + t + " ★";
+        instance.tag.text = "— " + t + " —"; // (la font no té el caràcter de l'estrella)
         instance.tag.color = color;
         instance.tag.gameObject.SetActive(true);
         instance.shownAt = Time.unscaledTime;
