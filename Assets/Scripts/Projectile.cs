@@ -9,6 +9,7 @@ public class Projectile : MonoBehaviour
 
     // efectes dels plats (els posa PlayerShooting en disparar)
     [HideInInspector] public int pierce = 0;              // clients extra que travessa
+    [HideInInspector] public int bounces = 0;             // rebots que li queden a les parets (Mandonguilles)
     [HideInInspector] public float explosionRadius = 0f;  // 0 = no explota
     [HideInInspector] public float slowFactor = 1f;       // 1 = no frena
     [HideInInspector] public float slowDuration = 0f;
@@ -93,6 +94,7 @@ public class Projectile : MonoBehaviour
         SaveDefaults();
         damage = defaultDamage;
         pierce = 0;
+        bounces = 0;
         explosionRadius = 0f;
         slowFactor = 1f;
         slowDuration = 0f;
@@ -231,7 +233,12 @@ public class Projectile : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!alive) return; // ja ha tocat alguna cosa en aquest mateix pas de física
-        if (other.GetComponentInParent<ArenaWalls>() != null) { Despawn(); return; }
+        if (other.GetComponentInParent<ArenaWalls>() != null)
+        {
+            if (bounces > 0 && rb != null) { Bounce(); return; }
+            Despawn();
+            return;
+        }
         Breakable prop = other.GetComponent<Breakable>();
         if (prop != null)
         {
@@ -261,6 +268,24 @@ public class Projectile : MonoBehaviour
 
         if (pierce > 0) pierce--;
         else Despawn();
+    }
+
+    // rebota a la paret: la paret que toca és la del costat on és més a prop de sortir de la sala
+    void Bounce()
+    {
+        bounces--;
+        Vector2 v = rb.linearVelocity;
+        Vector2 p = (Vector2)transform.position - HazardManager.ArenaCenter;
+        Vector2 half = HazardManager.ArenaSize * 0.5f;
+        bool sideWall = Mathf.Abs(p.x) / Mathf.Max(0.01f, half.x) > Mathf.Abs(p.y) / Mathf.Max(0.01f, half.y);
+        if (sideWall) v.x = -Mathf.Sign(p.x) * Mathf.Abs(v.x);
+        else v.y = -Mathf.Sign(p.y) * Mathf.Abs(v.y);
+        rb.linearVelocity = v;
+        transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
+        alreadyHit.Clear(); // de tornada pot tocar els mateixos clients
+        dieAt = Mathf.Max(dieAt, Time.time + 0.6f);
+        if (SetBonuses.Has(SetId.BounceDamage)) damage += 1; // Mandonguilles amb sípia
+        EnemyVariants.Burst(transform.position, 0.25f, new Color(1f, 0.9f, 0.7f, 0.7f), 0.1f);
     }
 
     void HitEnemy(Enemy e)

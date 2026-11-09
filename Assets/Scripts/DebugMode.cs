@@ -14,6 +14,7 @@ using UnityEngine.SceneManagement;
 //   F6  invencible sí / no
 //   F7  obre ara la pantalla de triar plat
 //   F8  fa sortir un client especial de cada tipus (Golafre, Olla, Safata, Cambrer)
+//   F9  la propera onada tindrà un esdeveniment (cada cop que el prems, en tria un altre)
 public class DebugMode : MonoBehaviour
 {
     // el ratolí és a sobre del quadre? PlayerShooting ho mira perquè no disparis en clicar els botons
@@ -82,6 +83,7 @@ public class DebugMode : MonoBehaviour
             if (kb.f6Key.wasPressedThisFrame) ToggleGod();
             if (kb.f7Key.wasPressedThisFrame) OfferNow();
             if (kb.f8Key.wasPressedThisFrame) SpawnSpecials();
+            if (kb.f9Key.wasPressedThisFrame) NextEvent();
         }
 
         UpdateMouseOver();
@@ -140,6 +142,14 @@ public class DebugMode : MonoBehaviour
     {
         if (spawner == null) return;
         Say(spawner.DebugSpawnSpecials() ? "Clients especials al voltant!" : "No s'han pogut fer sortir");
+    }
+
+    void NextEvent()
+    {
+        int n = System.Enum.GetValues(typeof(WaveEventKind)).Length;
+        int k = ((int)WaveEvents.ForcedNext % (n - 1)) + 1; // 1..n-1 (mai "cap")
+        WaveEvents.ForcedNext = (WaveEventKind)k;
+        Say("Propera onada: " + WaveEvents.Title(WaveEvents.ForcedNext));
     }
 
     void OfferNow()
@@ -239,6 +249,7 @@ public class DebugMode : MonoBehaviour
         if (GUILayout.Button(PlayerHealth.GodMode ? "Invencible: SÍ (F6)" : "Invencible: no (F6)")) ToggleGod();
         if (GUILayout.Button("Obre la tria de plats (F7)")) OfferNow();
         if (GUILayout.Button("Clients especials (F8)")) SpawnSpecials();
+        if (GUILayout.Button("Esdeveniment a la propera onada (F9)")) NextEvent();
         GUILayout.Space(4f);
     }
 

@@ -377,6 +377,44 @@ public static class PropArt
         return bigTray = c.ToSprite();
     }
 
+    static Sprite crown, olive;
+
+    // oliva verda farcida de pebrot (Olives farcides)
+    public static Sprite Olive()
+    {
+        if (olive != null) return olive;
+        PixelCanvas c = new PixelCanvas(14, 12);
+        c.Ellipse(7, 6, 5, 4, new Color(0.45f, 0.58f, 0.2f));
+        c.Ellipse(6, 7, 3, 2, new Color(0.62f, 0.75f, 0.32f));
+        c.Ellipse(10, 6, 1, 1, new Color(0.85f, 0.2f, 0.18f));
+        c.OutlineAround(Outline);
+        return olive = c.ToSprite();
+    }
+
+    // corona daurada amb pedres (el client VIP)
+    public static Sprite Crown()
+    {
+        if (crown != null) return crown;
+        PixelCanvas c = new PixelCanvas(22, 14);
+        Color gold = new Color(1f, 0.80f, 0.20f);
+        Color goldDark = new Color(0.80f, 0.55f, 0.10f);
+        c.Rect(1, 0, 20, 6, gold);
+        c.Rect(1, 0, 20, 2, goldDark);
+        for (int i = 0; i < 3; i++)          // les tres puntes
+        {
+            int cx = 3 + i * 8;
+            for (int k = 0; k < 7; k++)
+            {
+                int half = Mathf.Max(0, 3 - k / 2);
+                c.Rect(cx - half, 6 + k, half * 2 + 1, 1, gold);
+            }
+        }
+        c.Rect(2, 12, 3, 2, gold); c.Rect(10, 12, 3, 2, gold); c.Rect(18, 12, 3, 2, gold); // boletes a les puntes
+        c.Set(6, 3, new Color(0.9f, 0.15f, 0.2f)); c.Set(11, 3, new Color(0.2f, 0.5f, 0.95f)); c.Set(16, 3, new Color(0.9f, 0.15f, 0.2f));
+        c.OutlineAround(Outline);
+        return crown = c.ToSprite();
+    }
+
     static Sprite glow;
 
     // llum suau blanca i rodona (1 x 1 unitat) per tenyir del color que calgui

@@ -34,6 +34,9 @@ public class Pickup : MonoBehaviour
         Create(pos, t);
     }
 
+    // fa sortir un premi concret (el client VIP en deixa de punts)
+    public static void Spawn(Vector2 pos, PickupType t) { Create(pos, t); }
+
     static void Create(Vector2 pos, PickupType t)
     {
         GameObject go = new GameObject("Drop " + t);

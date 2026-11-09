@@ -75,6 +75,9 @@ public class WaveSpawner : MonoBehaviour
 
     public int currentWave = 0;
 
+    // mode infinit: després de l'última onada, el jugador ha triat continuar
+    public bool endless;
+
     private Enemy currentBoss;
     private int pendingSpawns;   // clients avisats que encara no han sortit (l'onada no s'acaba fins que surtin)
     private int spawnGeneration; // el mode de prova el canvia per anul·lar els avisos pendents // el cap de l'onada actual (no el traiem mai per temps)
@@ -115,6 +118,10 @@ public class WaveSpawner : MonoBehaviour
             bool isBossWave = bosses != null && bosses.Length > 0
                               && currentWave % bossEveryNWaves == 0;
 
+            // potser és una onada especial (hora punta, tall de llum, client VIP...)
+            WaveEvents.Begin(WaveEvents.Roll(currentWave, isBossWave, actManager != null ? actManager.currentAct : 0), this);
+            count = WaveEvents.AdjustCount(count);
+
             if (isBossWave)
             {
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
@@ -132,12 +139,13 @@ public class WaveSpawner : MonoBehaviour
                 if (debugAbort) break;
                 SpawnEnemy();
                 // les onades altes surten en un degoteig més ràpid
-                yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
+                yield return new WaitForSeconds(WaveEvents.AdjustInterval(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1))));
             }
 
             yield return StartCoroutine(WaitForWaveCleared());
 
             inWave = false;
+            WaveEvents.End();
 
             // mode de prova: s'ha demanat saltar a una altra onada (sense bonus ni plats entremig)
             if (debugAbort)
@@ -163,15 +171,24 @@ public class WaveSpawner : MonoBehaviour
                 yield return StartCoroutine(actManager.ShowRoundComplete(currentWave));
             yield return new WaitForSeconds(0.4f);
 
-            // final del joc: en acabar l'última onada, guanyes
-            if (finalWave > 0 && currentWave >= finalWave)
+            // final del joc: en acabar l'última onada, guanyes... o continues en mode infinit
+            if (finalWave > 0 && currentWave >= finalWave && !endless)
             {
-                // guardem el resultat i anem a la pantalla de victòria
-                int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
-                int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
-                RunStats.Save(currentWave, points, combo);
-                SceneManager.LoadScene(SceneNames.Win);
-                yield break; // la partida s'acaba: no hi ha més onades
+                bool keepGoing = false;
+                yield return StartCoroutine(EndlessChoice.Ask(r => keepGoing = r));
+
+                if (!keepGoing)
+                {
+                    // guardem el resultat i anem a la pantalla de victòria
+                    int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
+                    int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
+                    RunStats.Save(currentWave, points, combo);
+                    SceneManager.LoadScene(SceneNames.Win);
+                    yield break; // la partida s'acaba: no hi ha més onades
+                }
+
+                endless = true;
+                RunStats.endless = true;
             }
 
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
@@ -330,6 +347,31 @@ public class WaveSpawner : MonoBehaviour
         Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
         ApplyWaveDifficulty(e);
         EnemyVariants.MaybeApply(e, prefab, currentWave);
+        WaveEvents.OnEnemySpawned(e);
+    }
+
+    // un client de més, ara mateix i sense variants ni esdeveniments (el client VIP)
+    public Enemy SpawnExtra(GameObject prefab)
+    {
+        if (prefab == null || player == null) return null;
+        Enemy e = Instantiate(prefab, RandomSpawnPosition(), Quaternion.identity).GetComponent<Enemy>();
+        ApplyWaveDifficulty(e);
+        return e;
+    }
+
+    // el client que camina més ràpid (no tirador) de la llista: el VIP en fa servir l'aspecte
+    public GameObject FastestWalkerPrefab()
+    {
+        GameObject best = null;
+        float bestSpeed = -1f;
+        if (enemyTypes == null) return null;
+        foreach (EnemyType t in enemyTypes)
+        {
+            Enemy e = t.prefab != null ? t.prefab.GetComponent<Enemy>() : null;
+            if (e == null || e.isShooter) continue;
+            if (e.speed > bestSpeed) { bestSpeed = e.speed; best = t.prefab; }
+        }
+        return best;
     }
 
     // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
@@ -385,6 +427,11 @@ public class WaveSpawner : MonoBehaviour
 
         // mida
         if (info.scale > 0f) b.transform.localScale = Vector3.one * info.scale;
+
+        // mode infinit: a cada volta (cada 25 onades) els caps tornen més forts
+        int loop = finalWave > 0 ? (currentWave - 1) / finalWave : 0;
+        if (e != null && loop > 0)
+            e.OverrideStats(Mathf.RoundToInt(e.maxHealth * (1f + 0.75f * loop)), e.speed * (1f + 0.08f * loop));
 
         // cada cap té el seu comportament
         ConfigureBoss(b, e, info);
@@ -451,7 +498,7 @@ public class WaveSpawner : MonoBehaviour
         if (!inWave || Time.timeScale == 0f) return false; // enmig d'una pantalla pausada o entre onades
 
         debugTarget = Mathf.Max(1, wave);
-        if (finalWave > 0) debugTarget = Mathf.Min(debugTarget, finalWave);
+        if (finalWave > 0 && !endless) debugTarget = Mathf.Min(debugTarget, finalWave);
         debugAbort = true;
         spawnGeneration++; // els clients avisats que encara no han sortit ja no sortiran
 

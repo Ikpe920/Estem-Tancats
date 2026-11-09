@@ -16,7 +16,12 @@ public enum SetId
     Carajillo,    // Ratafia + Cafè: un crític et deixa tornar a disparar de seguida
     CritBlast,    // Ratafia + Calçots: les explosions crítiques són més grans
     Dart,         // Pa amb tomàquet + Bunyols: travessen 1 client més
-    Aftermeal     // Botifarra + Cafè: en curar-te per clients, tret ràpid
+    Aftermeal,    // Botifarra + Cafè: en curar-te per clients, tret ràpid
+    BounceDamage, // Mandonguilles + Bunyols: cada rebot fa el tret +1 de dany
+    SpicyOlives,  // Olives + Pollastre: les olives fan el doble de mal
+    Castanyada,   // Panellets + Xurros: el dash llença 4 panellets més
+    Revenge,      // Romesco + Croquetes: l'ona és el doble de gran
+    Revetlla      // Coca + Calçots: els clients sempre esclaten
 }
 
 public class SetBonus
@@ -49,6 +54,11 @@ public static class SetBonuses
         new SetBonus(SetId.CritBlast, "Calçotada crítica", "Les explosions crítiques són un 60% més grans", BoonType.Crit, BoonType.Explosive),
         new SetBonus(SetId.Dart, "Bunyols exprés", "Els projectils travessen 1 client més", BoonType.ProjectileSpeed, BoonType.Pierce),
         new SetBonus(SetId.Aftermeal, "Sobretaula", "En curar-te per clients, 4 s de tret un 40% més ràpid", BoonType.HealOnKills, BoonType.FireRate),
+        new SetBonus(SetId.BounceDamage, "Mandonguilles amb sípia", "Cada rebot fa el tret +1 de dany", BoonType.Ricochet, BoonType.Pierce),
+        new SetBonus(SetId.SpicyOlives, "Aperitiu picant", "Les olives fan el doble de mal", BoonType.Orbit, BoonType.DashDamage),
+        new SetBonus(SetId.Castanyada, "Castanyada", "El dash llença 4 panellets més", BoonType.DashRing, BoonType.DashCooldown),
+        new SetBonus(SetId.Revenge, "Salsa de revenja", "L'ona de romesco és el doble de gran", BoonType.HitWave, BoonType.Invulnerability),
+        new SetBonus(SetId.Revetlla, "Revetlla", "Els clients sempre esclaten en morir", BoonType.KillBurst, BoonType.Explosive),
     };
 
     static readonly HashSet<SetId> active = new HashSet<SetId>();
