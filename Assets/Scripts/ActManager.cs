@@ -242,45 +242,20 @@ public class ActManager : MonoBehaviour
         }
     }
 
+    // el cartell de l'acte nou (ActBanner: franja fosca, "ACTE N", el nom que cau de cop i la frase)
     IEnumerator ShowTitle()
     {
-        if (actPanel == null || actTitleText == null) yield break;
-
         ActData act = Current;
         if (act == null) yield break;
-
-        actTitleText.text = "ACTE " + (currentAct + 1) + " · " + act.name;
-        if (actSubtitleText != null) actSubtitleText.text = act.subtitle;
-
-        CanvasGroup cg = actPanel.GetComponent<CanvasGroup>();
-        if (cg == null) cg = actPanel.AddComponent<CanvasGroup>();
-        cg.alpha = 0f;
-        actPanel.SetActive(true);
-
-        yield return FadeCanvas(cg, 0f, 1f, 0.45f);
-        yield return new WaitForSecondsRealtime(titleDuration); // el joc pot estar aturat
-        yield return FadeCanvas(cg, 1f, 0f, 0.45f);
-
-        actPanel.SetActive(false);
+        if (actPanel != null) actPanel.SetActive(false);
+        yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint);
     }
 
+    // el segell d'onada completada (o "SERVEI PERFECTE!" si no t'han tocat)
     public IEnumerator ShowRoundComplete(int wave)
     {
-        if (actPanel == null || actTitleText == null) yield break;
-
-        actTitleText.text = "ONADA " + wave + " COMPLETADA";
-        if (actSubtitleText != null) actSubtitleText.text = "PREPARA'T PER ALS PLATS";
-
-        CanvasGroup cg = actPanel.GetComponent<CanvasGroup>();
-        if (cg == null) cg = actPanel.AddComponent<CanvasGroup>();
-        cg.alpha = 0f;
-        actPanel.SetActive(true);
-
-        yield return FadeCanvas(cg, 0f, 1f, 0.35f);
-        yield return new WaitForSecondsRealtime(1.4f);
-        yield return FadeCanvas(cg, 1f, 0f, 0.4f);
-
-        actPanel.SetActive(false);
+        if (actPanel != null) actPanel.SetActive(false);
+        yield return ActBanner.RoundComplete(wave, 1.2f);
     }
 
     IEnumerator FadeCanvas(CanvasGroup cg, float from, float to, float duration)

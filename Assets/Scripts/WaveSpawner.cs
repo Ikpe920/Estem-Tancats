@@ -454,7 +454,7 @@ public class WaveSpawner : MonoBehaviour
         ConfigureBoss(b, e, info);
 
         if (bossManager != null && e != null)
-            bossManager.TrackBoss(e, info.name);
+            bossManager.TrackBoss(e, info.name, BossIntroScreen.ColorFor(info.type));
     }
 
     // afegeix el comportament propi de cada cap
