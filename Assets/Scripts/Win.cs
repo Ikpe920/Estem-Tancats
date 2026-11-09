@@ -11,14 +11,8 @@ public class Win : MonoBehaviour
         Canvas canvas = FindAnyObjectByType<Canvas>();
         if (canvas == null) return;
 
-        // el títol, gran i a dalt
-        EndScreenUI.CreateText(canvas.transform, "TitleText", "HAS SOBREVISCUT AL SERVEI!", 72f,
-            new Vector2(0.5f, 0.68f), new Vector2(1500f, 110f), Color.white, true);
-
-        // el resultat de la partida
-        EndScreenUI.CreateText(canvas.transform, "Resultat",
-            "Has completat les " + RunStats.wave + " onades!\nPunts: " + RunStats.points + RunStats.ExtraLines(), 36f,
-            new Vector2(0.5f, 0.50f), new Vector2(1100f, 220f), Color.white);
+        // títol, retrat del xef, estadístiques que compten cap amunt i confeti
+        EndScreenFx.Build(canvas, true);
 
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
