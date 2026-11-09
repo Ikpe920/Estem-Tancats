@@ -43,6 +43,7 @@ public class GamepadInput : MonoBehaviour
         GameObject go = new GameObject("GamepadInput");
         DontDestroyOnLoad(go);
         go.AddComponent<GamepadInput>();
+        go.AddComponent<MenuHighlight>(); // el marc que indica el botó seleccionat als menús
     }
 
     void Awake()
@@ -93,7 +94,7 @@ public class GamepadInput : MonoBehaviour
         {
             if (!(d is Gamepad) && !(d is Joystick)) continue;
             pads++;
-            bool current = d == Gamepad.current;
+            bool current = d == ActivePad;
             GUILayout.Label((current ? "▶ " : "   ") + d.displayName + "  [" + d.layout + "]" + (d.enabled ? "" : "  (DESACTIVAT)"), Rich());
         }
         foreach (InputDevice d in InputSystem.disconnectedDevices)
@@ -104,7 +105,7 @@ public class GamepadInput : MonoBehaviour
             GUILayout.Label("Prova: cable USB · tancar Steam (o treure-hi el suport de PlayStation) · tancar DS4Windows", Rich());
         }
 
-        Gamepad g = Gamepad.current;
+        Gamepad g = ActivePad;
         if (g != null)
         {
             GUILayout.Space(6);
@@ -137,22 +138,70 @@ public class GamepadInput : MonoBehaviour
 
     // ---------- AMB QUÈ S'ESTÀ JUGANT ----------
 
+    // ---------- EL COMANDAMENT QUE S'ESTÀ FENT SERVIR ----------
+    // Amb Steam o DS4Windows, un comandament de PS4 apareix dues vegades: el de veritat i un d'Xbox "virtual".
+    // Gamepad.current salta d'un a l'altre cada fotograma, i els textos (X / Quadrat) tremolaven.
+    // Aquí se'n tria un i no es canvia mentre es faci servir; si n'hi ha un de PlayStation, té preferència.
+    static Gamepad activePad;
+    static float activePadLastInput;
+
+    public static Gamepad ActivePad
+    {
+        get
+        {
+            if (activePad != null && activePad.added) return activePad;
+            return Gamepad.current;
+        }
+    }
+
+    static bool HasInput(Gamepad g)
+    {
+        if (g == null) return false;
+        if (g.leftStick.ReadValue().sqrMagnitude > 0.09f || g.rightStick.ReadValue().sqrMagnitude > 0.09f) return true;
+        if (!g.wasUpdatedThisFrame) return false;
+        foreach (var c in g.allControls)
+            if (c is UnityEngine.InputSystem.Controls.ButtonControl b && b.isPressed && !(c.parent is UnityEngine.InputSystem.Controls.StickControl)) return true;
+        return false;
+    }
+
+    static bool IsPlayStation(Gamepad g)
+    {
+        if (g == null) return false;
+        string l = (g.layout ?? "") + " " + (g.name ?? "") + " " + (g.displayName ?? "");
+        return l.Contains("DualShock") || l.Contains("DualSense") || l.Contains("PlayStation") || l.Contains("PS4") || l.Contains("PS5");
+    }
+
+    // torna true si algun comandament ha fet alguna cosa aquest fotograma
+    bool TrackActivePad()
+    {
+        bool any = false;
+        Gamepad candidate = null;
+        foreach (Gamepad g in Gamepad.all)
+        {
+            if (!HasInput(g)) continue;
+            any = true;
+            if (g == activePad) { activePadLastInput = Time.unscaledTime; return true; }
+            if (candidate == null || (IsPlayStation(g) && !IsPlayStation(candidate))) candidate = g;
+        }
+        if (candidate == null) return any;
+
+        // només es canvia de comandament si l'actual fa estona que no es fa servir
+        // (o si el nou és el de PlayStation i l'actual no: és el de veritat, el virtual és una còpia)
+        bool stale = activePad == null || !activePad.added || Time.unscaledTime - activePadLastInput > 1.5f;
+        bool better = IsPlayStation(candidate) && !IsPlayStation(activePad);
+        if (stale || better)
+        {
+            bool kindChanged = activePad == null || IsPlayStation(activePad) != IsPlayStation(candidate);
+            activePad = candidate;
+            activePadLastInput = Time.unscaledTime;
+            if (kindChanged && UsingGamepad) OnModeChanged?.Invoke(); // els textos han de dir els botons nous
+        }
+        return true;
+    }
+
     void DetectMode()
     {
-        bool pad = false, kbm = false;
-
-        Gamepad g = Gamepad.current;
-        if (g != null)
-        {
-            if (g.leftStick.ReadValue().sqrMagnitude > 0.09f || g.rightStick.ReadValue().sqrMagnitude > 0.09f) pad = true;
-            else if (g.wasUpdatedThisFrame)
-            {
-                foreach (var c in g.allControls)
-                {
-                    if (c is UnityEngine.InputSystem.Controls.ButtonControl b && b.wasPressedThisFrame) { pad = true; break; }
-                }
-            }
-        }
+        bool pad = TrackActivePad(), kbm = false;
 
         Keyboard k = Keyboard.current;
         if (k != null && k.anyKey.wasPressedThisFrame) kbm = true;
@@ -208,10 +257,12 @@ public class GamepadInput : MonoBehaviour
 
     static PadKind Kind()
     {
-        Gamepad g = Gamepad.current;
+        Gamepad g = ActivePad;
         if (g == null) return PadKind.Xbox;
+        if (IsPlayStation(g)) return PadKind.PlayStation;
+        // si hi ha un comandament de PlayStation connectat (encara que l'actiu sigui la còpia d'Xbox), és aquest
+        foreach (Gamepad other in Gamepad.all) if (IsPlayStation(other)) return PadKind.PlayStation;
         string l = (g.layout ?? "") + " " + (g.name ?? "");
-        if (l.Contains("DualShock") || l.Contains("DualSense") || l.Contains("PlayStation") || l.Contains("PS4") || l.Contains("PS5")) return PadKind.PlayStation;
         if (l.Contains("Switch")) return PadKind.Switch;
         return PadKind.Xbox;
     }
@@ -236,7 +287,7 @@ public class GamepadInput : MonoBehaviour
     {
         get
         {
-            Gamepad g = Gamepad.current;
+            Gamepad g = ActivePad;
             return g != null && Kind() != PadKind.PlayStation;
         }
     }
@@ -245,7 +296,7 @@ public class GamepadInput : MonoBehaviour
     public static void Rumble(float low, float high, float seconds)
     {
         if (Instance == null || !Vibration || !UsingGamepad || !CanRumble) return;
-        Gamepad g = Gamepad.current;
+        Gamepad g = ActivePad;
         rumbling = true;
         g.SetMotorSpeeds(Mathf.Clamp01(low), Mathf.Clamp01(high));
         if (Instance.rumbleStop != null) Instance.StopCoroutine(Instance.rumbleStop);
@@ -263,7 +314,7 @@ public class GamepadInput : MonoBehaviour
     {
         if (!rumbling) return;
         rumbling = false;
-        Gamepad g = Gamepad.current;
+        Gamepad g = ActivePad;
         if (g != null && Kind() != PadKind.PlayStation) g.SetMotorSpeeds(0f, 0f);
     }
 }
