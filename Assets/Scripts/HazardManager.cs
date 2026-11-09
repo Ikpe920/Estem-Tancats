@@ -15,10 +15,16 @@ public class HazardManager : MonoBehaviour
         SceneManager.sceneLoaded += (scene, mode) =>
         {
             if (scene.name != SceneNames.Game) return;
-
-            new GameObject("Perills").AddComponent<HazardManager>();
-            new GameObject("Portes").AddComponent<DoorManager>();
+            EnsureExists();
         };
+    }
+
+    // crea els perills (taules, caixes...) i les portes si encara no hi són. El WaveSpawner també ho
+    // demana en començar: així no depèn que l'avís de l'escena carregada arribi fins aquí
+    public static void EnsureExists()
+    {
+        if (FindAnyObjectByType<HazardManager>() == null) new GameObject("Perills").AddComponent<HazardManager>();
+        if (DoorManager.Instance == null) new GameObject("Portes").AddComponent<DoorManager>();
     }
 
     void Awake()
