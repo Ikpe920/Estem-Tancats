@@ -17,7 +17,7 @@ public class GameOver : MonoBehaviour
         if (title != null) title.text = "FIN DEL JOC";
 
         if (resultText != null)
-            resultText.text = "Has arribat a l'onada " + RunStats.wave + "\nPunts: " + RunStats.points;
+            resultText.text = "Has arribat a l'onada " + RunStats.wave + "\nPunts: " + RunStats.points + RunStats.ExtraLines();
 
         Canvas canvas = FindAnyObjectByType<Canvas>();
         if (canvas == null) return;

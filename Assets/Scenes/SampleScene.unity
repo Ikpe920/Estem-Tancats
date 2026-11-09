@@ -119,143 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &50580075
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 50580076}
-  - component: {fileID: 50580078}
-  - component: {fileID: 50580077}
-  m_Layer: 5
-  m_Name: BOTIGA
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &50580076
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 50580075}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &50580077
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 50580075}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_text: LA BOTIGA
-  m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 0}
-  m_fontMaterials: []
-  m_fontColor32:
-    serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
-  m_enableVertexGradient: 0
-  m_colorMode: 3
-  m_fontColorGradient:
-    topLeft: {r: 1, g: 1, b: 1, a: 1}
-    topRight: {r: 1, g: 1, b: 1, a: 1}
-    bottomLeft: {r: 1, g: 1, b: 1, a: 1}
-    bottomRight: {r: 1, g: 1, b: 1, a: 1}
-  m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 0}
-  m_tintAllSprites: 0
-  m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
-  m_overrideHtmlColors: 0
-  m_faceColor:
-    serializedVersion: 2
-    rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
-  m_fontWeight: 400
-  m_enableAutoSizing: 0
-  m_fontSizeMin: 18
-  m_fontSizeMax: 72
-  m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
-  m_textAlignment: 65535
-  m_characterSpacing: 0
-  m_characterHorizontalScale: 1
-  m_wordSpacing: 0
-  m_lineSpacing: 0
-  m_lineSpacingMax: 0
-  m_paragraphSpacing: 0
-  m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
-  m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
-  m_linkedTextComponent: {fileID: 0}
-  parentLinkedComponent: {fileID: 0}
-  m_enableKerning: 0
-  m_ActiveFontFeatures: 6e72656bu
-  m_enableExtraPadding: 0
-  checkPaddingRequired: 0
-  m_isRichText: 1
-  m_EmojiFallbackSupport: 1
-  m_parseCtrlCharacters: 1
-  m_isOrthographic: 1
-  m_isCullingEnabled: 0
-  m_horizontalMapping: 0
-  m_verticalMapping: 0
-  m_uvLineOffset: 0
-  m_geometrySortingOrder: 0
-  m_IsTextObjectScaleStatic: 0
-  m_VertexBufferAutoSizeReduction: 0
-  m_useMaxVisibleDescender: 1
-  m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
-  m_isUsingLegacyAnimationComponent: 0
-  m_isVolumetricText: 0
-  m_hasFontAssetChanged: 0
-  m_baseMaterial: {fileID: 0}
-  m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
---- !u!222 &50580078
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 50580075}
-  m_CullTransparentMesh: 1
 --- !u!1 &71013544
 GameObject:
   m_ObjectHideFlags: 0
@@ -770,13 +633,12 @@ MonoBehaviour:
     firstWave: 4
     weight: 3
   player: {fileID: 672883916}
-  shop: {fileID: 2090463949}
   bosses:
   - name: "EL CRITIC GASTRON\xD2MIC"
     subtitle: "Ve a criticar el men\xFA. Ell hi posar\xE0 nota."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 0
-    health: 200
+    health: 150
     speed: 1.5
     scale: 3
     sprite: {fileID: 21300000, guid: e777f384b655745449c6f07c37f75128, type: 3}
@@ -786,7 +648,7 @@ MonoBehaviour:
     subtitle: "Tres copes de m\xE9s i ara et veu com un aperitiu."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 1
-    health: 400
+    health: 350
     speed: 1.8
     scale: 3.2
     sprite: {fileID: 21300000, guid: 90220a7f090c417eb1bbdd522dda72fe, type: 3}
@@ -796,7 +658,7 @@ MonoBehaviour:
     subtitle: Ha canviat la cuina pels clients. Ara et vol al forn.
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 2
-    health: 650
+    health: 700
     speed: 1.6
     scale: 3
     sprite: {fileID: 21300000, guid: 5b62ea532276445f8e284629becebc1a, type: 3}
@@ -806,7 +668,7 @@ MonoBehaviour:
     subtitle: "T\xE9 reserva per a tots els teus cors. I no pensa marxar."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 3
-    health: 900
+    health: 1100
     speed: 1.7
     scale: 2.8
     sprite: {fileID: 21300000, guid: 49c67e691ad249a1aa3a65437ca9d380, type: 3}
@@ -816,7 +678,7 @@ MonoBehaviour:
     subtitle: "Ha vingut a tancar el local. Comen\xE7ar\xE0 per tu."
     prefab: {fileID: 3035424927779291405, guid: eb7357b117c54349ba5aea456b8e3232, type: 3}
     type: 4
-    health: 1200
+    health: 1800
     speed: 1.8
     scale: 3.4
     sprite: {fileID: 21300000, guid: af5d1d799c6d43bbb95a28ca889d01a1, type: 3}
@@ -902,6 +764,7 @@ MonoBehaviour:
   background: {fileID: 0}
   cam: {fileID: 0}
   sortingOrder: -100
+  tileFloor: 1
   musicSource: {fileID: 0}
   actPanel: {fileID: 1034332571}
   actTitleText: {fileID: 359405706}
@@ -1115,16 +978,16 @@ MonoBehaviour:
     icon: {fileID: 0}
     weight: 6
     maxStacks: 0
+  useCodeDishes: 1
   optionsPerOffer: 3
   everyNWaves: 1
   panel: {fileID: 0}
   takenText: {fileID: 0}
-  shop: {fileID: 0}
   shooting: {fileID: 0}
   movement: {fileID: 0}
   health: {fileID: 0}
   healAmount: 1
-  maxHeartsCap: 4
+  rerollsPerOffer: 1
 --- !u!1 &290632249
 GameObject:
   m_ObjectHideFlags: 0
@@ -1900,6 +1763,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
   target: {fileID: 672883916}
   smooth: 8
+  clampToArena: 1
 --- !u!1 &533483992
 GameObject:
   m_ObjectHideFlags: 0
@@ -2161,6 +2025,7 @@ MonoBehaviour:
   healthText: {fileID: 1536069903}
   scoreText: {fileID: 413754214}
   waveText: {fileID: 127806984}
+  comboText: {fileID: 0}
   playerHealth: {fileID: 672883919}
   spawner: {fileID: 223980660}
 --- !u!1 &588491475
@@ -2757,10 +2622,13 @@ MonoBehaviour:
   damage: 1
   extraShots: 0
   spreadAngle: 12
+  sideShotDamage: 0.7
   pierce: 0
   explosionRadius: 0
   slowFactor: 1
   slowDuration: 0
+  critChance: 0
+  critMultiplier: 2
 --- !u!114 &672883919
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2774,6 +2642,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
   maxLives: 3
+  invulnerableWhileDashing: 1
   invulnerabilityTime: 1.2
 --- !u!114 &672883920
 MonoBehaviour:
@@ -3821,9 +3690,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4dc24fabae8960bfb69d33e8dd47eac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
-  score: 0
   totalScore: 0
   scoreMultiplier: 1
+  comboWindow: 4
+  killsPerTier: 5
+  tierBonus: 0.25
+  maxComboMultiplier: 3
+  waveBonusPerWave: 40
+  flawlessFactor: 2
 --- !u!114 &2090463949
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3846,10 +3720,13 @@ MonoBehaviour:
   fireRateText: {fileID: 0}
   healText: {fileID: 0}
   dashCooldownText: {fileID: 0}
+  damageCost: 40
+  speedCost: 30
+  fireRateCost: 40
+  dashCooldownCost: 50
   healCost: 60
   maxLifeCost: 150
   rerollCost: 60
-  maxLifeCap: 4
 --- !u!114 &2090463950
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3935,6 +3812,5 @@ SceneRoots:
   - {fileID: 162779101}
   - {fileID: 586144848}
   - {fileID: 818977908}
-  - {fileID: 50580076}
   - {fileID: 71013545}
   - {fileID: 98374487}

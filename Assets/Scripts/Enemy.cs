@@ -277,7 +277,7 @@ public class Enemy : MonoBehaviour
         {
             dead = true;
             if (ScoreManager.Instance != null)
-                ScoreManager.Instance.AddScore(points);
+                ScoreManager.Instance.AddKill(points, transform.position);
             CameraFX.Shake(0.14f, 0.12f);
             OnKilled?.Invoke(this);
             Destroy(gameObject);

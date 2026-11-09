@@ -1,16 +1,31 @@
 using UnityEngine;
 
-// dades de la partida que han de sobreviure al canvi d'escena (Game Over i victòria)
+// dades de la partida que han de sobreviure al canvi d'escena (Game Over i victòria),
+// i el rècord, que es guarda al dispositiu
 public static class RunStats
 {
-    public static int wave;   // l'onada on s'ha acabat la partida
-    public static int points; // els punts totals de la partida
+    const string BestPointsKey = "best_points";
+    const string BestWaveKey = "best_wave";
+
+    public static int wave;        // l'onada on s'ha acabat la partida
+    public static int points;      // els punts totals de la partida
+    public static int maxCombo;    // la ratxa més llarga de la partida
+    public static bool newRecord;  // aquesta partida ha batut el rècord de punts
+
+    public static int BestPoints { get { return PlayerPrefs.GetInt(BestPointsKey, 0); } }
+    public static int BestWave { get { return PlayerPrefs.GetInt(BestWaveKey, 0); } }
 
     // es crida just abans de carregar la pantalla final
-    public static void Save(int finalWave, int totalPoints)
+    public static void Save(int finalWave, int totalPoints, int longestCombo = 0)
     {
         wave = finalWave;
         points = totalPoints;
+        maxCombo = longestCombo;
+
+        newRecord = totalPoints > BestPoints;
+        if (newRecord) PlayerPrefs.SetInt(BestPointsKey, totalPoints);
+        if (finalWave > BestWave) PlayerPrefs.SetInt(BestWaveKey, finalWave);
+        PlayerPrefs.Save();
     }
 
     // es crida en començar una partida nova
@@ -18,5 +33,17 @@ public static class RunStats
     {
         wave = 0;
         points = 0;
+        maxCombo = 0;
+        newRecord = false;
+    }
+
+    // les línies de sota els punts a les pantalles finals
+    public static string ExtraLines()
+    {
+        string s = "\nMillor ratxa: " + maxCombo;
+        s += newRecord
+            ? "\n<color=#FFD24D>NOU RÈCORD!</color>"
+            : "\nRècord: " + BestPoints;
+        return s;
     }
 }

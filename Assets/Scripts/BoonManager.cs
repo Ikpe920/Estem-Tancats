@@ -26,7 +26,10 @@ public enum BoonType
     DashDamage,      // el dash fa mal
     HealOnKills,     // cures un cor cada X clients
     MoreChoices,     // una carta més a triar
-    None             // sense segon efecte
+    None,            // sense segon efecte
+    ProjectileSpeed, // projectils més ràpids
+    Crit,            // probabilitat de tret crític (×2 de dany)
+    FlawlessHeal     // cures un cor en acabar una onada sense rebre cap cop
 }
 
 [System.Serializable]
@@ -47,12 +50,13 @@ public class Boon
 public class BoonManager : MonoBehaviour
 {
     public Boon[] boons;              // la llibreria de boons
+    [Tooltip("Si està activat, la llista de plats es regenera des del codi cada cop que comença l'escena (ignora la còpia guardada a l'escena). Desactiva'l si vols editar els plats a mà a l'Inspector.")]
+    public bool useCodeDishes = true;
     public int optionsPerOffer = 3;   // quantes opcions s'ofereixen
     public int everyNWaves = 1;       // s'ofereix cada tantes onades
 
     public GameObject panel;          // el panell (si el deixes buit, es crea sol)
     public TextMeshProUGUI takenText; // opcional: llista de boons actius
-    public ShopManager shop;           // els serveis (curar cor, +1 cor, canviar cartes)
 
     public PlayerShooting shooting;
     public PlayerMovement movement;
@@ -60,34 +64,71 @@ public class BoonManager : MonoBehaviour
 
     private int killsPerHeal = 0;
     private int killCounter = 0;
+    private int flawlessHeal = 0;
 
     private readonly Dictionary<Boon, int> taken = new Dictionary<Boon, int>();
     private bool picking;
     private Boon[] currentOffer;              // les cartes que s'estan oferint ara
+    private Boon[] previousOffer;             // les de l'oferta anterior (surten menys)
+
+    // parelles de plats que van bé junts: si tens un, l'altre surt més
+    static readonly BoonType[][] Synergies =
+    {
+        new[] { BoonType.Explosive, BoonType.MultiShot },
+        new[] { BoonType.Explosive, BoonType.Pierce },
+        new[] { BoonType.SlowOnHit, BoonType.Explosive },
+        new[] { BoonType.SlowOnHit, BoonType.MultiShot },
+        new[] { BoonType.FireRate, BoonType.MultiShot },
+        new[] { BoonType.DashDamage, BoonType.DashCooldown },
+        new[] { BoonType.HealOnKills, BoonType.Explosive },
+        new[] { BoonType.HealOnKills, BoonType.FireRate },
+        new[] { BoonType.Crit, BoonType.FireRate },
+        new[] { BoonType.Crit, BoonType.MultiShot },
+        new[] { BoonType.Crit, BoonType.Explosive },
+        new[] { BoonType.ProjectileSpeed, BoonType.Pierce },
+    };
     private Button healButton;                 // l'opció de curar (en lloc d'un plat)
     private TextMeshProUGUI healLabel;
     private TextMeshProUGUI titleText;
     private RectTransform takenStrip;          // la fila d'icones dels plats que ja tens (dalt a l'esquerra)
     private readonly Dictionary<string, Sprite> iconCache = new Dictionary<string, Sprite>();
     public int healAmount = 1;     // cors que cura l'opció de curar
+    public int rerollsPerOffer = 1; // quantes vegades pots canviar les cartes a cada oferta (0 = desactivat)
+
+    private int rerollsLeft;
+    private Button rerollButton;
+    private TextMeshProUGUI rerollLabel;
 
     void Awake()
     {
         if (shooting == null) shooting = FindAnyObjectByType<PlayerShooting>();
         if (movement == null) movement = FindAnyObjectByType<PlayerMovement>();
         if (health == null) health = FindAnyObjectByType<PlayerHealth>();
-        if (shop == null) shop = FindAnyObjectByType<ShopManager>();
+
+        if (useCodeDishes || boons == null || boons.Length == 0) BuildDefaultBoons();
 
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
         if (panel != null) panel.SetActive(false);
         if (takenText == null) BuildTakenText();
         Enemy.OnKilled += HandleKill;
+        ScoreManager.OnWaveEnded += HandleWaveEnded;
         
     }
 
         void OnDestroy()
     {
         Enemy.OnKilled -= HandleKill;
+        ScoreManager.OnWaveEnded -= HandleWaveEnded;
+    }
+
+    // Crema catalana: onada acabada sense rebre cap cop → cures un cor
+    void HandleWaveEnded(bool flawless)
+    {
+        if (!flawless || flawlessHeal <= 0 || health == null) return;
+        if (health.CurrentLives >= health.maxLives) return;
+
+        health.Heal(flawlessHeal);
+        HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2f, "CREMA CATALANA! +1 cor", new Color(0.98f, 0.85f, 0.45f));
     }
 
     void HandleKill(Enemy e)
@@ -104,6 +145,11 @@ public class BoonManager : MonoBehaviour
 
     void Reset()
     {
+        BuildDefaultBoons();
+    }
+
+    void BuildDefaultBoons()
+    {
         boons = new Boon[]
         {
             // ---- plats que donen un buff ----
@@ -114,22 +160,25 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Gaspatxo fresquet", "Cures 1 cor", BoonType.Heal, 1f, new Color(0.5f, 0.9f, 0.55f), 8),
             MakeBoon("Croquetes cruixents", "+0,3 s d'invulnerabilitat", BoonType.Invulnerability, 0.3f, new Color(0.9f, 0.75f, 0.45f), 8),
             MakeBoon("Xurros amb xocolata", "-0,25 s de recàrrega del dash", BoonType.DashCooldown, 0.25f, new Color(0.7f, 0.45f, 0.35f), 8),
-            MakeBoon("Menú del dia", "+75 punts", BoonType.Score, 75f, new Color(0.95f, 0.95f, 0.6f), 10),
-            MakeBoon("Safrà", "+25% de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.8f, 0.2f), 6),
+            MakeBoon("Pa amb tomàquet", "Els projectils van més ràpids", BoonType.ProjectileSpeed, 3f, new Color(0.95f, 0.55f, 0.4f), 8, 2),
+            MakeBoon("Ratafia", "Cada tret té un 15% de ser crític (×2 de dany)", BoonType.Crit, 0.15f, new Color(0.55f, 0.3f, 0.2f), 7, 3),
             MakeBoon("Oli d'oliva verge", "Els clients van un 10% més lents", BoonType.SlowEnemies, 0.1f, new Color(0.65f, 0.75f, 0.3f), 7),
 
             // ---- plats que canvien com es juga ----
-            MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 2),
+            MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 1),
             MakeBoon("Bunyols de bacallà", "Els teus projectils travessen 1 client", BoonType.Pierce, 1f, new Color(0.9f, 0.85f, 0.6f), 6, 3),
             MakeBoon("Calçots amb salvitxada", "Els teus projectils exploten i fan mal als clients de prop", BoonType.Explosive, 1.5f, new Color(0.95f, 0.4f, 0.2f), 5, 1),
             MakeBoon("Sorbet de llimona", "Els teus projectils frenen els clients durant 2 s", BoonType.SlowOnHit, 0.4f, new Color(0.7f, 0.95f, 0.9f), 6, 2),
             MakeBoon("Pollastre al curri", "El dash crema els clients que travessis", BoonType.DashDamage, 2f, new Color(0.95f, 0.65f, 0.15f), 5, 3),
             MakeBoon("Botifarra amb mongetes", "Cada 12 clients que despatxis, cures 1 cor", BoonType.HealOnKills, 12f, new Color(0.75f, 0.5f, 0.4f), 5, 2),
+            MakeBoon("Crema catalana", "Cures 1 cor en acabar una onada sense rebre cap cop", BoonType.FlawlessHeal, 1f, new Color(0.98f, 0.85f, 0.45f), 5, 1),
             MakeBoon("Menú de degustació", "A partir d'ara pots triar entre una carta més", BoonType.MoreChoices, 1f, new Color(0.85f, 0.7f, 0.9f), 3, 2),
 
             // ---- plats amb risc i recompensa ----
             MakeBoon("Xili amb carn", "+2 de dany, però els clients van un 15% més ràpids", BoonType.Damage, 2f, new Color(0.85f, 0.25f, 0.2f), 6, 0, BoonType.SlowEnemies, -0.15f),
             MakeBoon("Fondue de formatge", "Dispares molt més ràpid, però camines més lent", BoonType.FireRate, 0.1f, new Color(0.98f, 0.9f, 0.5f), 6, 0, BoonType.MoveSpeed, -0.8f),
+            MakeBoon("Fideuà picant", "+1 de dany, però el dash triga més a recarregar-se", BoonType.Damage, 1f, new Color(0.9f, 0.5f, 0.25f), 6, 2, BoonType.DashCooldown, -0.25f),
+            MakeBoon("Calamars a la romana", "Camines més ràpid, però ets menys temps invulnerable", BoonType.MoveSpeed, 0.9f, new Color(0.95f, 0.85f, 0.5f), 5, 2, BoonType.Invulnerability, -0.3f),
         };
     }
 
@@ -180,6 +229,9 @@ public class BoonManager : MonoBehaviour
         BuildTitle();
         BuildHealButton();
         RefreshHealButton();
+        rerollsLeft = rerollsPerOffer;
+        BuildRerollButton();
+        RefreshRerollButton();
 
         panel.SetActive(true);
         bool wasPaused = Time.timeScale == 0f;
@@ -203,10 +255,12 @@ public class BoonManager : MonoBehaviour
                 }
 
                 if (!picking && kb.hKey.wasPressedThisFrame) ChooseHeal();
+                if (!picking && kb.rKey.wasPressedThisFrame) TryReroll();
             }
             yield return null;
         }
 
+        previousOffer = currentOffer;
         panel.SetActive(false);
         if (!wasPaused) Time.timeScale = 1f;
     }
@@ -234,6 +288,9 @@ public class BoonManager : MonoBehaviour
             case BoonType.DashDamage: return 2;
             case BoonType.HealOnKills: return 1;
             case BoonType.MoreChoices: return 1;
+            case BoonType.ProjectileSpeed: return 2;
+            case BoonType.Crit: return 3;
+            case BoonType.FlawlessHeal: return 1;
             default: return 0; // sense topall (curar, punts...)
         }
     }
@@ -260,11 +317,12 @@ public class BoonManager : MonoBehaviour
         int cap = MaxStacks(b);
         if (cap > 0 && TypeStacks(b.type) >= cap) return false; // el tipus ja està al màxim
 
+        if (b.type == BoonType.Heal && health != null && health.CurrentLives >= health.maxLives) return false; // vida plena: carta morta
         if (b.type == BoonType.MaxLives && health != null && health.maxLives >= PlayerHealth.MaxLivesCap) return false;
         return true;
     }
 
-    // ---------- REROLL (servei "Canviar les cartes") ----------
+    // ---------- REROLL (canviar les cartes de l'oferta) ----------
 
     public bool CanReroll()
     {
@@ -288,7 +346,36 @@ public class BoonManager : MonoBehaviour
         currentOffer = picked;
         BuildCards(picked);
         RefreshHealButton();
+        RefreshRerollButton();
         return true;
+    }
+
+    // el jugador demana canviar les cartes (botó o tecla R)
+    void TryReroll()
+    {
+        if (picking || rerollsLeft <= 0) return;
+        if (!CanReroll()) return;
+        if (RerollCards()) rerollsLeft--;
+        RefreshRerollButton();
+    }
+
+    // pes real d'un plat al sorteig: el que ja ha sortit fa poc pesa menys, les sinergies pesen més
+    float EffectiveWeight(Boon b)
+    {
+        float w = Mathf.Max(1, b.weight);
+
+        if (previousOffer != null && System.Array.IndexOf(previousOffer, b) >= 0) w *= 0.25f;
+
+        float syn = 1f;
+        foreach (BoonType[] pair in Synergies)
+        {
+            BoonType other;
+            if (pair[0] == b.type) other = pair[1];
+            else if (pair[1] == b.type) other = pair[0];
+            else continue;
+            if (TypeStacks(other) > 0) syn *= 1.7f;
+        }
+        return w * Mathf.Min(syn, 2.5f);
     }
 
     Boon[] PickBoons(int howMany, List<Boon> exclou = null)
@@ -306,15 +393,15 @@ public class BoonManager : MonoBehaviour
         List<Boon> result = new List<Boon>();
         while (result.Count < howMany && pool.Count > 0)
         {
-            int total = 0;
-            foreach (Boon b in pool) total += Mathf.Max(1, b.weight);
+            float total = 0f;
+            foreach (Boon b in pool) total += EffectiveWeight(b);
 
-            int roll = Random.Range(0, total);
+            float roll = Random.Range(0f, total);
             int chosen = 0;
             for (int i = 0; i < pool.Count; i++)
             {
-                roll -= Mathf.Max(1, pool[i].weight);
-                if (roll < 0) { chosen = i; break; }
+                roll -= EffectiveWeight(pool[i]);
+                if (roll < 0f) { chosen = i; break; }
                 chosen = i;
             }
 
@@ -350,7 +437,7 @@ public class BoonManager : MonoBehaviour
                 break;
 
             case BoonType.FireRate:
-                if (shooting != null) shooting.fireRate = Mathf.Clamp(shooting.fireRate - amount, 0.06f, 1f);
+                if (shooting != null) shooting.fireRate = Mathf.Clamp(shooting.fireRate - amount, 0.10f, 1f);
                 break;
 
             case BoonType.MoveSpeed:
@@ -374,7 +461,7 @@ public class BoonManager : MonoBehaviour
                 break;
 
             case BoonType.Invulnerability:
-                if (health != null) health.invulnerabilityTime += amount;
+                if (health != null) health.invulnerabilityTime = Mathf.Max(0.4f, health.invulnerabilityTime + amount);
                 break;
 
             case BoonType.DashCooldown:
@@ -408,8 +495,9 @@ public class BoonManager : MonoBehaviour
             case BoonType.SlowOnHit:
                 if (shooting != null)
                 {
-                    shooting.slowFactor = Mathf.Max(0.3f, Mathf.Min(shooting.slowFactor, 1f - amount));
-                    shooting.slowDuration = 2f;
+                    // cada còpia frena més (0,6 → 0,36) i dura més (2 s → 3 s)
+                    shooting.slowFactor = Mathf.Max(0.3f, shooting.slowFactor * (1f - amount));
+                    shooting.slowDuration = shooting.slowDuration <= 0f ? 2f : shooting.slowDuration + 1f;
                 }
                 break;
 
@@ -428,6 +516,18 @@ public class BoonManager : MonoBehaviour
 
             case BoonType.MoreChoices:
                 optionsPerOffer = Mathf.Min(5, optionsPerOffer + Mathf.RoundToInt(amount));
+                break;
+
+            case BoonType.ProjectileSpeed:
+                if (shooting != null) shooting.projectileSpeed += amount;
+                break;
+
+            case BoonType.Crit:
+                if (shooting != null) shooting.critChance = Mathf.Min(0.75f, shooting.critChance + amount);
+                break;
+
+            case BoonType.FlawlessHeal:
+                flawlessHeal += Mathf.RoundToInt(amount);
                 break;
         }
     }
@@ -575,6 +675,122 @@ public class BoonManager : MonoBehaviour
     }
 
     // etiqueta de la carta segons el tipus de plat
+    // ---------- DESCRIPCIONS AMB L'EFECTE REAL ("Dany 2 → 3") ----------
+
+    static string F(float v, int decimals)
+    {
+        return v.ToString(decimals == 0 ? "0" : (decimals == 1 ? "0.0" : "0.00"), CultureInfo.InvariantCulture).Replace('.', ',');
+    }
+
+    string DescribeBoon(Boon b)
+    {
+        string a = DescribeEffect(b.type, b.amount);
+        if (b.type2 == BoonType.None) return a ?? b.description;
+
+        string c = DescribeEffect(b.type2, b.amount2);
+        if (a == null || c == null) return b.description;
+        return a + "\n" + c;
+    }
+
+    // torna null si no es pot calcular (llavors es fa servir la descripció escrita)
+    string DescribeEffect(BoonType type, float amount)
+    {
+        int r = Mathf.RoundToInt(amount);
+        switch (type)
+        {
+            case BoonType.Damage:
+                if (shooting == null) return null;
+                return "Dany " + shooting.damage + " → " + Mathf.Max(1, shooting.damage + r);
+
+            case BoonType.FireRate:
+                if (shooting == null) return null;
+                return "Trets per segon " + F(1f / shooting.fireRate, 1) + " → "
+                    + F(1f / Mathf.Clamp(shooting.fireRate - amount, 0.06f, 1f), 1);
+
+            case BoonType.MoveSpeed:
+                if (movement == null) return null;
+                return "Velocitat " + F(movement.speed, 1) + " → " + F(Mathf.Max(2f, movement.speed + amount), 1);
+
+            case BoonType.MaxLives:
+                if (health == null) return null;
+                return "Cors màxims " + health.maxLives + " → " + Mathf.Min(PlayerHealth.MaxLivesCap, health.maxLives + r) + " (i ple)";
+
+            case BoonType.Heal:
+                return "Cures " + r + (r > 1 ? " cors" : " cor");
+
+            case BoonType.Invulnerability:
+                if (health == null) return null;
+                return "Invulnerable " + F(health.invulnerabilityTime, 1) + " s → " + F(Mathf.Max(0.4f, health.invulnerabilityTime + amount), 1) + " s";
+
+            case BoonType.DashCooldown:
+                if (movement == null) return null;
+                return "Recàrrega del dash " + F(movement.dashCooldown, 2) + " s → " + F(Mathf.Max(0.15f, movement.dashCooldown - amount), 2) + " s";
+
+            case BoonType.Score:
+                return "+" + r + " punts";
+
+            case BoonType.ScoreBoost:
+                if (ScoreManager.Instance == null) return null;
+                return "Punts ×" + F(ScoreManager.Instance.scoreMultiplier, 2) + " → ×" + F(ScoreManager.Instance.scoreMultiplier + amount, 2);
+
+            case BoonType.SlowEnemies:
+            {
+                float cur = Enemy.speedMultiplier * 100f;
+                return "Velocitat dels clients " + Mathf.RoundToInt(cur) + "% → " + Mathf.RoundToInt(cur * (1f - amount)) + "%";
+            }
+
+            case BoonType.MultiShot:
+                if (shooting == null) return null;
+                return "Projectils per tret " + (1 + shooting.extraShots) + " → " + (1 + shooting.extraShots + r);
+
+            case BoonType.Pierce:
+                if (shooting == null) return null;
+                return "Travessen " + shooting.pierce + " → " + (shooting.pierce + r) + " clients";
+
+            case BoonType.Explosive:
+                if (shooting == null) return null;
+                return shooting.explosionRadius <= 0f
+                    ? "Explosió de radi " + F(amount, 1)
+                    : "Radi de l'explosió " + F(shooting.explosionRadius, 1) + " → " + F(shooting.explosionRadius + amount, 1);
+
+            case BoonType.SlowOnHit:
+            {
+                if (shooting == null) return null;
+                float newFactor = Mathf.Max(0.3f, shooting.slowFactor * (1f - amount));
+                float newDur = shooting.slowDuration <= 0f ? 2f : shooting.slowDuration + 1f;
+                return "Frenada " + Mathf.RoundToInt((1f - shooting.slowFactor) * 100f) + "% → " + Mathf.RoundToInt((1f - newFactor) * 100f) + "% (" + F(newDur, 0) + " s)";
+            }
+
+            case BoonType.DashDamage:
+            {
+                if (movement == null) return null;
+                DashDamage dd = movement.GetComponent<DashDamage>();
+                int cur = dd != null ? dd.damage : 0;
+                return "Dany del dash " + cur + " → " + (cur + r);
+            }
+
+            case BoonType.HealOnKills:
+                return killsPerHeal == 0
+                    ? "Cures 1 cor cada " + r + " clients"
+                    : "1 cor cada " + killsPerHeal + " → " + Mathf.Max(5, killsPerHeal - 3) + " clients";
+
+            case BoonType.ProjectileSpeed:
+                if (shooting == null) return null;
+                return "Velocitat dels projectils " + F(shooting.projectileSpeed, 0) + " → " + F(shooting.projectileSpeed + amount, 0);
+
+            case BoonType.Crit:
+                if (shooting == null) return null;
+                return "Crítics " + Mathf.RoundToInt(shooting.critChance * 100f) + "% → " + Mathf.RoundToInt(Mathf.Min(0.75f, shooting.critChance + amount) * 100f) + "% (×2 de dany)";
+
+            case BoonType.FlawlessHeal:
+                return "Cures " + Mathf.Max(1, r) + " cor en acabar una onada sense cops";
+
+            case BoonType.MoreChoices:
+                return "Cartes per oferta " + optionsPerOffer + " → " + Mathf.Min(5, optionsPerOffer + r);
+        }
+        return null;
+    }
+
     static string TagFor(Boon boon, out Color col)
     {
         if (boon.type2 != BoonType.None)
@@ -592,6 +808,8 @@ public class BoonManager : MonoBehaviour
             case BoonType.DashDamage:
             case BoonType.HealOnKills:
             case BoonType.MoreChoices:
+            case BoonType.Crit:
+            case BoonType.FlawlessHeal:
                 col = new Color(0.42f, 0.26f, 0.64f);
                 return "ESPECIALITAT";
         }
@@ -793,7 +1011,7 @@ public class BoonManager : MonoBehaviour
         float descTop = sepY + u * 4f;
         RectTransform descRt = MakeRect(card.transform, "Descripcio", Vector2.zero, Vector2.one,
             new Vector2(edge + pad, edge + pad + keyH + pad), new Vector2(-(edge + pad), -descTop));
-        Label(descRt, boon.description, descSize, TextAlignmentOptions.Top, InkSoft, false, true);
+        Label(descRt, DescribeBoon(boon), descSize, TextAlignmentOptions.Top, InkSoft, false, true);
 
         // la tecla per triar-lo (1, 2, 3...), com una tecla de teclat
         RectTransform keyRt = MakeFixed(card.transform, "Tecla", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
@@ -960,6 +1178,72 @@ public class BoonManager : MonoBehaviour
             ? "Cors plens"
             : "Curar " + healAmount + (healAmount > 1 ? " cors" : " cor") + " en lloc d'un plat (H)";
         healLabel.color = full ? new Color(0.62f, 0.62f, 0.62f, 1f) : Color.white;
+    }
+
+    void BuildRerollButton()
+    {
+        if (panel == null) BuildPanel();
+        if (panel == null) return;
+        if (rerollButton != null) return;
+
+        float sw = Mathf.Max(320f, Screen.width);
+        float sh = Mathf.Max(240f, Screen.height);
+        float u = PixelUnit();
+        float w = Mathf.Clamp(sw * 0.34f, 280f, 560f);
+        float h = Mathf.Clamp(sh * 0.08f, 46f, 80f);
+        float y = -sh * 0.30f - h * 1.2f; // just a sota del botó de curar
+
+        GameObject go = new GameObject("BotoCanviar", typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(panel.transform, false);
+
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(w, h);
+        rt.anchoredPosition = new Vector2(0f, y);
+
+        Image frame = go.GetComponent<Image>();
+        frame.color = Frame;
+
+        Image face = Box(rt, "Fons", new Color(0.25f, 0.36f, 0.55f, 1f), Vector2.zero, Vector2.one,
+            new Vector2(u, u), new Vector2(-u, -u));
+        Box(face.rectTransform, "Llum", new Color(1f, 1f, 1f, 0.18f), new Vector2(0f, 1f), Vector2.one,
+            new Vector2(0f, -u), Vector2.zero);
+
+        Button btn = go.GetComponent<Button>();
+        btn.targetGraphic = face;
+        ColorBlock colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+        colors.selectedColor = colors.highlightedColor;
+        colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+        colors.disabledColor = new Color(0.55f, 0.55f, 0.55f, 0.7f);
+        colors.fadeDuration = 0.08f;
+        btn.colors = colors;
+        btn.onClick.AddListener(TryReroll);
+
+        TextMeshProUGUI label = Label(face.rectTransform, "", Mathf.Clamp(h * 0.34f, 13f, 26f),
+            TextAlignmentOptions.Center, Color.white, true, true);
+
+        rerollButton = btn;
+        rerollLabel = label;
+    }
+
+    void RefreshRerollButton()
+    {
+        if (rerollButton == null || rerollLabel == null) return;
+
+        bool hidden = rerollsPerOffer <= 0;
+        rerollButton.gameObject.SetActive(!hidden);
+        if (hidden) return;
+
+        bool can = rerollsLeft > 0 && CanReroll();
+        rerollButton.interactable = can;
+        rerollLabel.text = rerollsLeft > 0
+            ? "Canviar les cartes (R) · " + rerollsLeft + (rerollsLeft > 1 ? " canvis" : " canvi")
+            : "Cap canvi restant";
+        rerollLabel.color = can ? Color.white : new Color(0.62f, 0.62f, 0.62f, 1f);
     }
 
     void ChooseHeal()

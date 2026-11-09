@@ -34,6 +34,7 @@ public class PlayerHealth : MonoBehaviour
         if (invulnerableWhileDashing && movement != null && movement.IsDashing) return;
 
         lives--;
+        if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa
         nextDamageTime = Time.time + invulnerabilityTime;
         OnLivesChanged?.Invoke(lives);
         CameraFX.Shake(0.18f, 0.16f);
@@ -44,7 +45,8 @@ public class PlayerHealth : MonoBehaviour
             WaveSpawner spawner = FindAnyObjectByType<WaveSpawner>();
             int wave = spawner != null ? spawner.currentWave : 0;
             int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
-            RunStats.Save(wave, points);
+            int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
+            RunStats.Save(wave, points, combo);
             SceneManager.LoadScene(SceneNames.GameOver);
         }
     }

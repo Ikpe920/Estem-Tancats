@@ -40,7 +40,6 @@ public class WaveSpawner : MonoBehaviour
 {
     public EnemyType[] enemyTypes;
     public Transform player;
-    public ShopManager shop;
 
     [Header("Boss")]
     public BossInfo[] bosses;
@@ -55,7 +54,7 @@ public class WaveSpawner : MonoBehaviour
     public float spawnRadius = 10f;
 
     [Header("Dificultat progressiva")]
-    public float healthPerWave = 0.14f;   // +14% de vida (sobre la base) a cada onada
+    public float healthPerWave = 0.18f;   // +14% de vida (sobre la base) a cada onada
     public float speedPerWave = 0.03f;    // +0,03 de velocitat a cada onada
 
     [Header("Actes")]
@@ -123,6 +122,14 @@ public class WaveSpawner : MonoBehaviour
                 yield return null;
             }
 
+            // bonus d'onada (doble si no t'han tocat)
+            if (ScoreManager.Instance != null)
+            {
+                PlayerHealth ph = FindAnyObjectByType<PlayerHealth>();
+                Vector2 at = ph != null ? (Vector2)ph.transform.position + Vector2.up * 1.2f : Vector2.zero;
+                ScoreManager.Instance.EndWave(currentWave, at);
+            }
+
             // petit descans perquè el jugador pugui respirar abans de triar un plat
             if (actManager != null)
                 yield return StartCoroutine(actManager.ShowRoundComplete(currentWave));
@@ -133,7 +140,8 @@ public class WaveSpawner : MonoBehaviour
             {
                 // guardem el resultat i anem a la pantalla de victòria
                 int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
-                RunStats.Save(currentWave, points);
+                int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
+                RunStats.Save(currentWave, points, combo);
                 SceneManager.LoadScene(SceneNames.Win);
                 yield break; // la partida s'acaba: no hi ha més onades
             }

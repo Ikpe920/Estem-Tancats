@@ -15,10 +15,13 @@ public class PlayerShooting : MonoBehaviour
     // efectes dels plats (els posa el BoonManager)
     public int extraShots = 0;        // projectils extra en ventall
     public float spreadAngle = 12f;   // graus entre projectils
+    [Range(0.2f, 1f)] public float sideShotDamage = 0.7f; // els projectils del ventall (no el central) fan aquesta part del dany
     public int pierce = 0;
     public float explosionRadius = 0f;
     public float slowFactor = 1f;
     public float slowDuration = 0f;
+    public float critChance = 0f;     // probabilitat de crític (0-1)
+    public float critMultiplier = 2f; // el dany d'un crític
 
     void Awake()
     {
@@ -59,6 +62,13 @@ public class PlayerShooting : MonoBehaviour
 
             Projectile proj = p.GetComponent<Projectile>();
             proj.damage += damage - 1; // dany del prefab + millores
+            bool isCenter = total % 2 == 1 && i == total / 2;
+            if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideShotDamage));
+            if (critChance > 0f && Random.value < critChance)
+            {
+                proj.damage = Mathf.RoundToInt(proj.damage * critMultiplier);
+                proj.isCrit = true;
+            }
             proj.pierce = pierce;
             proj.explosionRadius = explosionRadius;
             proj.slowFactor = slowFactor;

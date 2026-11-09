@@ -12,6 +12,7 @@ public class Projectile : MonoBehaviour
     [HideInInspector] public float explosionRadius = 0f;  // 0 = no explota
     [HideInInspector] public float slowFactor = 1f;       // 1 = no frena
     [HideInInspector] public float slowDuration = 0f;
+    [HideInInspector] public bool isCrit = false;        // tret crític: més gran i daurat
 
     private readonly HashSet<Enemy> alreadyHit = new HashSet<Enemy>();
 
@@ -21,11 +22,65 @@ public class Projectile : MonoBehaviour
 
         Rigidbody2D prb = GetComponent<Rigidbody2D>();
         if (prb != null) prb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        ApplyDishLook();
     }
+
+    // l'aspecte del projectil canvia segons els plats que has triat
+    void ApplyDishLook()
+    {
+        if (isCrit)
+        {
+            transform.localScale *= 1.35f;
+            foreach (SpriteRenderer csr in GetComponentsInChildren<SpriteRenderer>())
+                csr.color = Color.Lerp(csr.color, new Color(1f, 0.92f, 0.4f), 0.55f);
+        }
+
+        bool fire = explosionRadius > 0f;   // Calçots: foc
+        bool ice = slowDuration > 0f;       // Sorbet: tint blau
+        bool trail = pierce > 0;            // Bunyols: estela
+
+        Color tint = Color.white;
+        int n = 0;
+        Color sum = Color.black;
+        if (fire) { sum += new Color(1f, 0.5f, 0.15f); n++; }
+        if (ice) { sum += new Color(0.5f, 0.85f, 1f); n++; }
+        if (trail) { sum += new Color(1f, 0.92f, 0.65f); n++; }
+        if (n == 0) return;
+        tint = sum / n;
+        tint.a = 1f;
+
+        foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>())
+            sr.color = Color.Lerp(sr.color, tint, fire || ice ? 0.6f : 0.3f);
+
+        // estela: llarga amb Bunyols, curta amb foc o gel
+        if (trail || fire || ice)
+        {
+            TrailRenderer tr = gameObject.AddComponent<TrailRenderer>();
+            tr.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
+            tr.time = trail ? 0.3f : 0.15f;
+            tr.startWidth = trail ? 0.22f : 0.16f;
+            tr.endWidth = 0f;
+            tr.startColor = new Color(tint.r, tint.g, tint.b, 0.8f);
+            tr.endColor = new Color(tint.r, tint.g, tint.b, 0f);
+            tr.sortingOrder = 4;
+        }
+
+        // el foc batega una mica
+        if (fire) { flicker = true; baseScale = transform.localScale; }
+    }
+
+    private bool flicker;
+    private Vector3 baseScale = Vector3.one;
 
     void Update()
     {
         transform.Rotate(0f, 0f, spinSpeed * Time.deltaTime);
+        if (flicker)
+        {
+            float k = 1f + 0.12f * Mathf.Sin(Time.time * 40f);
+            transform.localScale = baseScale * k;
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
@@ -59,7 +114,7 @@ public class Projectile : MonoBehaviour
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
         if (e != null)
         {
-            e.Flash(Color.white, 0.12f);
+            e.Flash(isCrit ? new Color(1f, 0.9f, 0.3f) : Color.white, isCrit ? 0.2f : 0.12f);
         }
     }
 
@@ -85,7 +140,7 @@ public class Projectile : MonoBehaviour
         fx.transform.localScale = Vector3.one * explosionRadius * 2f;
         SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
         sr.sprite = SpriteFactory.Circle();
-        sr.color = new Color(1f, 0.55f, 0.1f, 0.5f);
+        sr.color = slowDuration > 0f ? new Color(0.75f, 0.55f, 0.35f, 0.5f) : new Color(1f, 0.55f, 0.1f, 0.5f);
         sr.sortingOrder = 5;
         Destroy(fx, 0.15f);
     }

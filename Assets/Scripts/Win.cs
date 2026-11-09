@@ -17,8 +17,8 @@ public class Win : MonoBehaviour
 
         // el resultat de la partida
         EndScreenUI.CreateText(canvas.transform, "Resultat",
-            "Has completat les " + RunStats.wave + " onades!\nPunts: " + RunStats.points, 36f,
-            new Vector2(0.5f, 0.50f), new Vector2(1100f, 160f), Color.white);
+            "Has completat les " + RunStats.wave + " onades!\nPunts: " + RunStats.points + RunStats.ExtraLines(), 36f,
+            new Vector2(0.5f, 0.50f), new Vector2(1100f, 220f), Color.white);
 
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
