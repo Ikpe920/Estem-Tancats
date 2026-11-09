@@ -29,7 +29,12 @@ public enum BoonType
     None,            // sense segon efecte
     ProjectileSpeed, // projectils més ràpids
     Crit,            // probabilitat de tret crític (×2 de dany)
-    FlawlessHeal     // cures un cor en acabar una onada sense rebre cap cop
+    FlawlessHeal,    // cures un cor en acabar una onada sense rebre cap cop
+    Ricochet,        // els trets reboten a les parets
+    Orbit,           // olives que giren al teu voltant i fan mal
+    HitWave,         // quan et toquen, una ona empeny i fa mal als clients de prop
+    DashRing,        // en fer el dash, llences projectils en cercle
+    KillBurst        // els clients de vegades esclaten en morir
 }
 
 [System.Serializable]
@@ -86,6 +91,11 @@ public class BoonManager : MonoBehaviour
         new[] { BoonType.Crit, BoonType.MultiShot },
         new[] { BoonType.Crit, BoonType.Explosive },
         new[] { BoonType.ProjectileSpeed, BoonType.Pierce },
+        new[] { BoonType.Ricochet, BoonType.Pierce },
+        new[] { BoonType.Orbit, BoonType.DashDamage },
+        new[] { BoonType.DashRing, BoonType.DashCooldown },
+        new[] { BoonType.HitWave, BoonType.Invulnerability },
+        new[] { BoonType.KillBurst, BoonType.Explosive },
     };
     private Button healButton;                 // l'opció de curar (en lloc d'un plat)
     private TextMeshProUGUI healLabel;
@@ -181,6 +191,16 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Botifarra amb mongetes", "Cada 12 clients que despatxis, cures 1 cor", BoonType.HealOnKills, 12f, new Color(0.75f, 0.5f, 0.4f), 5, 2),
             MakeBoon("Crema catalana", "Cures 1 cor en acabar una onada sense rebre cap cop", BoonType.FlawlessHeal, 1f, new Color(0.98f, 0.85f, 0.45f), 5, 1),
             MakeBoon("Menú de degustació", "A partir d'ara pots triar entre una carta més", BoonType.MoreChoices, 1f, new Color(0.85f, 0.7f, 0.9f), 3, 2),
+            MakeBoon("Mandonguilles", "Els trets reboten 1 cop a les parets", BoonType.Ricochet, 1f, new Color(0.7f, 0.42f, 0.28f), 6, 2),
+            MakeBoon("Olives farcides", "2 olives giren al teu voltant i fan mal als clients", BoonType.Orbit, 2f, new Color(0.55f, 0.7f, 0.3f), 5, 2),
+            MakeBoon("Romesco", "Quan et toquen, una ona empeny i fa mal als clients de prop", BoonType.HitWave, 1f, new Color(0.9f, 0.45f, 0.25f), 5, 1),
+            MakeBoon("Panellets", "En fer el dash, llences 6 panellets en cercle", BoonType.DashRing, 6f, new Color(0.92f, 0.8f, 0.55f), 5, 2),
+            MakeBoon("Coca de recapte", "Els clients tenen un 30% d'esclatar en morir", BoonType.KillBurst, 1f, new Color(0.85f, 0.6f, 0.35f), 5, 1),
+
+            // ---- plats de punts ----
+            MakeBoon("Safrà", "Guanyes un 25% més de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.7f, 0.2f), 6),
+            MakeBoon("Torrons de Xixona", "+150 punts ara mateix", BoonType.Score, 150f, new Color(0.9f, 0.8f, 0.6f), 5),
+            MakeBoon("Menú del dia", "Cures 1 cor i +75 punts", BoonType.Heal, 1f, new Color(0.4f, 0.6f, 0.45f), 5, 0, BoonType.Score, 75f),
 
             // ---- plats amb risc i recompensa ----
             MakeBoon("Xili amb carn", "+2 de dany, però els clients van un 15% més ràpids", BoonType.Damage, 2f, new Color(0.85f, 0.25f, 0.2f), 6, 0, BoonType.SlowEnemies, -0.15f),
@@ -299,6 +319,11 @@ public class BoonManager : MonoBehaviour
             case BoonType.ProjectileSpeed: return 2;
             case BoonType.Crit: return 3;
             case BoonType.FlawlessHeal: return 1;
+            case BoonType.Ricochet: return 2;
+            case BoonType.Orbit: return 2;
+            case BoonType.HitWave: return 1;
+            case BoonType.DashRing: return 2;
+            case BoonType.KillBurst: return 1;
             default: return 0; // sense topall (curar, punts...)
         }
     }
@@ -613,7 +638,37 @@ public class BoonManager : MonoBehaviour
             case BoonType.FlawlessHeal:
                 flawlessHeal += Mathf.RoundToInt(amount);
                 break;
+
+            case BoonType.Ricochet:
+                if (shooting != null) shooting.bounces += Mathf.RoundToInt(amount);
+                break;
+
+            case BoonType.Orbit:
+                if (movement != null) Ensure<OrbitingOlives>(movement.gameObject).AddOlives(Mathf.RoundToInt(amount));
+                break;
+
+            case BoonType.HitWave:
+                if (health != null) Ensure<RomescoWave>(health.gameObject);
+                break;
+
+            case BoonType.DashRing:
+                if (movement != null)
+                {
+                    PanelletsRing ring = Ensure<PanelletsRing>(movement.gameObject);
+                    ring.count += ring.count == 0 ? Mathf.RoundToInt(amount) : 3; // la segona còpia: +3
+                }
+                break;
+
+            case BoonType.KillBurst:
+                if (movement != null) Ensure<KillBurst>(movement.gameObject);
+                break;
         }
+    }
+
+    static T Ensure<T>(GameObject go) where T : Component
+    {
+        T c = go.GetComponent<T>();
+        return c != null ? c : go.AddComponent<T>();
     }
 
     void RefreshTakenText()
@@ -871,13 +926,37 @@ public class BoonManager : MonoBehaviour
 
             case BoonType.MoreChoices:
                 return "Cartes per oferta " + optionsPerOffer + " → " + Mathf.Min(5, optionsPerOffer + r);
+
+            case BoonType.Ricochet:
+                if (shooting == null) return null;
+                return "Rebots a les parets " + shooting.bounces + " → " + (shooting.bounces + r);
+
+            case BoonType.Orbit:
+            {
+                OrbitingOlives o = movement != null ? movement.GetComponent<OrbitingOlives>() : null;
+                int cur = o != null ? o.count : 0;
+                return "Olives que giren " + cur + " → " + (cur + r);
+            }
+
+            case BoonType.HitWave:
+                return "En rebre un cop: ona que empeny i fa 2 de mal";
+
+            case BoonType.DashRing:
+            {
+                PanelletsRing p = movement != null ? movement.GetComponent<PanelletsRing>() : null;
+                int cur = p != null ? p.count : 0;
+                return "Panellets per dash " + cur + " → " + (cur == 0 ? r : cur + 3);
+            }
+
+            case BoonType.KillBurst:
+                return "30% d'esclatar en morir (fa el teu dany al voltant)";
         }
         return null;
     }
 
     static string TagFor(Boon boon, out Color col)
     {
-        if (boon.type2 != BoonType.None)
+        if (boon.type2 != BoonType.None && boon.amount2 < 0f) // el segon efecte és dolent
         {
             col = new Color(0.72f, 0.16f, 0.14f);
             return "AMB RISC";
@@ -894,6 +973,11 @@ public class BoonManager : MonoBehaviour
             case BoonType.MoreChoices:
             case BoonType.Crit:
             case BoonType.FlawlessHeal:
+            case BoonType.Ricochet:
+            case BoonType.Orbit:
+            case BoonType.HitWave:
+            case BoonType.DashRing:
+            case BoonType.KillBurst:
                 col = new Color(0.42f, 0.26f, 0.64f);
                 return "ESPECIALITAT";
         }

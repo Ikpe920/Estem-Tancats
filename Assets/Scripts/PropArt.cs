@@ -377,7 +377,19 @@ public static class PropArt
         return bigTray = c.ToSprite();
     }
 
-    static Sprite crown;
+    static Sprite crown, olive;
+
+    // oliva verda farcida de pebrot (Olives farcides)
+    public static Sprite Olive()
+    {
+        if (olive != null) return olive;
+        PixelCanvas c = new PixelCanvas(14, 12);
+        c.Ellipse(7, 6, 5, 4, new Color(0.45f, 0.58f, 0.2f));
+        c.Ellipse(6, 7, 3, 2, new Color(0.62f, 0.75f, 0.32f));
+        c.Ellipse(10, 6, 1, 1, new Color(0.85f, 0.2f, 0.18f));
+        c.OutlineAround(Outline);
+        return olive = c.ToSprite();
+    }
 
     // corona daurada amb pedres (el client VIP)
     public static Sprite Crown()

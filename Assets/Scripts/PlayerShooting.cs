@@ -20,6 +20,7 @@ public class PlayerShooting : MonoBehaviour
     public float spreadAngle = 12f;   // graus entre projectils
     [Range(0.2f, 1f)] public float sideShotDamage = 0.7f; // els projectils del ventall (no el central) fan aquesta part del dany
     public int pierce = 0;
+    public int bounces = 0;           // rebots a les parets (Mandonguilles)
     public float explosionRadius = 0f;
     public float slowFactor = 1f;
     public float slowDuration = 0f;
@@ -129,6 +130,7 @@ public class PlayerShooting : MonoBehaviour
                 anyCrit = true;
             }
             proj.pierce = pierce;
+            proj.bounces = bounces;
             proj.explosionRadius = explosionRadius;
             proj.slowFactor = slowFactor;
             proj.slowDuration = slowDuration;
