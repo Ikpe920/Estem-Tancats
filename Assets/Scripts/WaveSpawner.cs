@@ -121,6 +121,7 @@ public class WaveSpawner : MonoBehaviour
             // potser és una onada especial (hora punta, tall de llum, client VIP...)
             WaveEvents.Begin(WaveEvents.Roll(currentWave, isBossWave, actManager != null ? actManager.currentAct : 0), this);
             count = WaveEvents.AdjustCount(count);
+            count = Mathf.Max(1, Mathf.RoundToInt(count * Progression.EnemyCountMul)); // dificultat
 
             if (isBossWave)
             {
@@ -165,6 +166,7 @@ public class WaveSpawner : MonoBehaviour
                 Vector2 at = ph != null ? (Vector2)ph.transform.position + Vector2.up * 1.2f : Vector2.zero;
                 ScoreManager.Instance.EndWave(currentWave, at);
             }
+            Progression.OnWaveCleared(currentWave, finalWave, endless);
 
             // petit descans perquè el jugador pugui respirar abans de triar un plat
             if (actManager != null)
@@ -390,7 +392,9 @@ public class WaveSpawner : MonoBehaviour
             speedBonus += act.enemySpeedBonus;
         }
 
+        healthMul *= Progression.EnemyHealthMul; // dificultat triada
         e.ApplyActDifficulty(healthMul, speedBonus);
+        e.speed *= Progression.EnemySpeedMul;
 
         // els tiradors disparen més sovint a les onades altes
         if (e.isShooter)
@@ -427,6 +431,10 @@ public class WaveSpawner : MonoBehaviour
 
         // mida
         if (info.scale > 0f) b.transform.localScale = Vector3.one * info.scale;
+
+        // dificultat triada
+        if (e != null && !Mathf.Approximately(Progression.EnemyHealthMul, 1f))
+            e.OverrideStats(Mathf.RoundToInt(e.maxHealth * Progression.EnemyHealthMul), e.speed);
 
         // mode infinit: a cada volta (cada 25 onades) els caps tornen més forts
         int loop = finalWave > 0 ? (currentWave - 1) / finalWave : 0;

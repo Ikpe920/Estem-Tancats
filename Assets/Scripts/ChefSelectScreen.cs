@@ -7,13 +7,16 @@ using UnityEngine.UI;
 using TMPro;
 
 // Pantalla per triar el xef (surt en prémer Jugar al menú principal).
-// Clica una carta (o fes servir les fletxes, 1-4 o el comandament) i prem Començar (o Enter).
+//  - Clica una carta (o fletxes / 1-4 / comandament) i prem Començar (o Enter).
+//  - Els xefs bloquejats es compren amb propines: tria'l i prem Començar per comprar-lo.
+//  - A sota es tria la dificultat (Tab o LB/RB), i el botó Reptes mostra la llista de reptes.
 public class ChefSelectScreen : MonoBehaviour
 {
     static readonly Color Frame = new Color(0.16f, 0.11f, 0.13f, 1f);
     static readonly Color Paper = new Color(0.96f, 0.92f, 0.82f, 1f);
     static readonly Color Ink = new Color(0.24f, 0.15f, 0.12f, 1f);
     static readonly Color Gold = new Color(1f, 0.8f, 0.3f, 1f);
+    static readonly Color Locked = new Color(0.35f, 0.32f, 0.36f, 1f);
     static readonly string[] Dirs = { "Down", "Left", "Up", "Right" }; // el xef triat dona voltes
 
     public static bool IsOpen { get; private set; }
@@ -25,11 +28,21 @@ public class ChefSelectScreen : MonoBehaviour
     private int turn;
     private bool done;
 
+    private TextMeshProUGUI tipsText;
+    private TextMeshProUGUI messageText;
+    private float messageUntil;
+    private TextMeshProUGUI startLabel;
+    private readonly Image[] diffButtons = new Image[3];
+    private TextMeshProUGUI diffHint;
+    private GameObject challengesPanel;
+
     class Card
     {
         public RectTransform root;
         public Image frame;
         public Image portrait;
+        public GameObject lockBand;
+        public TextMeshProUGUI lockText;
         public Sprite[] sprites = new Sprite[4];
     }
 
@@ -48,6 +61,7 @@ public class ChefSelectScreen : MonoBehaviour
         selected = ChefRoster.Selected;
         Build();
         Select(selected);
+        RefreshAll();
         // que la tecla Enter no premi també el botó del menú que hi ha a sota
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
@@ -60,6 +74,16 @@ public class ChefSelectScreen : MonoBehaviour
 
         Keyboard kb = Keyboard.current;
         Gamepad pad = Gamepad.current;
+
+        // amb la llista de reptes oberta, qualsevol tecla de tornar la tanca
+        if (challengesPanel != null && challengesPanel.activeSelf)
+        {
+            if ((kb != null && (kb.escapeKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame)) ||
+                (pad != null && (pad.buttonEast.wasPressedThisFrame || pad.buttonSouth.wasPressedThisFrame || pad.buttonNorth.wasPressedThisFrame)))
+                ShowChallenges(false);
+            return;
+        }
+
         if (kb != null)
         {
             if (kb.leftArrowKey.wasPressedThisFrame || kb.aKey.wasPressedThisFrame) Select(selected - 1);
@@ -68,6 +92,8 @@ public class ChefSelectScreen : MonoBehaviour
             if (kb.digit2Key.wasPressedThisFrame) Select(1);
             if (kb.digit3Key.wasPressedThisFrame) Select(2);
             if (kb.digit4Key.wasPressedThisFrame) Select(3);
+            if (kb.tabKey.wasPressedThisFrame) SetDifficulty(((int)Progression.Difficulty + 1) % 3);
+            if (kb.rKey.wasPressedThisFrame) ShowChallenges(true);
             if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) Confirm();
             if (kb.escapeKey.wasPressedThisFrame) Close();
         }
@@ -75,6 +101,9 @@ public class ChefSelectScreen : MonoBehaviour
         {
             if (pad.dpad.left.wasPressedThisFrame) Select(selected - 1);
             if (pad.dpad.right.wasPressedThisFrame) Select(selected + 1);
+            if (pad.leftShoulder.wasPressedThisFrame) SetDifficulty(Mathf.Max(0, (int)Progression.Difficulty - 1));
+            if (pad.rightShoulder.wasPressedThisFrame) SetDifficulty(Mathf.Min(2, (int)Progression.Difficulty + 1));
+            if (pad.buttonNorth.wasPressedThisFrame) ShowChallenges(true);
             if (pad.buttonSouth.wasPressedThisFrame || pad.startButton.wasPressedThisFrame) Confirm();
             if (pad.buttonEast.wasPressedThisFrame) Close();
         }
@@ -94,6 +123,8 @@ public class ChefSelectScreen : MonoBehaviour
             Transform t = cards[i].root;
             t.localScale = Vector3.one * Mathf.Lerp(t.localScale.x, target, Time.unscaledDeltaTime * 12f);
         }
+
+        if (messageText != null && Time.unscaledTime > messageUntil) messageText.text = "";
     }
 
     void Select(int i)
@@ -107,11 +138,26 @@ public class ChefSelectScreen : MonoBehaviour
             cards[k].frame.color = k == selected ? Gold : Frame;
             if (cards[k].sprites[0] != null) cards[k].portrait.sprite = cards[k].sprites[0];
         }
+        RefreshStartLabel();
     }
 
+    // Començar: si el xef està bloquejat, primer es compra
     void Confirm()
     {
         if (done) return;
+
+        if (!Progression.IsChefUnlocked(selected))
+        {
+            int price = Progression.ChefPrice(selected);
+            if (Progression.BuyChef(selected))
+            {
+                Say("Has desbloquejat " + ChefRoster.All[selected].name + "!", new Color(0.55f, 1f, 0.6f));
+                RefreshAll();
+            }
+            else Say("Et falten " + (price - Progression.Tips) + " propines", new Color(1f, 0.55f, 0.5f));
+            return;
+        }
+
         done = true;
         ChefRoster.Selected = selected;
         Action a = onConfirm;
@@ -123,6 +169,50 @@ public class ChefSelectScreen : MonoBehaviour
     {
         done = true;
         Destroy(gameObject);
+    }
+
+    void SetDifficulty(int d)
+    {
+        Progression.Difficulty = (Difficulty)Mathf.Clamp(d, 0, 2);
+        RefreshDifficulty();
+    }
+
+    void Say(string text, Color color)
+    {
+        messageText.text = text;
+        messageText.color = color;
+        messageUntil = Time.unscaledTime + 2.5f;
+    }
+
+    // ---------- REFRESCAR ----------
+
+    void RefreshAll()
+    {
+        tipsText.text = "Propines: <b>" + Progression.Tips + "</b>   ·   Reptes: " + Progression.DoneCount() + "/" + Progression.Challenges.Length;
+        for (int i = 0; i < cards.Count; i++)
+        {
+            bool unlocked = Progression.IsChefUnlocked(i);
+            cards[i].lockBand.SetActive(!unlocked);
+            cards[i].portrait.color = unlocked ? Color.white : new Color(0.25f, 0.22f, 0.25f, 1f); // silueta fosca
+            if (!unlocked) cards[i].lockText.text = "BLOQUEJAT · " + Progression.ChefPrice(i) + " propines";
+        }
+        RefreshStartLabel();
+        RefreshDifficulty();
+    }
+
+    void RefreshStartLabel()
+    {
+        if (startLabel == null) return;
+        startLabel.text = Progression.IsChefUnlocked(selected) ? "Començar" : "Comprar (" + Progression.ChefPrice(selected) + ")";
+    }
+
+    void RefreshDifficulty()
+    {
+        int d = (int)Progression.Difficulty;
+        Color[] on = { new Color(0.3f, 0.6f, 0.35f), new Color(0.75f, 0.6f, 0.2f), new Color(0.75f, 0.25f, 0.22f) };
+        for (int i = 0; i < 3; i++)
+            if (diffButtons[i] != null) diffButtons[i].color = i == d ? on[i] : new Color(0.28f, 0.26f, 0.3f);
+        if (diffHint != null) diffHint.text = Progression.DifficultyHint(Progression.Difficulty);
     }
 
     // ---------- LA INTERFÍCIE ----------
@@ -143,20 +233,40 @@ public class ChefSelectScreen : MonoBehaviour
         RectTransform bg = Rect(canvasGo.transform, "Fons", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         bg.gameObject.AddComponent<Image>().color = new Color(0.06f, 0.04f, 0.06f, 0.94f);
 
-        EndScreenUI.CreateText(bg, "Titol", "TRIA EL TEU XEF", 84f, new Vector2(0.5f, 0.88f), new Vector2(1400f, 120f), Gold, true);
+        EndScreenUI.CreateText(bg, "Titol", "TRIA EL TEU XEF", 76f, new Vector2(0.5f, 0.92f), new Vector2(1400f, 110f), Gold, true);
+        tipsText = EndScreenUI.CreateText(bg, "Propines", "", 32f, new Vector2(0.5f, 0.845f), new Vector2(1400f, 50f), new Color(1f, 0.92f, 0.7f));
+        tipsText.raycastTarget = false;
 
         int n = ChefRoster.All.Length;
         for (int i = 0; i < n; i++)
-        {
-            float x = (i + 0.5f) / n;
-            cards.Add(BuildCard(bg, i, new Vector2(Mathf.Lerp(0.14f, 0.86f, n > 1 ? (float)i / (n - 1) : 0.5f), 0.5f)));
-        }
+            cards.Add(BuildCard(bg, i, new Vector2(Mathf.Lerp(0.14f, 0.86f, n > 1 ? (float)i / (n - 1) : 0.5f), 0.53f)));
 
-        EndScreenUI.CreateButton(bg, "Enrere", new Vector2(0.38f, 0.1f), new Vector2(300f, 76f), new Color(0.30f, 0.30f, 0.35f), Close);
-        EndScreenUI.CreateButton(bg, "Començar", new Vector2(0.62f, 0.1f), new Vector2(300f, 76f), new Color(0.20f, 0.45f, 0.25f), Confirm);
-        TextMeshProUGUI help = EndScreenUI.CreateText(bg, "Ajuda", "← → o 1-4 per triar  ·  Enter per començar  ·  Esc per tornar",
-            26f, new Vector2(0.5f, 0.19f), new Vector2(1400f, 50f), new Color(0.85f, 0.78f, 0.65f));
+        // dificultat
+        string[] names = { "Fàcil", "Normal", "Difícil" };
+        for (int d = 0; d < 3; d++)
+        {
+            int captured = d;
+            Button b = EndScreenUI.CreateButton(bg, names[d], new Vector2(0.4f + d * 0.1f, 0.215f), new Vector2(180f, 54f),
+                new Color(0.28f, 0.26f, 0.3f), () => SetDifficulty(captured));
+            diffButtons[d] = b.GetComponent<Image>();
+        }
+        TextMeshProUGUI dl = EndScreenUI.CreateText(bg, "Dificultat", "Dificultat:", 28f, new Vector2(0.29f, 0.215f), new Vector2(240f, 54f), new Color(0.85f, 0.78f, 0.65f));
+        dl.raycastTarget = false;
+        diffHint = EndScreenUI.CreateText(bg, "PistaDificultat", "", 24f, new Vector2(0.5f, 0.165f), new Vector2(1200f, 40f), new Color(0.85f, 0.78f, 0.65f));
+        diffHint.raycastTarget = false;
+
+        EndScreenUI.CreateButton(bg, "Enrere", new Vector2(0.32f, 0.085f), new Vector2(260f, 70f), new Color(0.30f, 0.30f, 0.35f), Close);
+        EndScreenUI.CreateButton(bg, "Reptes", new Vector2(0.5f, 0.085f), new Vector2(260f, 70f), new Color(0.25f, 0.35f, 0.50f), () => ShowChallenges(true));
+        Button start = EndScreenUI.CreateButton(bg, "Començar", new Vector2(0.68f, 0.085f), new Vector2(260f, 70f), new Color(0.20f, 0.45f, 0.25f), Confirm);
+        startLabel = start.GetComponentInChildren<TextMeshProUGUI>();
+
+        messageText = EndScreenUI.CreateText(bg, "Missatge", "", 30f, new Vector2(0.5f, 0.27f), new Vector2(1200f, 50f), Color.white, true);
+        messageText.raycastTarget = false;
+        TextMeshProUGUI help = EndScreenUI.CreateText(bg, "Ajuda", "← → triar  ·  Tab dificultat  ·  R reptes  ·  Enter començar  ·  Esc tornar",
+            22f, new Vector2(0.5f, 0.025f), new Vector2(1500f, 36f), new Color(0.7f, 0.64f, 0.55f));
         help.raycastTarget = false;
+
+        BuildChallenges(canvasGo.transform);
     }
 
     Card BuildCard(Transform parent, int index, Vector2 anchor)
@@ -171,7 +281,7 @@ public class ChefSelectScreen : MonoBehaviour
         RectTransform rt = go.GetComponent<RectTransform>();
         rt.anchorMin = rt.anchorMax = anchor;
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.sizeDelta = new Vector2(380f, 560f);
+        rt.sizeDelta = new Vector2(380f, 520f);
         c.root = rt;
         c.frame = go.GetComponent<Image>();
         c.frame.color = Frame;
@@ -188,29 +298,83 @@ public class ChefSelectScreen : MonoBehaviour
         faceImg.raycastTarget = false;
 
         // franja de color del xef, a dalt, amb el retrat a sobre
-        RectTransform band = Rect(face, "Franja", new Vector2(0f, 1f), Vector2.one, new Vector2(0f, -250f), Vector2.zero);
+        RectTransform band = Rect(face, "Franja", new Vector2(0f, 1f), Vector2.one, new Vector2(0f, -230f), Vector2.zero);
         Image bandImg = band.gameObject.AddComponent<Image>();
         bandImg.color = chef.color;
         bandImg.raycastTarget = false;
 
         RectTransform port = Rect(face, "Retrat", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), Vector2.zero, Vector2.zero);
         port.pivot = new Vector2(0.5f, 1f);
-        port.sizeDelta = new Vector2(240f, 240f);
-        port.anchoredPosition = new Vector2(0f, -10f);
+        port.sizeDelta = new Vector2(220f, 220f);
+        port.anchoredPosition = new Vector2(0f, -8f);
         c.portrait = port.gameObject.AddComponent<Image>();
         c.portrait.sprite = c.sprites[0];
         c.portrait.preserveAspect = true;
         c.portrait.raycastTarget = false;
 
         // nom, punt fort i punt feble
-        Label(face, chef.name, 40f, new Vector2(0.5f, 1f), new Vector2(0f, -290f), new Vector2(340f, 56f), Ink, true);
-        Label(face, "<color=#2E8B3E>+</color> " + chef.strong, 26f, new Vector2(0.5f, 1f), new Vector2(0f, -375f), new Vector2(330f, 100f), Ink, false);
-        Label(face, "<color=#B8352F>−</color> " + chef.weak, 26f, new Vector2(0.5f, 1f), new Vector2(0f, -470f), new Vector2(330f, 100f), new Color(0.45f, 0.33f, 0.26f), false);
+        Label(face, chef.name, 38f, new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(340f, 52f), Ink, true);
+        Label(face, "<color=#2E8B3E>+</color> " + chef.strong, 25f, new Vector2(0.5f, 1f), new Vector2(0f, -345f), new Vector2(330f, 90f), Ink, false);
+        Label(face, "<color=#B8352F>−</color> " + chef.weak, 25f, new Vector2(0.5f, 1f), new Vector2(0f, -435f), new Vector2(330f, 90f), new Color(0.45f, 0.33f, 0.26f), false);
 
         // la tecla per triar-lo
         Label(face, (index + 1).ToString(), 28f, new Vector2(0f, 1f), new Vector2(28f, -26f), new Vector2(40f, 40f), Ink, true);
+
+        // franja de "bloquejat" amb el preu, a sobre del retrat
+        RectTransform lockRt = Rect(face, "Bloquejat", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -150f), new Vector2(0f, -95f));
+        Image lockImg = lockRt.gameObject.AddComponent<Image>();
+        lockImg.color = new Color(Locked.r, Locked.g, Locked.b, 0.92f);
+        lockImg.raycastTarget = false;
+        c.lockBand = lockRt.gameObject;
+        GameObject lt = new GameObject("Text", typeof(RectTransform));
+        lt.transform.SetParent(lockRt, false);
+        RectTransform ltr = lt.GetComponent<RectTransform>();
+        ltr.anchorMin = Vector2.zero; ltr.anchorMax = Vector2.one; ltr.offsetMin = ltr.offsetMax = Vector2.zero;
+        c.lockText = lt.AddComponent<TextMeshProUGUI>();
+        if (TMP_Settings.defaultFontAsset != null) c.lockText.font = TMP_Settings.defaultFontAsset;
+        c.lockText.fontSize = 26f;
+        c.lockText.fontStyle = FontStyles.Bold;
+        c.lockText.alignment = TextAlignmentOptions.Center;
+        c.lockText.color = Gold;
+        c.lockText.raycastTarget = false;
         return c;
     }
+
+    // ---------- LA LLISTA DE REPTES ----------
+
+    void BuildChallenges(Transform canvas)
+    {
+        RectTransform panel = Rect(canvas, "Reptes", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        panel.gameObject.AddComponent<Image>().color = new Color(0.05f, 0.03f, 0.05f, 0.97f);
+        challengesPanel = panel.gameObject;
+
+        EndScreenUI.CreateText(panel, "Titol", "REPTES", 72f, new Vector2(0.5f, 0.91f), new Vector2(1000f, 100f), Gold, true);
+
+        float y = 0.79f;
+        foreach (Progression.Challenge ch in Progression.Challenges)
+        {
+            RectTransform row = Rect(panel, "Repte " + ch.id, new Vector2(0.18f, y), new Vector2(0.82f, y), new Vector2(0f, -30f), new Vector2(0f, 30f));
+            Image rowBg = row.gameObject.AddComponent<Image>();
+            rowBg.raycastTarget = false;
+            TextMeshProUGUI t = Label(row, "", 26f, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 56f), Color.white, false);
+            t.alignment = TextAlignmentOptions.Left;
+            t.enableAutoSizing = false;
+            row.gameObject.AddComponent<ChallengeRow>().Init(ch, rowBg, t);
+            y -= 0.066f;
+        }
+
+        EndScreenUI.CreateButton(panel, "Tornar", new Vector2(0.5f, 0.08f), new Vector2(260f, 70f), new Color(0.30f, 0.30f, 0.35f), () => ShowChallenges(false));
+        challengesPanel.SetActive(false);
+    }
+
+    void ShowChallenges(bool show)
+    {
+        if (challengesPanel == null) return;
+        challengesPanel.SetActive(show);
+        if (show) foreach (ChallengeRow r in challengesPanel.GetComponentsInChildren<ChallengeRow>()) r.Refresh();
+    }
+
+    // ---------- AJUDES ----------
 
     static RectTransform Rect(Transform parent, string name, Vector2 aMin, Vector2 aMax, Vector2 offMin, Vector2 offMax)
     {
@@ -224,7 +388,7 @@ public class ChefSelectScreen : MonoBehaviour
         return rt;
     }
 
-    static void Label(Transform parent, string text, float size, Vector2 anchor, Vector2 pos, Vector2 box, Color color, bool bold)
+    static TextMeshProUGUI Label(Transform parent, string text, float size, Vector2 anchor, Vector2 pos, Vector2 box, Color color, bool bold)
     {
         GameObject go = new GameObject("Text", typeof(RectTransform));
         go.transform.SetParent(parent, false);
@@ -244,5 +408,34 @@ public class ChefSelectScreen : MonoBehaviour
         t.alignment = TextAlignmentOptions.Center;
         t.color = color;
         t.raycastTarget = false;
+        return t;
+    }
+}
+
+// una fila de la llista de reptes: nom, què cal fer, el progrés i la recompensa
+public class ChallengeRow : MonoBehaviour
+{
+    private Progression.Challenge challenge;
+    private Image bg;
+    private TextMeshProUGUI text;
+
+    public void Init(Progression.Challenge c, Image background, TextMeshProUGUI label)
+    {
+        challenge = c;
+        bg = background;
+        text = label;
+        Refresh();
+    }
+
+    public void Refresh()
+    {
+        if (challenge == null) return;
+        bool done = Progression.IsDone(challenge);
+        bg.color = done ? new Color(0.18f, 0.36f, 0.22f, 0.9f) : new Color(0.2f, 0.17f, 0.2f, 0.9f);
+        string progress = "";
+        if (!done && challenge.goal > 0 && challenge.progress != null)
+            progress = "  <color=#C9B98F>(" + Mathf.Min(challenge.progress(), challenge.goal) + "/" + challenge.goal + ")</color>";
+        string state = done ? "<color=#8FE39B><b>FET</b></color>" : "<color=#FFD24D>+" + challenge.reward + "</color>";
+        text.text = "   " + state + "   <b>" + challenge.name + "</b> — " + challenge.desc + progress;
     }
 }

@@ -83,7 +83,9 @@ public static class ChefRoster
     {
         if (scene.name != SceneNames.Game) return;
 
-        Chef c = All[Selected];
+        // un xef bloquejat no es pot fer servir (per si de cas): el Xef
+        int index = Progression.IsChefUnlocked(Selected) ? Selected : 0;
+        Chef c = All[index];
         PlayerMovement m = PlayerRef.Movement;
         PlayerShooting s = PlayerRef.Shooting;
         PlayerHealth h = PlayerRef.Health;
@@ -103,5 +105,8 @@ public static class ChefRoster
         }
 
         c.apply?.Invoke(m, s, h);
+
+        // en FÀCIL, un cor més
+        if (h != null && Progression.ExtraHearts > 0) h.SetMaxLives(h.maxLives + Progression.ExtraHearts);
     }
 }

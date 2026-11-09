@@ -471,6 +471,7 @@ public class BoonManager : MonoBehaviour
     void ActivateSet(SetBonus s)
     {
         SetBonuses.Activate(s.id);
+        Progression.OnSetCompleted();
 
         // efectes que es posen una sola vegada, en activar-se
         if (s.id == SetId.Dart && shooting != null) shooting.pierce += 1;
