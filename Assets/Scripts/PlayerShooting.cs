@@ -79,6 +79,12 @@ public class PlayerShooting : MonoBehaviour
 
         Mouse mouse = Mouse.current;
         if (DebugMode.MouseOverPanel) return false; // no disparar en clicar el quadre del mode de prova
+        if (PauseMenu.SuppressMouseFire)
+        {
+            // el clic de "Continuar" encara està premut: esperem que el deixi anar
+            if (mouse == null || !mouse.leftButton.isPressed) PauseMenu.SuppressMouseFire = false;
+            return false;
+        }
         if (mouse != null && mouse.leftButton.isPressed && cam != null)
         {
             Vector2 mouseWorld = cam.ScreenToWorldPoint(mouse.position.ReadValue());
