@@ -230,8 +230,8 @@ public class Enemy : MonoBehaviour
     [Header("Esquivar obstacles")]
     public float avoidLookAhead = 1.4f;   // fins on miren endavant (unitats)
 
-    static readonly RaycastHit2D[] castHits = new RaycastHit2D[8];
-    static readonly Dictionary<int, bool> obstacleCache = new Dictionary<int, bool>(); // col·lisionador -> és obstacle?
+    static readonly List<RaycastHit2D> castHits = new List<RaycastHit2D>(8);
+    static readonly Dictionary<Collider2D, bool> obstacleCache = new Dictionary<Collider2D, bool>(); // col·lisionador -> és obstacle?
 
     private float bodyRadius = -1f;
     private int avoidSide;              // per quin costat el voregem (1 o -1), perquè no dubti a cada pas
@@ -301,11 +301,10 @@ public class Enemy : MonoBehaviour
         if (c == null || c.isTrigger) return false;
         if (c.attachedRigidbody != null && c.attachedRigidbody == rb) return false; // ell mateix
 
-        int id = c.GetInstanceID();
-        if (obstacleCache.TryGetValue(id, out bool cached)) return cached;
+        if (obstacleCache.TryGetValue(c, out bool cached)) return cached;
 
         bool obstacle = c.GetComponentInParent<Enemy>() == null && c.GetComponentInParent<PlayerHealth>() == null;
-        obstacleCache[id] = obstacle;
+        obstacleCache[c] = obstacle;
         return obstacle;
     }
 
