@@ -49,6 +49,7 @@ public class PlayerMovement : MonoBehaviour
 
     void Awake()
     {
+        if (GetComponent<WalkAnimator>() == null) gameObject.AddComponent<WalkAnimator>(); // animació de caminar
         rb = GetComponent<Rigidbody2D>();
         // la física va a 50 Hz i la pantalla a més: sense interpolació el jugador va a tirones
         if (rb != null) rb.interpolation = RigidbodyInterpolation2D.Interpolate;

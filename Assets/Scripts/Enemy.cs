@@ -75,6 +75,7 @@ public class Enemy : MonoBehaviour
 
     void Awake()
     {
+        if (GetComponent<WalkAnimator>() == null) gameObject.AddComponent<WalkAnimator>(); // animació de caminar
         rb = GetComponent<Rigidbody2D>();
         if (rb != null) rb.interpolation = RigidbodyInterpolation2D.Interpolate; // moviment suau
         health = maxHealth;
