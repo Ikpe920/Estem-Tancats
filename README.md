@@ -7,6 +7,17 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 - Entre onades tries un **plat** (millora). Si en combines alguns, completes **conjunts** amb efectes especials.
 - Les **ratxes** (encadenar clients sense que et toquin) multipliquen els punts. El rècord es guarda.
 
+### Xefs
+
+En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la propera partida.
+
+| Xef | Punt fort | Punt feble |
+|---|---|---|
+| El Xef | equilibrat | cap |
+| El Carnisser | 4 cors i +1 de dany | més lent i dispara més a poc a poc |
+| El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
+| El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
+
 ### Clients especials
 
 A partir de certes onades, alguns clients surten amb un comportament propi:
@@ -57,7 +68,7 @@ Assets/
   Scenes/      MainMenu → Story → Game → GameOver / Win
   Scripts/     tot el codi del joc (una classe per fitxer)
   Prefabs/     clients, caps i projectils
-  Resources/   fons dels actes (Actes/) i imatges dels plats (Dishes/)
+  Resources/   fons dels actes (Actes/), plats (Dishes/), xefs (Chefs/) i clients especials (Enemies/)
   Sprites/     la resta de gràfics
 ```
 
@@ -70,6 +81,7 @@ Scripts principals:
 - `PlayerMovement`, `PlayerShooting` i `PlayerHealth`: el xef. `PlayerRef` dona accés ràpid al jugador des de qualsevol script.
 - `Enemy`: els clients. `EnemyVariants` en fa els clients especials. Els caps hi afegeixen `BossMelee`, `BossCharger`, `BossSummoner`, `BossTeleporter` o `BossPhases`.
 - `ScoreManager` i `RunStats`: els punts, les ratxes i el rècord.
+- `ChefRoster` i `ChefSelectScreen`: els xefs que es poden triar i la pantalla per triar-los.
 - `PauseMenu`, `TutorialHints`, `OffscreenIndicators`, `DebugMode`, `HitStop` i `CameraFX`: es creen sols o es criden des de qualsevol lloc. No cal posar-los a cap escena.
 
 Els noms de les escenes són a `SceneNames.cs`. Si en reanomenes una, canvia-la allà i a la llista del build.
