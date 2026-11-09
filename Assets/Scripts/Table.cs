@@ -79,7 +79,8 @@ public class Table : MonoBehaviour
         if (!near) return;
 
         // l'avís diu la tecla o el botó, segons amb què es jugui
-        prompt.text = (GamepadInput.UsingGamepad ? GamepadInput.West() : "E") + " · Bolcar";
+        string text = (GamepadInput.UsingGamepad ? GamepadInput.West() : "E") + " · Bolcar";
+        if (prompt.text != text) prompt.text = text; // només si canvia (refer el text cada fotograma el feia tremolar)
 
         Keyboard kb = Keyboard.current;
         Gamepad pad = Gamepad.current;
