@@ -363,24 +363,7 @@ public static class PropArt
 
     // ---------- ACCESSORIS DELS CLIENTS ESPECIALS ----------
 
-    static Sprite bib, bigTray, waiterTray, cooker;
-
-    // tovalló de pitet, blanc amb la vora vermella (el Golafre)
-    public static Sprite Bib()
-    {
-        if (bib != null) return bib;
-        PixelCanvas c = new PixelCanvas(18, 16);
-        for (int y = 0; y < 16; y++)
-        {
-            int half = Mathf.RoundToInt(Mathf.Lerp(1f, 8.5f, y / 15f)); // triangle amb la punta avall
-            for (int x = 9 - half; x < 9 + half; x++) c.Set(x, y, ClothWhite);
-        }
-        c.Rect(1, 13, 16, 2, ClothRed);
-        c.Set(9, 4, ClothRed);
-        c.Set(9, 8, ClothRed);
-        c.OutlineAround(Outline);
-        return bib = c.ToSprite();
-    }
+    static Sprite bigTray;
 
     // safata gran de metall, vista de cantell (l'Escut): fa de paret pel davant
     public static Sprite BigTray()
@@ -392,36 +375,6 @@ public static class PropArt
         c.Rect(3, 4, 2, 30, new Color(0.85f, 0.86f, 0.9f)); // reflex
         c.OutlineAround(Outline);
         return bigTray = c.ToSprite();
-    }
-
-    // safata petita amb un got d'aigua, a sobre del cap (el Cambrer)
-    public static Sprite WaiterTray()
-    {
-        if (waiterTray != null) return waiterTray;
-        PixelCanvas c = new PixelCanvas(22, 16);
-        c.Ellipse(11, 4, 10, 3, Metal);
-        c.Ellipse(11, 5, 9, 2, new Color(0.8f, 0.82f, 0.86f));
-        // got amb aigua
-        c.Rect(8, 6, 6, 9, new Color(0.75f, 0.9f, 1f, 1f));
-        c.Rect(8, 6, 6, 5, new Color(0.35f, 0.65f, 0.95f));
-        c.Rect(9, 12, 1, 2, Color.white);
-        c.OutlineAround(Outline);
-        return waiterTray = c.ToSprite();
-    }
-
-    // olla a pressió amb la vàlvula vermella (el de l'Olla)
-    public static Sprite Cooker()
-    {
-        if (cooker != null) return cooker;
-        PixelCanvas c = new PixelCanvas(22, 18);
-        c.Rect(0, 7, 22, 3, MetalDark);              // nanses
-        c.RoundRect(3, 0, 16, 13, 3, Metal);          // olla
-        c.Rect(4, 9, 14, 2, MetalDark);               // tapa
-        c.Rect(5, 2, 2, 6, new Color(0.85f, 0.86f, 0.9f));
-        c.Rect(10, 13, 2, 2, MetalDark);              // vàlvula
-        c.Circle(11, 16, 2, new Color(0.9f, 0.15f, 0.1f));
-        c.OutlineAround(Outline);
-        return cooker = c.ToSprite();
     }
 
     static Sprite glow;

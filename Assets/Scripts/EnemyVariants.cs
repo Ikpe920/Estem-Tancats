@@ -107,6 +107,19 @@ public static class EnemyVariants
         return sr;
     }
 
+    // posa els sprites propis del client especial (Resources/Enemies/<nom>_Front i _Back)
+    public static void SetLook(Enemy e, string spriteName)
+    {
+        if (e == null) return;
+        Sprite front = Resources.Load<Sprite>("Enemies/" + spriteName + "_Front");
+        Sprite back = Resources.Load<Sprite>("Enemies/" + spriteName + "_Back");
+        if (front == null) return; // sense sprites, es queda com el client normal
+        e.spriteFront = front;
+        e.spriteBack = back != null ? back : front;
+        SpriteRenderer sr = e.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sprite = front;
+    }
+
     // una onada de color que s'eixampla i s'esvaeix (explosions i cures)
     public static void Burst(Vector2 pos, float radius, Color color, float duration = 0.25f)
     {
@@ -156,8 +169,7 @@ public class Golafre : MonoBehaviour
         transform.localScale *= 1.3f;
         enemy.OverrideStats(Mathf.Max(2, enemy.MaxHealth * 2), enemy.speed * 0.85f);
         enemy.points *= 2;
-        enemy.SetTint(new Color(1f, 0.82f, 0.85f));
-        EnemyVariants.AddAccessory(transform, "Pitet", PropArt.Bib(), new Vector2(0f, -0.12f));
+        EnemyVariants.SetLook(enemy, "Golafre");
     }
 
     void OnEnable() { Enemy.OnKilled += HandleKilled; }
@@ -178,7 +190,7 @@ public class Golafre : MonoBehaviour
             go.transform.localScale = prefab.transform.localScale * 0.7f;
             small.OverrideStats(Mathf.Max(1, enemy.MaxHealth / 4), enemy.speed / 0.85f * 1.35f);
             small.points = 5;
-            small.SetTint(new Color(1f, 0.82f, 0.85f));
+            EnemyVariants.SetLook(small, "Golafre");
             small.Knockback(dir, 5f, 0.15f);
         }
     }
@@ -194,7 +206,7 @@ public class OllaPressio : MonoBehaviour
 
     private Enemy enemy;
     private Rigidbody2D rb;
-    private Transform valve;
+    private SpriteRenderer dangerRing; // el cercle vermell que mostra l'abast de l'explosió
     private bool armed, exploded;
     private float armedAt;
 
@@ -204,8 +216,7 @@ public class OllaPressio : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         enemy.speed += 0.6f;
         enemy.points = Mathf.RoundToInt(enemy.points * 1.5f);
-        enemy.SetTint(new Color(1f, 0.8f, 0.6f));
-        valve = EnemyVariants.AddAccessory(transform, "Olla", PropArt.Cooker(), new Vector2(0f, -0.15f)).transform;
+        EnemyVariants.SetLook(enemy, "Olla");
     }
 
     void OnEnable() { Enemy.OnKilled += HandleKilled; }
@@ -230,12 +241,16 @@ public class OllaPressio : MonoBehaviour
             armed = true;
             armedAt = Time.time;
             enemy.externalMovement = true; // ja no camina: s'atura i xiula
+
+            // el cercle vermell a terra: fins on arribarà l'explosió
+            dangerRing = HazardFx.MakeCircle(transform.position, Radius, new Color(1f, 0.2f, 0.1f, 0.15f), -2);
         }
 
         // parpelleja en vermell i l'olla tremola, cada cop més de pressa
         float k = (Time.time - armedAt) / FuseTime;
         if (Mathf.Repeat(Time.time * Mathf.Lerp(6f, 16f, k), 1f) < 0.5f) enemy.Flash(new Color(1f, 0.35f, 0.25f), 0.05f);
-        if (valve != null) valve.localScale = Vector3.one * (1f + 0.25f * k + 0.08f * Mathf.Sin(Time.time * 60f));
+        if (dangerRing != null)
+            dangerRing.color = new Color(1f, 0.2f, 0.1f, Mathf.Lerp(0.12f, 0.35f, k) * (0.8f + 0.2f * Mathf.Sin(Time.time * 30f)));
 
         if (k >= 1f)
         {
@@ -249,10 +264,16 @@ public class OllaPressio : MonoBehaviour
         if (armed && rb != null && enemy != null && !enemy.IsStunned) rb.linearVelocity = Vector2.zero;
     }
 
+    void OnDestroy()
+    {
+        if (dangerRing != null) Destroy(dangerRing.gameObject);
+    }
+
     void Explode(bool hurtPlayer)
     {
         if (exploded) return;
         exploded = true;
+        if (dangerRing != null) Destroy(dangerRing.gameObject);
 
         Vector2 pos = transform.position;
         EnemyVariants.Burst(pos, Radius, new Color(1f, 0.55f, 0.15f, 0.55f), 0.3f);
@@ -292,6 +313,7 @@ public class SafataEscut : MonoBehaviour
         enemy = GetComponent<Enemy>();
         enemy.OverrideStats(Mathf.RoundToInt(enemy.MaxHealth * 1.5f), enemy.speed * 0.9f);
         enemy.points = Mathf.RoundToInt(enemy.points * 1.5f);
+        EnemyVariants.SetLook(enemy, "Safata");
         traySr = EnemyVariants.AddAccessory(transform, "Safata", PropArt.BigTray(), Vector2.zero, 2);
         tray = traySr.transform;
 
@@ -377,9 +399,8 @@ public class Cambrer : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         enemy.OverrideStats(Mathf.RoundToInt(enemy.MaxHealth * 1.2f), enemy.speed * 1.1f);
         enemy.points *= 2;
-        enemy.SetTint(new Color(0.8f, 0.92f, 1f));
+        EnemyVariants.SetLook(enemy, "Cambrer");
         enemy.externalMovement = true; // es mou pel seu compte
-        EnemyVariants.AddAccessory(transform, "Safata", PropArt.WaiterTray(), new Vector2(0.15f, 0.62f));
         nextHeal = Time.time + 1.5f;
         strafeSide = Random.value < 0.5f ? 1f : -1f;
     }
