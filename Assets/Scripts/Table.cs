@@ -12,13 +12,41 @@ public class Table : MonoBehaviour
     private SpriteRenderer sr;
     private TextMeshPro prompt;
 
-    private static readonly Vector3 FlippedScale = new Vector3(1.2f, 2.6f, 1f);
-    private static readonly Color UprightColor = new Color(0.45f, 0.28f, 0.15f);
-    private static readonly Color FlippedColor = new Color(0.30f, 0.18f, 0.10f);
+    public static readonly Vector2 UprightSize = new Vector2(2.4f, 1.2f);
+    public static readonly Vector2 FlippedSize = new Vector2(1.2f, 2.6f); // bolcada fa de paret
+
+    private Transform shadow;
+
+    // posa el dibuix (i l'ombra a sota) com a fills de l'objecte; l'objecte no s'escala
+    public static void AddVisual(Transform parent, Sprite sprite, Vector2 size)
+    {
+        GameObject sh = new GameObject("Ombra");
+        sh.transform.SetParent(parent, false);
+        SpriteRenderer ssr = sh.AddComponent<SpriteRenderer>();
+        ssr.sprite = PropArt.Shadow();
+        ssr.color = new Color(1f, 1f, 1f, 0.35f);
+        ssr.sortingOrder = -3;
+        FitShadow(sh.transform, size);
+
+        GameObject body = new GameObject("Dibuix");
+        body.transform.SetParent(parent, false);
+        SpriteRenderer sr = body.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.sortingOrder = -1;
+    }
+
+    // l'ombra és una mica més ampla que l'objecte i surt per baix (el sprite de l'ombra fa 1 x 0,5)
+    static void FitShadow(Transform sh, Vector2 size)
+    {
+        sh.localPosition = new Vector3(0f, -size.y * 0.42f, 0f);
+        sh.localScale = new Vector3(size.x * 1.15f, size.y * 0.9f, 1f);
+    }
 
     void Start()
     {
-        sr = GetComponent<SpriteRenderer>();
+        Transform body = transform.Find("Dibuix");
+        sr = body != null ? body.GetComponent<SpriteRenderer>() : GetComponentInChildren<SpriteRenderer>();
+        shadow = transform.Find("Ombra");
 
         PlayerMovement pm = PlayerRef.Movement;
         if (pm != null) player = pm.transform;
@@ -61,16 +89,30 @@ public class Table : MonoBehaviour
 
         HazardFx.Shake(0.1f, 0.08f);
 
-        Vector3 from = transform.localScale;
+        // el dibuix s'aixafa, canvia per la taula bolcada i torna a créixer
+        Transform body = sr != null ? sr.transform : null;
         float t = 0f;
-        while (t < 0.2f)
+        while (t < 0.1f)
         {
             t += Time.deltaTime;
-            float k = Mathf.Clamp01(t / 0.2f);
-            transform.localScale = Vector3.Lerp(from, FlippedScale, k);
-            if (sr != null) sr.color = Color.Lerp(UprightColor, FlippedColor, k);
+            if (body != null) body.localScale = new Vector3(1f + 0.15f * (t / 0.1f), Mathf.Lerp(1f, 0.15f, t / 0.1f), 1f);
             yield return null;
         }
+
+        if (sr != null) sr.sprite = PropArt.TableFlipped();
+        BoxCollider2D col = GetComponent<BoxCollider2D>();
+        if (col != null) col.size = FlippedSize;
+        if (shadow != null) FitShadow(shadow, FlippedSize);
+
+        t = 0f;
+        while (t < 0.12f)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / 0.12f);
+            if (body != null) body.localScale = new Vector3(Mathf.Lerp(0.6f, 1f, k), Mathf.Lerp(0.6f, 1f, k) + Mathf.Sin(k * Mathf.PI) * 0.12f, 1f);
+            yield return null;
+        }
+        if (body != null) body.localScale = Vector3.one;
 
         // ara atura els trets, però es trenca després d'uns quants
         BlocksShots b = gameObject.AddComponent<BlocksShots>();

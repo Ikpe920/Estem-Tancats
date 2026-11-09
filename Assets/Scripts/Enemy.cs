@@ -14,12 +14,14 @@ public class Enemy : MonoBehaviour
         speedMultiplier = 1f;
         Alive = 0;
         All.Clear();
+        obstacleCache.Clear();
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        obstacleCache.Clear(); // els col·lisionadors de l'escena anterior ja no hi són
         speedMultiplier = 1f; // els boons de lentitud no s'arrosseguen entre partides
     }
 
@@ -116,6 +118,8 @@ public class Enemy : MonoBehaviour
     {
         GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
+        if (rb != null) lastProgressPos = rb.position;
+        lastProgressTime = Time.time;
         nextShotTime = Time.time + Random.Range(0.5f, fireInterval);
     }
 
@@ -184,11 +188,13 @@ public class Enemy : MonoBehaviour
         if (Time.time < knockbackUntil)
         {
             rb.linearVelocity = knockbackVelocity;
+            lastProgressTime = Time.time; // empès o glaçat no vol dir encallat
             return;
         }
         if (Time.time < frozenUntil)
         {
             rb.linearVelocity = Vector2.zero;
+            lastProgressTime = Time.time;
             return;
         }
         if (player == null)
@@ -200,7 +206,7 @@ public class Enemy : MonoBehaviour
         Vector2 toPlayer = (Vector2)player.position - rb.position;
         UpdateFacingSprite(toPlayer);
 
-        if (externalMovement) return;
+        if (externalMovement) { lastProgressTime = Time.time; return; }
 
         if (isShooter && toPlayer.magnitude <= stopDistance)
         {
@@ -209,8 +215,107 @@ public class Enemy : MonoBehaviour
         else
         {
             float slow = Time.time < slowUntil ? slowFactor : 1f;
-            rb.linearVelocity = toPlayer.normalized * speed * speedMultiplier * slow;
+            Vector2 dir = SteerAround(toPlayer.normalized, toPlayer.magnitude);
+            rb.linearVelocity = dir * speed * speedMultiplier * slow;
+            return;
         }
+        lastProgressTime = Time.time; // quiet a propòsit (tirador): no compta com encallat
+    }
+
+    // ---------- ESQUIVAR CAIXES, TAULES I PARETS ----------
+    // Abans anaven en línia recta cap al jugador i, si hi havia una caixa al mig, s'hi quedaven enganxats.
+    // Ara miren una mica endavant: si hi ha un obstacle, el voregen pel costat que els queda més a prop.
+    // I si tot i així porten una estona sense avançar, fan un pas de costat per desencallar-se.
+
+    [Header("Esquivar obstacles")]
+    public float avoidLookAhead = 1.4f;   // fins on miren endavant (unitats)
+
+    static readonly RaycastHit2D[] castHits = new RaycastHit2D[8];
+    static readonly Dictionary<int, bool> obstacleCache = new Dictionary<int, bool>(); // col·lisionador -> és obstacle?
+
+    private float bodyRadius = -1f;
+    private int avoidSide;              // per quin costat el voregem (1 o -1), perquè no dubti a cada pas
+    private float avoidUntil;
+    private Vector2 lastProgressPos;
+    private float lastProgressTime;
+    private float unstickUntil;
+    private Vector2 unstickDir;
+
+    Vector2 SteerAround(Vector2 desired, float distToPlayer)
+    {
+        float now = Time.time;
+        if (now < unstickUntil) return unstickDir;
+
+        // fa estona que no avança? un pas de costat
+        if ((rb.position - lastProgressPos).sqrMagnitude > 0.04f)
+        {
+            lastProgressPos = rb.position;
+            lastProgressTime = now;
+        }
+        else if (now - lastProgressTime > 0.6f)
+        {
+            lastProgressTime = now;
+            float side = Random.value < 0.5f ? 1f : -1f;
+            unstickDir = (new Vector2(desired.y, -desired.x) * side - desired * 0.3f).normalized;
+            unstickUntil = now + 0.45f;
+            return unstickDir;
+        }
+
+        if (bodyRadius < 0f) bodyRadius = BodyRadius();
+        float look = Mathf.Min(avoidLookAhead, distToPlayer - bodyRadius);
+        if (look <= 0.05f) return desired; // ja és a sobre del jugador
+
+        ContactFilter2D filter = new ContactFilter2D();
+        filter.useTriggers = false;
+        int n = Physics2D.CircleCast(rb.position, bodyRadius * 0.9f, desired, filter, castHits, look);
+
+        for (int i = 0; i < n; i++)
+        {
+            RaycastHit2D hit = castHits[i];
+            if (!IsObstacle(hit.collider)) continue;
+
+            // per quin costat: el contrari d'on queda el centre de l'obstacle (i sense canviar a mig camí)
+            if (avoidSide == 0 || now > avoidUntil)
+            {
+                Vector2 toCenter = (Vector2)hit.collider.bounds.center - rb.position;
+                float cross = desired.x * toCenter.y - desired.y * toCenter.x; // > 0: el centre queda a l'esquerra
+                avoidSide = cross > 0f ? 1 : -1;                               // 1 = cap a la dreta
+            }
+            avoidUntil = now + 0.4f;
+
+            // llisquem per la cara de l'obstacle cap al costat triat
+            Vector2 sidePerp = new Vector2(desired.y, -desired.x) * avoidSide;
+            Vector2 tangent = new Vector2(-hit.normal.y, hit.normal.x);
+            if (Vector2.Dot(tangent, sidePerp) < 0f) tangent = -tangent;
+
+            float closeness = 1f - Mathf.Clamp01(hit.distance / look);
+            return (tangent + desired * (1f - closeness) * 0.5f).normalized;
+        }
+
+        return desired;
+    }
+
+    // un obstacle és qualsevol cosa sòlida que no sigui un client ni el jugador
+    bool IsObstacle(Collider2D c)
+    {
+        if (c == null || c.isTrigger) return false;
+        if (c.attachedRigidbody != null && c.attachedRigidbody == rb) return false; // ell mateix
+
+        int id = c.GetInstanceID();
+        if (obstacleCache.TryGetValue(id, out bool cached)) return cached;
+
+        bool obstacle = c.GetComponentInParent<Enemy>() == null && c.GetComponentInParent<PlayerHealth>() == null;
+        obstacleCache[id] = obstacle;
+        return obstacle;
+    }
+
+    float BodyRadius()
+    {
+        Collider2D col = GetComponent<Collider2D>();
+        if (col == null) return 0.3f;
+        Vector3 ext = col.bounds.extents;
+        float r = Mathf.Min(ext.x, ext.y);
+        return r > 0.01f ? r : 0.3f;
     }
 
     void UpdateFacingSprite(Vector2 toPlayer)

@@ -7,15 +7,6 @@ public class PropsHazard : MonoBehaviour
     public int act;
     public int maxProps = 4;
 
-    private static readonly Color[] Colors =
-    {
-        new Color(0.60f, 0.42f, 0.25f),
-        new Color(0.55f, 0.30f, 0.12f),
-        new Color(0.45f, 0.65f, 0.30f),
-        new Color(0.75f, 0.38f, 0.25f),
-        new Color(0.50f, 0.45f, 0.40f),
-    };
-
     private static readonly Vector2[] Sizes =
     {
         new Vector2(0.9f, 0.9f),
@@ -78,13 +69,8 @@ public class PropsHazard : MonoBehaviour
         BoxCollider2D col = root.AddComponent<BoxCollider2D>();
         col.size = Sizes[a];
 
-        GameObject body = new GameObject("Cos");
-        body.transform.SetParent(root.transform, false);
-        body.transform.localScale = new Vector3(Sizes[a].x, Sizes[a].y, 1f);
-        SpriteRenderer sr = body.AddComponent<SpriteRenderer>();
-        sr.sprite = HazardFx.Square();
-        sr.color = Colors[a];
-        sr.sortingOrder = -1;
+        // el dibuix de cada acte (cadira, bóta, verdura, test, caixa) amb una ombra a sota
+        Table.AddVisual(root.transform, PropArt.Prop(a, Sizes[a]), Sizes[a]);
 
         root.AddComponent<Breakable>();
     }
