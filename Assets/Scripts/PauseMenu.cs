@@ -23,6 +23,7 @@ public class PauseMenu : MonoBehaviour
     private GameObject root;
     private Button continueButton;
     private TextMeshProUGUI volumeText;
+    private Button tutorialButton;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
@@ -87,6 +88,7 @@ public class PauseMenu : MonoBehaviour
         IsOpen = true;
         Time.timeScale = 0f;
         RefreshVolume();
+        RefreshTutorialButton();
         root.SetActive(true);
 
         // perquè es pugui navegar amb el comandament
@@ -117,6 +119,23 @@ public class PauseMenu : MonoBehaviour
         IsOpen = false;
         Time.timeScale = 1f;
         SceneManager.LoadScene(SceneNames.MainMenu);
+    }
+
+    void EnableTutorial()
+    {
+        TutorialHints.Done = false;
+        RefreshTutorialButton();
+    }
+
+    void RefreshTutorialButton()
+    {
+        if (tutorialButton == null) return;
+        TextMeshProUGUI t = tutorialButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (t == null) return;
+        t.enableAutoSizing = true; // el text "activat" és més llarg
+        t.fontSizeMin = 18f;
+        t.fontSizeMax = 30f;
+        t.text = TutorialHints.Done ? "Tornar a veure el tutorial" : "Tutorial activat (propera partida)";
     }
 
     void ChangeVolume(float delta)
@@ -160,28 +179,32 @@ public class PauseMenu : MonoBehaviour
         root.GetComponent<Image>().color = new Color(0.06f, 0.04f, 0.06f, 0.82f);
 
         Transform p = root.transform;
-        EndScreenUI.CreateText(p, "Titol", "PAUSA", 96f, new Vector2(0.5f, 0.76f), new Vector2(900f, 140f),
+        EndScreenUI.CreateText(p, "Titol", "PAUSA", 96f, new Vector2(0.5f, 0.80f), new Vector2(900f, 140f),
             new Color(1f, 0.8f, 0.3f), true);
 
         Vector2 size = new Vector2(420f, 80f);
-        continueButton = EndScreenUI.CreateButton(p, "Continuar", new Vector2(0.5f, 0.60f), size,
+        continueButton = EndScreenUI.CreateButton(p, "Continuar", new Vector2(0.5f, 0.64f), size,
             new Color(0.20f, 0.45f, 0.25f), Resume);
-        EndScreenUI.CreateButton(p, "Tornar a començar", new Vector2(0.5f, 0.50f), size,
+        EndScreenUI.CreateButton(p, "Tornar a començar", new Vector2(0.5f, 0.55f), size,
             new Color(0.55f, 0.33f, 0.12f), Restart);
-        EndScreenUI.CreateButton(p, "Menú principal", new Vector2(0.5f, 0.40f), size,
+        EndScreenUI.CreateButton(p, "Menú principal", new Vector2(0.5f, 0.46f), size,
             new Color(0.30f, 0.30f, 0.35f), GoToMenu);
+
+        // tornar a veure el tutorial a la propera partida
+        tutorialButton = EndScreenUI.CreateButton(p, "Tornar a veure el tutorial", new Vector2(0.5f, 0.37f), size,
+            new Color(0.25f, 0.35f, 0.50f), EnableTutorial);
 
         // volum: [-]  Volum: 80%  [+]
         Vector2 small = new Vector2(80f, 80f);
-        EndScreenUI.CreateButton(p, "-", new Vector2(0.40f, 0.28f), small,
+        EndScreenUI.CreateButton(p, "-", new Vector2(0.40f, 0.26f), small,
             new Color(0.30f, 0.30f, 0.35f), () => ChangeVolume(-VolumeStep));
-        volumeText = EndScreenUI.CreateText(p, "Volum", "", 40f, new Vector2(0.5f, 0.28f), new Vector2(260f, 80f),
+        volumeText = EndScreenUI.CreateText(p, "Volum", "", 40f, new Vector2(0.5f, 0.26f), new Vector2(260f, 80f),
             Color.white);
         volumeText.raycastTarget = false; // que no tapi els botons del costat
-        EndScreenUI.CreateButton(p, "+", new Vector2(0.60f, 0.28f), small,
+        EndScreenUI.CreateButton(p, "+", new Vector2(0.60f, 0.26f), small,
             new Color(0.30f, 0.30f, 0.35f), () => ChangeVolume(VolumeStep));
 
-        EndScreenUI.CreateText(p, "Ajuda", "Esc / Start per continuar", 28f, new Vector2(0.5f, 0.16f),
+        EndScreenUI.CreateText(p, "Ajuda", "Esc / Start per continuar", 28f, new Vector2(0.5f, 0.13f),
             new Vector2(900f, 60f), new Color(0.85f, 0.78f, 0.65f));
     }
 }
