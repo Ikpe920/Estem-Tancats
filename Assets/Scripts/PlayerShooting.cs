@@ -102,6 +102,7 @@ public class PlayerShooting : MonoBehaviour
     {
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
         ShotsFired++;
+        AudioManager.Play("shoot");
 
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 

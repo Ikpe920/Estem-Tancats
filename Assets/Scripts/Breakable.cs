@@ -51,6 +51,7 @@ public class Breakable : MonoBehaviour
     void Break()
     {
         broken = true;
+        AudioManager.Play("box_break");
 
         SpriteRenderer dust = HazardFx.MakeCircle(transform.position, 0.9f, new Color(0.85f, 0.75f, 0.55f, 0.6f), 4);
         Destroy(dust.gameObject, 0.15f);

@@ -141,6 +141,7 @@ public class PlayerMovement : MonoBehaviour
         if (!DashPressed()) return;
 
         dashDirection = GetDashDirection();
+        AudioManager.Play("dash");
         isDashing = true;
         dashEndTime = Time.time + dashDuration;
         nextDashTime = Time.time + dashCooldown;

@@ -286,6 +286,7 @@ public class Projectile : MonoBehaviour
         dieAt = Mathf.Max(dieAt, Time.time + 0.6f);
         if (SetBonuses.Has(SetId.BounceDamage)) damage += 1; // Mandonguilles amb sípia
         EnemyVariants.Burst(transform.position, 0.25f, new Color(1f, 0.9f, 0.7f, 0.7f), 0.1f);
+        AudioManager.Play("bounce");
     }
 
     void HitEnemy(Enemy e)
@@ -339,6 +340,7 @@ public class Projectile : MonoBehaviour
     // cercle taronja que es veu un instant (es genera sol, no cal cap imatge)
     void SpawnExplosionFx(float radius)
     {
+        AudioManager.Play("explosion", 0.45f);
         GameObject fx = new GameObject("Explosio");
         fx.transform.position = transform.position;
         fx.transform.localScale = Vector3.one * radius * 2f;

@@ -388,6 +388,7 @@ public class BoonManager : MonoBehaviour
     {
         if (picking || rerollsLeft <= 0) return;
         if (!CanReroll()) return;
+        AudioManager.Play("ui_click");
         if (RerollCards()) rerollsLeft--;
         RefreshRerollButton();
     }
@@ -448,6 +449,7 @@ public class BoonManager : MonoBehaviour
     {
         if (picking) return;
         picking = true;
+        AudioManager.Play("boon");
 
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
         Apply(boon);
@@ -471,6 +473,7 @@ public class BoonManager : MonoBehaviour
     void ActivateSet(SetBonus s)
     {
         SetBonuses.Activate(s.id);
+        AudioManager.Play("set");
         Progression.OnSetCompleted();
 
         // efectes que es posen una sola vegada, en activar-se

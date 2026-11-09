@@ -125,6 +125,7 @@ public class WaveSpawner : MonoBehaviour
 
             if (isBossWave)
             {
+                AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
 
@@ -147,6 +148,7 @@ public class WaveSpawner : MonoBehaviour
 
             inWave = false;
             WaveEvents.End();
+            AudioManager.SetBossMusic(false);
 
             // mode de prova: s'ha demanat saltar a una altra onada (sense bonus ni plats entremig)
             if (debugAbort)

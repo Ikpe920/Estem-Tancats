@@ -86,6 +86,7 @@ public class Table : MonoBehaviour
     {
         flipped = true;
         if (prompt != null) prompt.gameObject.SetActive(false);
+        AudioManager.Play("table");
 
         HazardFx.Shake(0.1f, 0.08f);
 

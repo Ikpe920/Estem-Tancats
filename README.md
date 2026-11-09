@@ -100,7 +100,7 @@ Assets/
   Scripts/     tot el codi del joc (una classe per fitxer)
   Prefabs/     clients, caps i projectils
   Resources/   fons dels actes (Actes/), plats (Dishes/), xefs (Chefs/), clients especials (Enemies/)
-               i fotogrames de caminar (Walk/)
+               fotogrames de caminar (Walk/) i so i música (Audio/)
   Sprites/     la resta de gràfics
 ```
 
@@ -113,6 +113,7 @@ Scripts principals:
 - `PlayerMovement`, `PlayerShooting` i `PlayerHealth`: el xef. `PlayerRef` dona accés ràpid al jugador des de qualsevol script.
 - `Enemy`: els clients. `EnemyVariants` en fa els clients especials. Els caps hi afegeixen `BossMelee`, `BossCharger`, `BossSummoner`, `BossTeleporter` o `BossPhases`.
 - `ScoreManager` i `RunStats`: els punts, les ratxes i el rècord.
+- `AudioManager`: els efectes de so (`AudioManager.Play("nom")`) i la música de cada escena i cada acte. Els sons es generen amb `Tools/AudioGen`.
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).
 - `ChefRoster` i `ChefSelectScreen`: els xefs que es poden triar i la pantalla per triar-los.
 - `PauseMenu`, `TutorialHints`, `OffscreenIndicators`, `DebugMode`, `HitStop` i `CameraFX`: es creen sols o es criden des de qualsevol lloc. No cal posar-los a cap escena.

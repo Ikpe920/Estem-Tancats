@@ -130,6 +130,7 @@ public class ChefSelectScreen : MonoBehaviour
     void Select(int i)
     {
         int n = ChefRoster.All.Length;
+        if (cards.Count > 0 && ((i % n) + n) % n != selected) AudioManager.Play("ui_click");
         selected = ((i % n) + n) % n;
         turn = 0;
         nextTurn = Time.unscaledTime + 0.55f;
@@ -152,9 +153,10 @@ public class ChefSelectScreen : MonoBehaviour
             if (Progression.BuyChef(selected))
             {
                 Say("Has desbloquejat " + ChefRoster.All[selected].name + "!", new Color(0.55f, 1f, 0.6f));
+                AudioManager.Play("coin_big");
                 RefreshAll();
             }
-            else Say("Et falten " + (price - Progression.Tips) + " propines", new Color(1f, 0.55f, 0.5f));
+            else { Say("Et falten " + (price - Progression.Tips) + " propines", new Color(1f, 0.55f, 0.5f)); AudioManager.Play("ui_back"); }
             return;
         }
 
