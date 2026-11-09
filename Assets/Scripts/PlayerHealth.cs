@@ -49,6 +49,7 @@ public class PlayerHealth : MonoBehaviour
         if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa
         Progression.OnPlayerHit(); // per als reptes "sense cops"
         if (lives > 0) AudioManager.Play("hurt"); // si és l'últim cor, ja sona la mort
+        GamepadInput.Rumble(0.6f, 0.5f, 0.22f);
         nextDamageTime = Time.time + invulnerabilityTime;
         OnLivesChanged?.Invoke(lives);
         CameraFX.Shake(0.18f, 0.16f);
@@ -71,6 +72,7 @@ public class PlayerHealth : MonoBehaviour
     {
         IsDying = true;
         AudioManager.Play("death");
+        GamepadInput.Rumble(0.9f, 0.7f, 0.6f);
 
         // ja no hi ha més onades, ni plats, ni victòria
         if (spawner != null) spawner.StopAllCoroutines();

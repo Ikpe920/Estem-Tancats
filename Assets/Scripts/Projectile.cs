@@ -341,6 +341,7 @@ public class Projectile : MonoBehaviour
     void SpawnExplosionFx(float radius)
     {
         AudioManager.Play("explosion", 0.45f);
+        GamepadInput.Rumble(0.15f, 0.2f, 0.06f);
         GameObject fx = new GameObject("Explosio");
         fx.transform.position = transform.position;
         fx.transform.localScale = Vector3.one * radius * 2f;

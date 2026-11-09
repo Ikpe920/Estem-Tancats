@@ -142,6 +142,7 @@ public class PlayerMovement : MonoBehaviour
 
         dashDirection = GetDashDirection();
         AudioManager.Play("dash");
+        GamepadInput.Rumble(0.0f, 0.25f, 0.07f);
         isDashing = true;
         dashEndTime = Time.time + dashDuration;
         nextDashTime = Time.time + dashCooldown;

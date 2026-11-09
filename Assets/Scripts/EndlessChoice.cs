@@ -26,6 +26,7 @@ public class EndlessChoice : MonoBehaviour
     {
         wasPaused = Time.timeScale == 0f;
         Time.timeScale = 0f;
+        GamepadInput.CustomScreens++; // es controla sola: A continuar, B acabar
         Build();
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
@@ -41,6 +42,8 @@ public class EndlessChoice : MonoBehaviour
         else if ((kb != null && kb.escapeKey.wasPressedThisFrame) || (pad != null && pad.buttonEast.wasPressedThisFrame))
             Choose(false);
     }
+
+    void OnDestroy() { GamepadInput.CustomScreens = Mathf.Max(0, GamepadInput.CustomScreens - 1); }
 
     void Choose(bool keepGoing)
     {
@@ -81,7 +84,10 @@ public class EndlessChoice : MonoBehaviour
             new Color(0.30f, 0.30f, 0.35f), () => Choose(false));
         EndScreenUI.CreateButton(p, "Continuar (infinit)", new Vector2(0.62f, 0.28f), new Vector2(380f, 84f),
             new Color(0.55f, 0.25f, 0.6f), () => Choose(true));
-        TextMeshProUGUI help = EndScreenUI.CreateText(p, "Ajuda", "Enter per continuar  ·  Esc per acabar", 26f,
+        string helpLine = GamepadInput.UsingGamepad
+            ? GamepadInput.South() + " per continuar  ·  " + GamepadInput.East() + " per acabar"
+            : "Enter per continuar  ·  Esc per acabar";
+        TextMeshProUGUI help = EndScreenUI.CreateText(p, "Ajuda", helpLine, 26f,
             new Vector2(0.5f, 0.17f), new Vector2(900f, 50f), new Color(0.85f, 0.78f, 0.65f));
         help.raycastTarget = false;
     }

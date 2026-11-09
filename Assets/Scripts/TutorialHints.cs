@@ -29,6 +29,7 @@ public class TutorialHints : MonoBehaviour
     private CanvasGroup group;
     private TextMeshProUGUI label;
     private float alpha;
+    private bool lastPad;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
@@ -63,6 +64,13 @@ public class TutorialHints : MonoBehaviour
             return;
         }
         if (paused) return;
+
+        // si es canvia de teclat a comandament (o al revés), el text diu els botons que toquen
+        if (lastPad != GamepadInput.UsingGamepad)
+        {
+            lastPad = GamepadInput.UsingGamepad;
+            if (completedAt < 0f) label.text = Text(step);
+        }
 
         if (completedAt < 0f)
         {
@@ -120,15 +128,17 @@ public class TutorialHints : MonoBehaviour
 
     static string Text(Step s)
     {
-        bool pad = Gamepad.current != null;
+        bool pad = GamepadInput.UsingGamepad;
         switch (s)
         {
             case Step.Move:
-                return "Mou-te amb <b>WASD</b> o les fletxes" + (pad ? "  ·  joystick esquerre" : "");
+                return pad ? "Mou-te amb el <b>joystick esquerre</b>" : "Mou-te amb <b>WASD</b> o les fletxes";
             case Step.Shoot:
-                return "Apunta amb el ratolí i dispara amb el <b>clic esquerre</b>" + (pad ? "  ·  joystick dret" : "");
+                return pad ? "Apunta i dispara amb el <b>joystick dret</b> (o mantén <b>" + GamepadInput.RightTrigger() + "</b>)"
+                           : "Apunta amb el ratolí i dispara amb el <b>clic esquerre</b>";
             case Step.Dash:
-                return "Prem <b>ESPAI</b> per fer un dash: mentre dura, no et poden tocar" + (pad ? "  ·  RB" : "");
+                return pad ? "Prem <b>" + GamepadInput.RightShoulder() + "</b> per fer un dash: mentre dura, no et poden tocar"
+                           : "Prem <b>ESPAI</b> per fer un dash: mentre dura, no et poden tocar";
             case Step.ClearWave:
                 return "Despatxa tots els clients per acabar l'onada. Les fletxes vermelles t'indiquen on són";
         }

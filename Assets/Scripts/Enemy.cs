@@ -406,6 +406,7 @@ public class Enemy : MonoBehaviour
         {
             dead = true;
             AudioManager.Play(isBoss ? "explosion" : "enemy_die");
+            if (isBoss) GamepadInput.Rumble(0.8f, 0.8f, 0.45f);
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddKill(points, transform.position);
             CameraFX.Shake(0.14f, 0.12f);

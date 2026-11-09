@@ -280,6 +280,7 @@ public class OllaPressio : MonoBehaviour
         Vector2 pos = transform.position;
         EnemyVariants.Burst(pos, Radius, new Color(1f, 0.55f, 0.15f, 0.55f), 0.3f);
         AudioManager.Play("explosion");
+        GamepadInput.Rumble(0.5f, 0.4f, 0.2f);
         CameraFX.Shake(0.2f, 0.2f);
 
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, Radius))

@@ -246,6 +246,12 @@ public class BoonManager : MonoBehaviour
     static readonly Key[] DigitKeys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5 };
     static readonly Key[] NumpadKeys = { Key.Numpad1, Key.Numpad2, Key.Numpad3, Key.Numpad4, Key.Numpad5 };
 
+    // comandament: la carta marcada (-1 = cap) i les cartes que hi ha ara
+    private int padFocus = -1;
+    private float padNextMove;
+    private readonly List<DishCardFx> cardFx = new List<DishCardFx>();
+    private TextMeshProUGUI subtitleText;
+
     public IEnumerator OfferBoons()
     {
         Boon[] picked = PickBoons(optionsPerOffer);
@@ -264,6 +270,13 @@ public class BoonManager : MonoBehaviour
         panel.SetActive(true);
         bool wasPaused = Time.timeScale == 0f;
         Time.timeScale = 0f; // el joc s'atura per triar
+
+        // amb comandament, la primera carta ja surt marcada; i la pantalla es controla sola (no amb l'EventSystem)
+        GamepadInput.CustomScreens++;
+        if (UnityEngine.EventSystems.EventSystem.current != null) UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(null);
+        SetPadFocus(GamepadInput.UsingGamepad ? 0 : -1);
+        GamepadInput.OnModeChanged += RefreshPadTexts;
+        RefreshPadTexts();
 
         while (!picking) // espera que el jugador trii un boó
         {
@@ -285,12 +298,60 @@ public class BoonManager : MonoBehaviour
                 if (!picking && kb.hKey.wasPressedThisFrame) ChooseHeal();
                 if (!picking && kb.rKey.wasPressedThisFrame) TryReroll();
             }
+
+            // comandament: creu o joystick per moure's per les cartes, A per agafar, X per curar, Y per canviar
+            Gamepad pad = Gamepad.current;
+            if (pad != null && !picking)
+            {
+                Boon[] offer = currentOffer != null ? currentOffer : picked;
+                float x = pad.leftStick.ReadValue().x;
+                int dir = 0;
+                if (pad.dpad.left.wasPressedThisFrame) dir = -1;
+                else if (pad.dpad.right.wasPressedThisFrame) dir = 1;
+                else if (Mathf.Abs(x) > 0.6f && Time.unscaledTime >= padNextMove) dir = x > 0 ? 1 : -1;
+                if (Mathf.Abs(x) < 0.3f) padNextMove = 0f;
+                if (dir != 0)
+                {
+                    padNextMove = Time.unscaledTime + 0.25f;
+                    SetPadFocus(padFocus < 0 ? 0 : Mathf.Clamp(padFocus + dir, 0, offer.Length - 1));
+                    AudioManager.Play("ui_click");
+                }
+                if (pad.buttonSouth.wasPressedThisFrame)
+                {
+                    if (padFocus < 0) SetPadFocus(0);
+                    else Choose(offer[Mathf.Clamp(padFocus, 0, offer.Length - 1)]);
+                }
+                if (!picking && pad.buttonWest.wasPressedThisFrame) ChooseHeal();
+                if (!picking && pad.buttonNorth.wasPressedThisFrame) TryReroll();
+            }
             yield return null;
         }
 
+        GamepadInput.CustomScreens = Mathf.Max(0, GamepadInput.CustomScreens - 1);
+        GamepadInput.OnModeChanged -= RefreshPadTexts;
+        SetPadFocus(-1);
         previousOffer = currentOffer;
         panel.SetActive(false);
         if (!wasPaused) Time.timeScale = 1f;
+    }
+
+    void SetPadFocus(int i)
+    {
+        padFocus = i;
+        for (int k = 0; k < cardFx.Count; k++)
+            if (cardFx[k] != null) cardFx[k].focused = k == i;
+    }
+
+    // els textos d'ajuda diuen les tecles o els botons del comandament, segons amb què es jugui
+    void RefreshPadTexts()
+    {
+        if (subtitleText != null)
+            subtitleText.text = GamepadInput.UsingGamepad
+                ? "Creu: triar · " + GamepadInput.South() + ": agafar · " + GamepadInput.West() + ": curar · " + GamepadInput.North() + ": canviar"
+                : "Clica un plat o prem la seva tecla";
+        RefreshHealButton();
+        RefreshRerollButton();
+        if (GamepadInput.UsingGamepad && padFocus < 0 && panel != null && panel.activeSelf) SetPadFocus(0);
     }
 
     // ---------- TOPALLS DELS PLATS ----------
@@ -1035,6 +1096,7 @@ public class BoonManager : MonoBehaviour
         }
 
         picking = false;
+        cardFx.Clear();
 
         // les cartes es dimensionen segons la pantalla (el Canvas treballa en píxels)
         float sw = Mathf.Max(320f, Screen.width);
@@ -1226,6 +1288,8 @@ public class BoonManager : MonoBehaviour
         fx.bob = u * 0.8f;
         fx.Own(tex);
         fx.Init();
+        cardFx.Add(fx);
+        fx.focused = index == padFocus; // en canviar les cartes, la marca es manté al mateix lloc
     }
 
     // Un canvas propi per a la pantalla de plats i la tira de plats actius. Abans s'agafava "un canvas
@@ -1298,7 +1362,7 @@ public class BoonManager : MonoBehaviour
 
         RectTransform subRt = MakeRect(ban, "Subtitol", Vector2.zero, new Vector2(1f, 0f),
             new Vector2(u * 4f, u * 4f), new Vector2(-u * 4f, bannerH * 0.34f));
-        Label(subRt, "Clica un plat o prem la seva tecla", size * 0.4f, TextAlignmentOptions.Center,
+        subtitleText = Label(subRt, "Clica un plat o prem la seva tecla", size * 0.4f, TextAlignmentOptions.Center,
             new Color(0.95f, 0.8f, 0.5f), false, false);
 
         // una paella a cada costat del cartell
@@ -1380,7 +1444,7 @@ public class BoonManager : MonoBehaviour
         healButton.interactable = !full;
         healLabel.text = full
             ? "Cors plens"
-            : "Curar " + healAmount + (healAmount > 1 ? " cors" : " cor") + " en lloc d'un plat (H)";
+            : "Curar " + healAmount + (healAmount > 1 ? " cors" : " cor") + " en lloc d'un plat (" + (GamepadInput.UsingGamepad ? GamepadInput.West() : "H") + ")";
         healLabel.color = full ? new Color(0.62f, 0.62f, 0.62f, 1f) : Color.white;
     }
 
@@ -1445,7 +1509,7 @@ public class BoonManager : MonoBehaviour
         bool can = rerollsLeft > 0 && CanReroll();
         rerollButton.interactable = can;
         rerollLabel.text = rerollsLeft > 0
-            ? "Canviar les cartes (R) · " + rerollsLeft + (rerollsLeft > 1 ? " canvis" : " canvi")
+            ? "Canviar les cartes (" + (GamepadInput.UsingGamepad ? GamepadInput.North() : "R") + ") · " + rerollsLeft + (rerollsLeft > 1 ? " canvis" : " canvi")
             : "Cap canvi restant";
         rerollLabel.color = can ? Color.white : new Color(0.62f, 0.62f, 0.62f, 1f);
     }

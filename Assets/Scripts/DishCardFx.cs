@@ -15,6 +15,7 @@ public class DishCardFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     public float delay = 0f;          // retard d'entrada (perquè no surtin totes alhora)
     public float lift = 12f;          // quant puja en passar-hi el ratolí
     public float bob = 3f;            // amplitud del flotar del plat
+    [HideInInspector] public bool focused; // marcada amb el comandament: es veu com si hi passessis el ratolí
 
     private RectTransform rt;
     private CanvasGroup group;
@@ -42,7 +43,7 @@ public class DishCardFx : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         if (rt == null) Init();
 
         t += Time.unscaledDeltaTime;
-        hover = Mathf.MoveTowards(hover, hovering ? 1f : 0f, Time.unscaledDeltaTime * 9f);
+        hover = Mathf.MoveTowards(hover, hovering || focused ? 1f : 0f, Time.unscaledDeltaTime * 9f);
         Apply(Mathf.Clamp01((t - delay) / 0.32f));
     }
 

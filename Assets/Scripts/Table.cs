@@ -78,14 +78,20 @@ public class Table : MonoBehaviour
         prompt.gameObject.SetActive(near);
         if (!near) return;
 
+        // l'avís diu la tecla o el botó, segons amb què es jugui
+        prompt.text = (GamepadInput.UsingGamepad ? GamepadInput.West() : "E") + " · Bolcar";
+
         Keyboard kb = Keyboard.current;
-        if (kb != null && kb.eKey.wasPressedThisFrame) StartCoroutine(Flip());
+        Gamepad pad = Gamepad.current;
+        if ((kb != null && kb.eKey.wasPressedThisFrame) || (pad != null && pad.buttonWest.wasPressedThisFrame))
+            StartCoroutine(Flip());
     }
 
     IEnumerator Flip()
     {
         flipped = true;
         if (prompt != null) prompt.gameObject.SetActive(false);
+        GamepadInput.Rumble(0.35f, 0.15f, 0.12f);
         AudioManager.Play("table");
 
         HazardFx.Shake(0.1f, 0.08f);

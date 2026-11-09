@@ -15,6 +15,12 @@ public class PlayerShooting : MonoBehaviour
     private Vector2 lastPadAim = Vector2.right; // última direcció apuntada amb el joystick dret
     public float aimDeadZone = 0.3f;            // zona morta del joystick dret
 
+    [Header("Comandament")]
+    public float aimAssistAngle = 14f;   // graus: si hi ha un client tan a prop de la línia de tret, s'hi apunta
+    public float aimAssistRange = 11f;   // fins on mira l'ajuda a apuntar
+    private Transform reticle;           // la mira que es veu davant del xef quan es juga amb comandament
+    private SpriteRenderer reticleSr;
+
     // efectes dels plats (els posa el BoonManager)
     public int extraShots = 0;        // projectils extra en ventall
     public float spreadAngle = 12f;   // graus entre projectils
@@ -74,7 +80,7 @@ public class PlayerShooting : MonoBehaviour
             bool trigger = pad.rightTrigger.isPressed;
             if (stick.magnitude > aimDeadZone || trigger)
             {
-                dir = lastPadAim;
+                dir = AimAssist(lastPadAim);
                 return true;
             }
         }
@@ -96,6 +102,51 @@ public class PlayerShooting : MonoBehaviour
         }
 
         return false;
+    }
+
+    // amb comandament costa apuntar fi: si hi ha un client a prop de la línia de tret, s'hi apunta
+    Vector2 AimAssist(Vector2 aim)
+    {
+        Vector2 me = transform.position;
+        Vector2 best = aim;
+        float bestAngle = aimAssistAngle;
+        foreach (Enemy e in Enemy.All)
+        {
+            if (e == null || e.IsDead) continue;
+            Vector2 to = (Vector2)e.transform.position - me;
+            float d = to.magnitude;
+            if (d < 0.01f || d > aimAssistRange) continue;
+            float a = Vector2.Angle(aim, to);
+            if (a < bestAngle) { bestAngle = a; best = to / d; }
+        }
+        return best;
+    }
+
+    // la mira: una fletxeta davant del xef, cap on apunta el joystick dret (només amb comandament)
+    void LateUpdate()
+    {
+        bool show = GamepadInput.UsingGamepad && Time.timeScale > 0f && !PlayerHealth.IsDying;
+        if (reticle == null)
+        {
+            if (!show) return;
+            GameObject go = new GameObject("Mira");
+            reticle = go.transform;
+            reticleSr = go.AddComponent<SpriteRenderer>();
+            reticleSr.sprite = SpriteFactory.Arrow();
+            reticleSr.color = new Color(1f, 0.9f, 0.5f, 0.85f);
+            reticleSr.sortingOrder = 6;
+            go.transform.localScale = Vector3.one * 0.38f;
+        }
+        reticleSr.enabled = show;
+        if (!show) return;
+        Vector2 aim = lastPadAim.sqrMagnitude > 0.01f ? lastPadAim : Vector2.right;
+        reticle.position = (Vector2)transform.position + aim * 1.3f;
+        reticle.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(aim.y, aim.x) * Mathf.Rad2Deg);
+    }
+
+    void OnDestroy()
+    {
+        if (reticle != null) Destroy(reticle.gameObject);
     }
 
     void Shoot(Vector2 baseDir)
