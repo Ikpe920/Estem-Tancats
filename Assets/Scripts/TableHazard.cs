@@ -50,15 +50,12 @@ public class TableHazard : MonoBehaviour
         GameObject go = new GameObject("Taula");
         go.transform.SetParent(transform, false);
         go.transform.position = pos;
-        go.transform.localScale = new Vector3(2.4f, 1.2f, 1f);
 
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = HazardFx.Square();
-        sr.color = new Color(0.45f, 0.28f, 0.15f, 1f);
-        sr.sortingOrder = -1;
-
+        // el col·lisionador fa la mida de la taula (2,4 x 1,2); el dibuix i l'ombra són fills
         BoxCollider2D col = go.AddComponent<BoxCollider2D>();
-        col.size = Vector2.one;
+        col.size = Table.UprightSize;
+
+        Table.AddVisual(go.transform, PropArt.TableUpright(), Table.UprightSize);
 
         go.AddComponent<Table>();
         return go;
