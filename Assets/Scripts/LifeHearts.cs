@@ -89,9 +89,39 @@ public class LifeHearts : MonoBehaviour
         rt.localScale = Vector3.one;
     }
 
+    IEnumerator Punch(RectTransform rt, bool lost)
+    {
+        Image img = rt.GetComponent<Image>();
+        Vector2 basePos = rt.anchoredPosition;
+        float d = lost ? 0.45f : 0.3f;
+        for (float t = 0f; t < d; t += Time.unscaledDeltaTime)
+        {
+            float k = t / d;
+            rt.localScale = Vector3.one * (1f + (lost ? 0.6f : 0.35f) * Mathf.Sin(k * Mathf.PI));
+            if (lost)
+            {
+                rt.anchoredPosition = basePos + Random.insideUnitCircle * 6f * (1f - k);
+                if (img != null) img.color = Color.Lerp(new Color(1f, 0.3f, 0.3f), Color.white, k);
+            }
+            yield return null;
+        }
+        rt.localScale = Vector3.one;
+        rt.anchoredPosition = basePos;
+        if (img != null) img.color = Color.white;
+    }
+
     // posa els cors que queden: els perduts es veuen buits o desapareixen
+    private int lastLives = -1;
+
     public void Refresh(int lives)
     {
+        // el cor que es perd fa un salt vermell i tremola; el que es recupera, un salt
+        if (lastLives >= 0 && isActiveAndEnabled)
+        {
+            if (lives < lastLives && lives >= 0 && lives < hearts.Count) StartCoroutine(Punch(hearts[lives].rectTransform, true));
+            else if (lives > lastLives && lives - 1 >= 0 && lives - 1 < hearts.Count) StartCoroutine(Punch(hearts[lives - 1].rectTransform, false));
+        }
+        lastLives = lives;
         int max = playerHealth != null ? playerHealth.maxLives : hearts.Count;
         EnsureHearts(max, true);
 
