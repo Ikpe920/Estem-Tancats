@@ -131,6 +131,14 @@ public class PlayerHealth : MonoBehaviour
         return img;
     }
 
+    // canvia els cors màxims i omple la vida (el xef triat ho fa en començar)
+    public void SetMaxLives(int n)
+    {
+        maxLives = Mathf.Clamp(n, 1, MaxLivesCap);
+        lives = maxLives;
+        OnLivesChanged?.Invoke(lives);
+    }
+
     // cura un cor (la botiga en dona un per cop)
     public void Heal(int amount)
     {
