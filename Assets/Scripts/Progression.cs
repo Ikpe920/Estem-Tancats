@@ -133,6 +133,7 @@ public static class Progression
 
             Transform p = PlayerRef.Transform;
             Vector2 at = p != null ? (Vector2)p.position + Vector2.up * 2.6f : Vector2.zero;
+            AudioManager.Play("challenge");
             HazardFx.Popup(at, "REPTE COMPLETAT: " + c.name + "\n<size=70%>+" + c.reward + " propines</size>",
                 new Color(0.55f, 1f, 0.6f), 2.8f);
             return;

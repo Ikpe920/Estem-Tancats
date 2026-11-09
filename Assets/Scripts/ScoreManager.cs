@@ -64,7 +64,10 @@ public class ScoreManager : MonoBehaviour
 
         // avís quan puges de graó
         if (Combo >= killsPerTier && Mathf.FloorToInt(ComboMultiplier * 100f) > before)
+        {
+            AudioManager.Play("combo");
             HazardFx.Popup(at, "RATXA ×" + ComboMultiplier.ToString("0.00").Replace('.', ','), new Color(1f, 0.8f, 0.3f));
+        }
     }
 
     // el jugador ha rebut un cop: es talla la ratxa i l'onada ja no és "perfecta"
@@ -88,6 +91,7 @@ public class ScoreManager : MonoBehaviour
         if (flawless) bonus *= Mathf.Max(1, flawlessFactor);
         hitThisWave = false;
         OnWaveEnded?.Invoke(flawless);
+        AudioManager.Play(flawless ? "wave_perfect" : "wave_clear");
 
         int gained = Mathf.RoundToInt(bonus * scoreMultiplier);
         totalScore += gained;

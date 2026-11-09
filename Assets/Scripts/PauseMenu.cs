@@ -90,6 +90,7 @@ public class PauseMenu : MonoBehaviour
         RefreshVolume();
         RefreshTutorialButton();
         root.SetActive(true);
+        AudioManager.Play("ui_click");
 
         // perquè es pugui navegar amb el comandament
         if (EventSystem.current != null && continueButton != null)
@@ -101,6 +102,7 @@ public class PauseMenu : MonoBehaviour
         if (!IsOpen) return;
         IsOpen = false;
         root.SetActive(false);
+        AudioManager.Play("ui_back");
         Time.timeScale = 1f;
         SuppressMouseFire = true;
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);

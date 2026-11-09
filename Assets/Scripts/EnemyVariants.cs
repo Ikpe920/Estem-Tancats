@@ -181,6 +181,7 @@ public class Golafre : MonoBehaviour
 
         Vector2 pos = transform.position;
         EnemyVariants.Burst(pos, 0.9f, new Color(1f, 0.85f, 0.85f, 0.6f));
+        AudioManager.Play("enemy_die", 1f, 0.8f);
         for (int i = 0; i < 2; i++)
         {
             Vector2 dir = i == 0 ? Vector2.left : Vector2.right;
@@ -243,6 +244,7 @@ public class OllaPressio : MonoBehaviour
             enemy.externalMovement = true; // ja no camina: s'atura i xiula
 
             // el cercle vermell a terra: fins on arribarà l'explosió
+            AudioManager.Play("fuse");
             dangerRing = HazardFx.MakeCircle(transform.position, Radius, new Color(1f, 0.2f, 0.1f, 0.15f), -2);
         }
 
@@ -277,6 +279,7 @@ public class OllaPressio : MonoBehaviour
 
         Vector2 pos = transform.position;
         EnemyVariants.Burst(pos, Radius, new Color(1f, 0.55f, 0.15f, 0.55f), 0.3f);
+        AudioManager.Play("explosion");
         CameraFX.Shake(0.2f, 0.2f);
 
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, Radius))

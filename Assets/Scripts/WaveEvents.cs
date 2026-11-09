@@ -115,6 +115,7 @@ public static class WaveEvents
         if (k == WaveEventKind.None) return;
 
         WaveEventBanner.Show(Title(k), Subtitle(k), Tint(k));
+        AudioManager.Play("event");
 
         switch (k)
         {
@@ -242,6 +243,7 @@ public class VipClient : MonoBehaviour
         int bonus = 60 * Mathf.Max(1, wave);
         if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(bonus);
         Progression.OnVipCaught();
+        AudioManager.Play("coin_big");
         Vector2 pos = transform.position;
         HazardFx.Popup(pos + Vector2.up * 1.2f, "VIP ATRAPAT! +" + bonus, new Color(1f, 0.85f, 0.3f), 1.8f);
         for (int i = 0; i < 3; i++)

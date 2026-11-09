@@ -32,6 +32,7 @@ public static class EndScreenUI
         colors.fadeDuration = 0.08f;
         btn.colors = colors;
 
+        btn.onClick.AddListener(() => AudioManager.Play("ui_click")); // so de clic a tots els botons
         if (onClick != null) btn.onClick.AddListener(onClick);
 
         // el text del boto, estirat per tot el requadre

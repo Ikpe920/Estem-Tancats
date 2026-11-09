@@ -148,14 +148,17 @@ public class Pickup : MonoBehaviour
             }
             case PickupType.Coffee:
                 GetBuffs(other.gameObject).SpeedBoost(1.5f, 8f);
+                AudioManager.Play("pickup");
                 HazardFx.Popup(at, "CAFÈ! + velocitat", new Color(0.9f, 0.7f, 0.45f));
                 break;
             case PickupType.Pepper:
                 GetBuffs(other.gameObject).DamageBoost(1, 8f);
+                AudioManager.Play("pickup");
                 HazardFx.Popup(at, "PEBRE! + dany", new Color(1f, 0.45f, 0.35f));
                 break;
             case PickupType.Points:
                 if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(25);
+                AudioManager.Play("coin");
                 HazardFx.Popup(at, "+25", new Color(1f, 0.9f, 0.4f));
                 break;
         }

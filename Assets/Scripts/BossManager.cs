@@ -35,6 +35,7 @@ public class BossManager : MonoBehaviour
         cg.alpha = 0f;
 
         introPanel.SetActive(true);
+        AudioManager.Play("boss_intro");
         bool wasPaused = Time.timeScale == 0f; // si ja estava pausat, no el reprenem en acabar
         Time.timeScale = 0f; // pausa el joc
 
