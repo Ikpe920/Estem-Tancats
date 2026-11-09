@@ -90,17 +90,18 @@ public class Table : MonoBehaviour
         HazardFx.Shake(0.1f, 0.08f);
 
         // la taula cau cap al costat contrari d'on és el jugador: si ets a baix cau cap amunt,
-        // si ets a l'esquerra cau cap a la dreta... i el tauler queda de cara a tu, fent d'escut
+        // si ets a l'esquerra cau cap a la dreta... Com una taula de debò que empenys: el tauler (amb les
+        // estovalles) queda a la banda de fora i les potes apunten cap a tu
         Vector2 away = player != null ? (Vector2)(transform.position - player.position) : Vector2.up;
         // es compara amb la mida de la taula (més ampla que alta) perquè "a sota" i "al costat" quedin ben repartits
         bool sideways = Mathf.Abs(away.x) / UprightSize.x > Mathf.Abs(away.y) / UprightSize.y;
         Vector2 fallDir = sideways ? new Vector2(Mathf.Sign(away.x), 0f) : new Vector2(0f, Mathf.Sign(away.y));
         if (away.sqrMagnitude < 0.0001f) fallDir = Vector2.up;
 
-        // el dibuix de la taula bolcada cau cap a la dreta (tauler a l'esquerra, potes a la dreta);
-        // per a les altres direccions es gira o s'emmiralla
-        bool flipX = fallDir.x < 0f;
-        float angle = fallDir.y > 0f ? 90f : fallDir.y < 0f ? -90f : 0f;
+        // el dibuix de la taula bolcada té les estovalles a l'esquerra i les potes a la dreta, és a dir,
+        // és el d'una taula que ha caigut cap a l'esquerra; per a les altres direccions es gira o s'emmiralla
+        bool flipX = fallDir.x > 0f;                                          // cau a la dreta: estovalles a la dreta
+        float angle = fallDir.y > 0f ? -90f : fallDir.y < 0f ? 90f : 0f;      // cau amunt: estovalles a dalt
         Vector2 size = sideways ? FlippedSize : new Vector2(FlippedSize.y, FlippedSize.x);
 
         // en caure, la taula es desplaça cap a on cau
