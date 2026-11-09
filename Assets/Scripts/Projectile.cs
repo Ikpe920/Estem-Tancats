@@ -57,8 +57,7 @@ public class Projectile : MonoBehaviour
         if (trail || fire || ice)
         {
             TrailRenderer tr = gameObject.AddComponent<TrailRenderer>();
-            Material mat = TrailMaterial();
-            if (mat != null) tr.sharedMaterial = mat;
+            tr.sharedMaterial = new Material(Shader.Find("Sprites/Default"));
             tr.time = trail ? 0.3f : 0.15f;
             tr.startWidth = trail ? 0.22f : 0.16f;
             tr.endWidth = 0f;
@@ -69,18 +68,6 @@ public class Projectile : MonoBehaviour
 
         // el foc batega una mica
         if (fire) { flicker = true; baseScale = transform.localScale; }
-    }
-
-    // un sol material per a totes les esteles (abans se'n creava un de nou a cada tret i no s'esborrava mai)
-    private static Material trailMaterial;
-
-    static Material TrailMaterial()
-    {
-        if (trailMaterial != null) return trailMaterial;
-        Shader shader = Shader.Find("Sprites/Default");
-        if (shader == null) return null; // al build pot no existir: millor sense material que petar
-        trailMaterial = new Material(shader);
-        return trailMaterial;
     }
 
     private bool flicker;
