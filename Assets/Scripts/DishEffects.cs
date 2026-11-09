@@ -96,7 +96,7 @@ public class RomescoWave : MonoBehaviour
 
         float r = SetBonuses.Has(SetId.Revenge) ? radius * 2f : radius; // Salsa de revenja
         Vector2 pos = transform.position;
-        EnemyVariants.Burst(pos, r, new Color(0.9f, 0.4f, 0.15f, 0.5f), 0.35f);
+        Fx.Shockwave(pos, r * 0.5f, new Color(0.95f, 0.45f, 0.2f));
         AudioManager.Play("explosion", 0.6f);
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, r))
         {
@@ -170,7 +170,7 @@ public class KillBurst : MonoBehaviour
 
         Vector2 pos = dead.transform.position;
         int dmg = shooting != null ? Mathf.Max(1, shooting.damage) : 1;
-        EnemyVariants.Burst(pos, radius, new Color(1f, 0.6f, 0.2f, 0.5f), 0.22f);
+        Fx.Explosion(pos, radius, 0.6f);
         AudioManager.Play("explosion", 0.35f);
 
         depth++;

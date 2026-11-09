@@ -113,8 +113,10 @@ public class FrostZone : MonoBehaviour
         z.born = Time.time;
 
         z.sr = go.AddComponent<SpriteRenderer>();
-        z.sr.sprite = SpriteFactory.Circle();
+        z.sr.sprite = Fx.FrostGround(); // terra glaçat amb esquerdes
+        z.baseColor = new Color(1f, 1f, 1f, 0.85f);
         z.sr.color = z.baseColor;
+        Fx.FrostBurst(pos, radius * 0.6f);
         z.sr.sortingOrder = -2;
     }
 
@@ -134,6 +136,7 @@ public class FrostZone : MonoBehaviour
 
         if (Time.time < nextTick) return;
         nextTick = Time.time + 0.15f;
+        if (Random.value < 0.6f) Fx.Sparkle((Vector2)transform.position + Random.insideUnitCircle * radius * 0.9f, new Color(0.8f, 0.95f, 1f)); // lluentons de gel
 
         foreach (Collider2D h in Physics2D.OverlapCircleAll(transform.position, radius))
         {

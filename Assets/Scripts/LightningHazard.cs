@@ -74,6 +74,8 @@ public class LightningHazard : MonoBehaviour
         Destroy(beam, 0.12f);
 
         HazardFx.Shake(0.2f, 0.22f);
+        Fx.Shockwave(pos, radius, new Color(1f, 0.97f, 0.6f));
+        Fx.Explosion(pos, radius * 0.5f, 0.5f);
 
         DarknessHazard.Flash(); // a la Teulada, el llamp il·lumina un instant
 

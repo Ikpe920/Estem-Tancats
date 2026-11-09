@@ -153,6 +153,7 @@ public class PlayerHealth : MonoBehaviour
         lives = newLives;
         OnLivesChanged?.Invoke(lives);
         AudioManager.Play("heal");
+        Fx.Sparkles((Vector2)transform.position + Vector2.up * 0.3f, new Color(0.5f, 1f, 0.55f), 8, 0.5f);
     }
 
     void OnDestroy()

@@ -285,12 +285,14 @@ public class Projectile : MonoBehaviour
         alreadyHit.Clear(); // de tornada pot tocar els mateixos clients
         dieAt = Mathf.Max(dieAt, Time.time + 0.6f);
         if (SetBonuses.Has(SetId.BounceDamage)) damage += 1; // Mandonguilles amb sípia
-        EnemyVariants.Burst(transform.position, 0.25f, new Color(1f, 0.9f, 0.7f, 0.7f), 0.1f);
+        Fx.Hit(transform.position, -v, false);
         AudioManager.Play("bounce");
     }
 
     void HitEnemy(Enemy e)
     {
+        Fx.Hit(e.transform.position, rb != null ? rb.linearVelocity : Vector2.zero, isCrit);
+        if (slowDuration > 0f && explosionRadius <= 0f) Fx.Snowflake(e.transform.position); // el gel s'hi queda enganxat
         e.TakeDamage(damage, isCrit);
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
         if (e != null)
@@ -342,13 +344,8 @@ public class Projectile : MonoBehaviour
     {
         AudioManager.Play("explosion", 0.45f);
         GamepadInput.Rumble(0.15f, 0.2f, 0.06f);
-        GameObject fx = new GameObject("Explosio");
-        fx.transform.position = transform.position;
-        fx.transform.localScale = Vector3.one * radius * 2f;
-        SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteFactory.Circle();
-        sr.color = slowDuration > 0f ? new Color(0.75f, 0.55f, 0.35f, 0.5f) : new Color(1f, 0.55f, 0.1f, 0.5f);
-        sr.sortingOrder = 5;
-        Destroy(fx, 0.15f);
+        // gel (Calçots + Sorbet) o foc
+        if (slowDuration > 0f) Fx.FrostBurst(transform.position, radius);
+        else Fx.Explosion(transform.position, radius, 0.8f);
     }
 }

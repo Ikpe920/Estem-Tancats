@@ -66,6 +66,7 @@ public class BossManager : MonoBehaviour
         if (healthBarName != null)
         {
             healthBarName.color = UIStyle.Gold;
+            healthBarName.rectTransform.anchoredPosition += new Vector2(0f, -18f); // més avall: que no toqui el marc
             healthBarName.fontStyle |= FontStyles.Bold;
             UIStyle.Outline(healthBarName);
         }

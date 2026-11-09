@@ -163,6 +163,7 @@ public class Pickup : MonoBehaviour
                 break;
         }
 
+        Fx.Sparkles(at, new Color(1f, 0.9f, 0.5f), 7, 0.4f); // lluentons en agafar-lo
         Destroy(gameObject);
     }
 
