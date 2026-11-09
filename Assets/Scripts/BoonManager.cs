@@ -1140,15 +1140,28 @@ public class BoonManager : MonoBehaviour
         fx.Init();
     }
 
+    // Un canvas propi per a la pantalla de plats i la tira de plats actius. Abans s'agafava "un canvas
+    // qualsevol" de l'escena, però ara n'hi ha més (pausa, fletxes, tutorial) i podia agafar-ne un
+    // que s'escala amb la pantalla: les cartes sortien petites. Aquest és com el de l'escena: 1 píxel = 1 píxel.
+    private Canvas uiCanvas;
+
+    Canvas UiCanvas()
+    {
+        if (uiCanvas != null) return uiCanvas;
+
+        GameObject canvasGo = new GameObject("PlatsCanvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
+        uiCanvas = canvasGo.GetComponent<Canvas>();
+        uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        uiCanvas.sortingOrder = 100; // per sobre del HUD i de les fletxes, per sota del tutorial i la pausa
+        CanvasScaler scaler = canvasGo.GetComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+        scaler.scaleFactor = 1f;
+        return uiCanvas;
+    }
+
     void BuildPanel()
     {
-        Canvas canvas = FindAnyObjectByType<Canvas>();
-        if (canvas == null)
-        {
-            GameObject canvasGo = new GameObject("Canvas", typeof(Canvas));
-            canvas = canvasGo.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        }
+        Canvas canvas = UiCanvas();
 
         GameObject panelGo = new GameObject("BoonsPanel", typeof(RectTransform), typeof(Image));
         panelGo.transform.SetParent(canvas.transform, false);
@@ -1363,8 +1376,7 @@ public class BoonManager : MonoBehaviour
 
     void BuildTakenText()
     {
-        Canvas canvas = FindAnyObjectByType<Canvas>();
-        if (canvas == null) return;
+        Canvas canvas = UiCanvas();
 
         GameObject go = new GameObject("BoonsActius", typeof(RectTransform));
         go.transform.SetParent(canvas.transform, false);
