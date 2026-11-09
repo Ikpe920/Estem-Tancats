@@ -37,6 +37,7 @@ public class DashDamage : MonoBehaviour
             if (e == null || hitThisDash.Contains(e)) continue;
             hitThisDash.Add(e);
             e.TakeDamage(damage);
+            if (SetBonuses.Has(SetId.DashRefund)) movement.ReduceDashCooldown(0.4f); // Dash picant
         }
     }
 }

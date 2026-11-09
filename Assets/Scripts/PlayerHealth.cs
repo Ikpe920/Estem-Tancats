@@ -9,6 +9,8 @@ public class PlayerHealth : MonoBehaviour
     public bool invulnerableWhileDashing = true; // el dash esquiva els cops (es pot desactivar a l'Inspector)
     public float invulnerabilityTime = 1.2f; // temps invulnerable després de rebre un cop
 
+    public static bool GodMode;              // només el posa el mode de prova (DebugMode)
+
     private int lives;
     private float nextDamageTime;
     private SpriteRenderer spriteRenderer;
@@ -30,6 +32,7 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage()
     {
         if (lives <= 0) return;
+        if (GodMode) return;
         if (Time.time < nextDamageTime) return; // encara és invulnerable
         if (invulnerableWhileDashing && movement != null && movement.IsDashing) return;
 
@@ -38,6 +41,7 @@ public class PlayerHealth : MonoBehaviour
         nextDamageTime = Time.time + invulnerabilityTime;
         OnLivesChanged?.Invoke(lives);
         CameraFX.Shake(0.18f, 0.16f);
+        if (lives > 0) HitStop.Do(0.07f); // una mica de pausa quan et toquen
 
         if (lives <= 0)
         {

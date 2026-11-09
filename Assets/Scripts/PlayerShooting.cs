@@ -23,6 +23,21 @@ public class PlayerShooting : MonoBehaviour
     public float critChance = 0f;     // probabilitat de crític (0-1)
     public float critMultiplier = 2f; // el dany d'un crític
 
+    // tret ràpid temporal (el conjunt Sobretaula): el temps entre trets es multiplica per aquest valor
+    private float hasteUntil;
+    private const float HasteFactor = 0.71f;
+
+    // el temps real entre trets: el dels plats, més el tret ràpid si està actiu
+    float CurrentFireRate
+    {
+        get { return Time.time < hasteUntil ? fireRate * HasteFactor : fireRate; }
+    }
+
+    public void GrantHaste(float seconds)
+    {
+        hasteUntil = Mathf.Max(hasteUntil, Time.time + seconds);
+    }
+
     void Awake()
     {
         cam = Camera.main;
@@ -33,10 +48,11 @@ public class PlayerShooting : MonoBehaviour
         if (Time.timeScale == 0) return; // no disparar mentre la botiga està oberta
 
         if (Mouse.current == null) return;
+        if (DebugMode.MouseOverPanel) return; // no disparar en clicar el quadre del mode de prova
 
         if (Mouse.current.leftButton.isPressed && Time.time >= nextFireTime)
         {
-            nextFireTime = Time.time + fireRate;
+            nextFireTime = Time.time + CurrentFireRate;
             Shoot();
         }
     }
@@ -48,6 +64,10 @@ public class PlayerShooting : MonoBehaviour
         Vector2 mouseWorld = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
         Vector2 baseDir = (mouseWorld - (Vector2)transform.position).normalized;
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
+
+        // plats de conjunt
+        float sideDamage = SetBonuses.Has(SetId.FullFan) ? 1f : sideShotDamage; // Paella exprés: el ventall fa tot el dany
+        bool anyCrit = false;
 
         int total = 1 + extraShots;
         for (int i = 0; i < total; i++)
@@ -63,11 +83,12 @@ public class PlayerShooting : MonoBehaviour
             Projectile proj = p.GetComponent<Projectile>();
             proj.damage += damage - 1; // dany del prefab + millores
             bool isCenter = total % 2 == 1 && i == total / 2;
-            if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideShotDamage));
+            if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideDamage));
             if (critChance > 0f && Random.value < critChance)
             {
                 proj.damage = Mathf.RoundToInt(proj.damage * critMultiplier);
                 proj.isCrit = true;
+                anyCrit = true;
             }
             proj.pierce = pierce;
             proj.explosionRadius = explosionRadius;
@@ -76,5 +97,9 @@ public class PlayerShooting : MonoBehaviour
 
             p.GetComponent<Rigidbody2D>().linearVelocity = dir * projectileSpeed;
         }
+
+        // Cigaló: un crític et deixa tornar a disparar de seguida
+        if (anyCrit && SetBonuses.Has(SetId.Carajillo))
+            nextFireTime = Time.time + CurrentFireRate * 0.3f;
     }
 }

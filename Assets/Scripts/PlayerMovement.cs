@@ -37,6 +37,12 @@ public class PlayerMovement : MonoBehaviour
     public Sprite spriteLeft;  // sprite del xef mirant a l'esquerra
     public Sprite spriteRight; // sprite del xef mirant a la dreta
 
+    // Dash picant (conjunt): recupera una mica de recàrrega del dash
+    public void ReduceDashCooldown(float seconds)
+    {
+        nextDashTime = Mathf.Max(Time.time, nextDashTime - seconds);
+    }
+
     public bool IsDashing => isDashing;
     public bool CanDash => Time.time >= nextDashTime;
     public float DashCooldownRemaining => Mathf.Max(0f, nextDashTime - Time.time);

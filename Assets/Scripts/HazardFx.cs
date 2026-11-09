@@ -41,7 +41,7 @@ public static class HazardFx
     }
 
         // text que puja i s'esvaeix (per als drops)
-    public static void Popup(Vector2 pos, string text, Color color)
+    public static void Popup(Vector2 pos, string text, Color color, float life = 0.9f)
     {
         GameObject go = new GameObject("Avis");
         go.transform.position = pos;
@@ -56,6 +56,7 @@ public static class HazardFx
         tmp.rectTransform.sizeDelta = new Vector2(8f, 1f);
         tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
 
-        go.AddComponent<PopupText>();
+        PopupText popup = go.AddComponent<PopupText>();
+        popup.life = life;
     }
 }

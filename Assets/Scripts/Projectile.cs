@@ -110,7 +110,7 @@ public class Projectile : MonoBehaviour
 
     void HitEnemy(Enemy e)
     {
-        e.TakeDamage(damage);
+        e.TakeDamage(damage, isCrit);
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
         if (e != null)
         {
@@ -120,7 +120,18 @@ public class Projectile : MonoBehaviour
 
     void Explode(Enemy center)
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, explosionRadius);
+        // plats de conjunt: una explosió crítica és més gran (Calçotada crítica)
+        float radius = explosionRadius;
+        if (isCrit && SetBonuses.Has(SetId.CritBlast)) radius *= 1.6f;
+
+        bool push = SetBonuses.Has(SetId.Shockwave); // Traca: l'explosió empeny els clients
+        Vector2 origin = transform.position;
+        Rigidbody2D prb = GetComponent<Rigidbody2D>();
+        Vector2 forward = prb != null && prb.linearVelocity.sqrMagnitude > 0.01f ? prb.linearVelocity.normalized : Vector2.right;
+
+        if (push) Push(center, origin, forward);
+
+        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, radius);
         foreach (Collider2D h in hits)
         {
             Enemy e = h.GetComponent<Enemy>();
@@ -128,16 +139,30 @@ public class Projectile : MonoBehaviour
             if (e == null || e == center || alreadyHit.Contains(e)) continue;
             alreadyHit.Add(e);
             HitEnemy(e);
+            if (push) Push(e, origin, forward);
         }
-        SpawnExplosionFx();
+        SpawnExplosionFx(radius);
+
+        // plats de conjunt: Calçots gelats deixen una zona gelada on ha explotat
+        if (slowDuration > 0f && SetBonuses.Has(SetId.FrostBlast))
+            FrostZone.Spawn(origin, radius, Mathf.Clamp(slowFactor, 0.3f, 0.7f), 3f);
+    }
+
+    // empeny un client lluny del centre de l'explosió
+    void Push(Enemy e, Vector2 origin, Vector2 fallback)
+    {
+        if (e == null) return;
+        Vector2 away = (Vector2)e.transform.position - origin;
+        if (away.sqrMagnitude < 0.04f) away = fallback; // just al centre: cap a on anava el projectil
+        e.Knockback(away, 9f, 0.18f);
     }
 
     // cercle taronja que es veu un instant (es genera sol, no cal cap imatge)
-    void SpawnExplosionFx()
+    void SpawnExplosionFx(float radius)
     {
         GameObject fx = new GameObject("Explosio");
         fx.transform.position = transform.position;
-        fx.transform.localScale = Vector3.one * explosionRadius * 2f;
+        fx.transform.localScale = Vector3.one * radius * 2f;
         SpriteRenderer sr = fx.AddComponent<SpriteRenderer>();
         sr.sprite = SpriteFactory.Circle();
         sr.color = slowDuration > 0f ? new Color(0.75f, 0.55f, 0.35f, 0.5f) : new Color(1f, 0.55f, 0.1f, 0.5f);

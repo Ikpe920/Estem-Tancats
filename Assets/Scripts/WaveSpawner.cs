@@ -70,6 +70,11 @@ public class WaveSpawner : MonoBehaviour
 
     public static WaveSpawner Instance; // perquè els caps puguin invocar clients
 
+    // mode de prova: saltar d'onada
+    private bool inWave;        // estem enmig d'una onada (sortint clients o esperant que acabin)
+    private bool debugAbort;    // s'ha demanat acabar l'onada ara
+    private int debugTarget;    // l'onada on s'ha demanat anar
+
     void Awake()
     {
         Instance = this;
@@ -89,6 +94,7 @@ public class WaveSpawner : MonoBehaviour
         while (true)
         {
             currentWave++;
+            inWave = true;
 
             ActData act = actManager != null ? actManager.Current : null;
 
@@ -112,6 +118,7 @@ public class WaveSpawner : MonoBehaviour
 
             for (int i = 0; i < count; i++)
             {
+                if (debugAbort) break;
                 SpawnEnemy();
                 // les onades altes surten en un degoteig més ràpid
                 yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
@@ -120,6 +127,19 @@ public class WaveSpawner : MonoBehaviour
             while (Enemy.Alive > 0)
             {
                 yield return null;
+            }
+
+            inWave = false;
+
+            // mode de prova: s'ha demanat saltar a una altra onada (sense bonus ni plats entremig)
+            if (debugAbort)
+            {
+                debugAbort = false;
+                currentWave = debugTarget - 1; // el bucle suma 1 en tornar a començar
+                if (actManager != null)
+                    actManager.ApplyAct((debugTarget - 1) / Mathf.Max(1, bossEveryNWaves));
+                yield return new WaitForSeconds(0.5f);
+                continue;
             }
 
             // bonus d'onada (doble si no t'han tocat)
@@ -245,6 +265,8 @@ public class WaveSpawner : MonoBehaviour
 
         if (e != null)
         {
+            e.isBoss = true; // perquè els impactes als caps tinguin més "suc"
+
             // vida i velocitat pròpies del cap (si les posa l'escena)
             if (info.health > 0 || info.speed > 0)
                 e.OverrideStats(info.health > 0 ? info.health : e.maxHealth,
@@ -321,6 +343,21 @@ public class WaveSpawner : MonoBehaviour
                 phases.projectilePrefab = info.projectilePrefab;
                 break;
         }
+    }
+
+    // MODE DE PROVA: salta a l'onada 'wave' (la propera que comença). Torna false si ara no es pot.
+    public bool DebugJumpToWave(int wave)
+    {
+        if (!inWave || Time.timeScale == 0f) return false; // enmig d'una pantalla pausada o entre onades
+
+        debugTarget = Mathf.Max(1, wave);
+        if (finalWave > 0) debugTarget = Mathf.Min(debugTarget, finalWave);
+        debugAbort = true;
+
+        // fora tots els clients (sense punts ni plats: és un salt de prova)
+        foreach (Enemy e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
+            if (e != null) Destroy(e.gameObject);
+        return true;
     }
 
     // els caps poden fer sortir clients normals (el Xef i la Inspectora)

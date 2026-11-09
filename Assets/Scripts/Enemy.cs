@@ -47,6 +47,7 @@ public class Enemy : MonoBehaviour
     private float nextShotTime;
     public int CurrentHealth => health;
     public bool canBeKnockedBack = true;
+    [HideInInspector] public bool isBoss;   // el posa el WaveSpawner: els caps tenen més "suc" als impactes
     [HideInInspector] public bool externalMovement;
     private Vector2 knockbackVelocity;
     private float knockbackUntil;
@@ -121,8 +122,18 @@ public class Enemy : MonoBehaviour
 
     public void Slow(float factor, float duration)
     {
-        slowFactor = factor;
-        slowUntil = Time.time + duration;
+        // si ja està frenat, es queda el frenat més fort i el que dura més (així una zona gelada
+        // no afluixa el frenat d'un projectil de Sorbet, ni al revés)
+        if (Time.time < slowUntil)
+        {
+            slowFactor = Mathf.Min(slowFactor, factor);
+            slowUntil = Mathf.Max(slowUntil, Time.time + duration);
+        }
+        else
+        {
+            slowFactor = factor;
+            slowUntil = Time.time + duration;
+        }
     }
 
     public void ApplyActDifficulty(float healthMultiplier, float speedBonus)
@@ -267,11 +278,19 @@ public class Enemy : MonoBehaviour
         if (srb != null) srb.linearVelocity = dir * shotSpeed;
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount, bool crit = false)
     {
         if (dead) return;
-        health -= Mathf.RoundToInt(amount * damageMultiplier);
+        int dealt = Mathf.RoundToInt(amount * damageMultiplier);
+        health -= dealt;
         ForceHitFlash();
+
+        // "suc" de l'impacte: número de dany (groc als crítics) i una mica de pausa als crítics
+        DamageNumber.Spawn((Vector2)transform.position + Vector2.up * 0.7f, dealt, crit);
+        if (crit) HitStop.Do(0.045f);
+
+        // els caps trontollen una mica a cada cop
+        if (isBoss && health > 0) CameraFX.Shake(0.07f, crit ? 0.1f : 0.05f);
 
         if (health <= 0)
         {
@@ -279,6 +298,12 @@ public class Enemy : MonoBehaviour
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddKill(points, transform.position);
             CameraFX.Shake(0.14f, 0.12f);
+            if (isBoss)
+            {
+                // matar un cap: pausa llarga i un bon xoc de càmera (el de després guanya al de dalt)
+                HitStop.Do(0.2f, true);
+                CameraFX.Shake(0.6f, 0.35f);
+            }
             OnKilled?.Invoke(this);
             Destroy(gameObject);
         }

@@ -108,6 +108,7 @@ public class BoonManager : MonoBehaviour
         if (useCodeDishes || boons == null || boons.Length == 0) BuildDefaultBoons();
 
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
+        SetBonuses.ResetAll();      // els conjunts tampoc
         if (panel != null) panel.SetActive(false);
         if (takenText == null) BuildTakenText();
         Enemy.OnKilled += HandleKill;
@@ -140,6 +141,13 @@ public class BoonManager : MonoBehaviour
         {
             killCounter = 0;
             health.Heal(1);
+
+            // Sobretaula (conjunt): en curar-te per clients, uns segons de tret més ràpid
+            if (SetBonuses.Has(SetId.Aftermeal) && shooting != null)
+            {
+                shooting.GrantHaste(4f);
+                HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2f, "SOBRETAULA! Tret ràpid", new Color(1f, 0.7f, 0.3f), 1.4f);
+            }
         }
     }
 
@@ -418,8 +426,84 @@ public class BoonManager : MonoBehaviour
 
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
         Apply(boon);
+        CheckSets();
         RefreshTakenText();
         Debug.Log("Plats: " + boon.name + " (" + boon.description + ")");
+    }
+
+    // ---------- PLATS DE CONJUNT ----------
+
+    // activa els conjunts que ara es completen (tens un plat de cada tipus de la parella)
+    void CheckSets()
+    {
+        foreach (SetBonus s in SetBonuses.All)
+        {
+            if (SetBonuses.Has(s.id)) continue;
+            if (TypeStacks(s.a) > 0 && TypeStacks(s.b) > 0) ActivateSet(s);
+        }
+    }
+
+    void ActivateSet(SetBonus s)
+    {
+        SetBonuses.Activate(s.id);
+
+        // efectes que es posen una sola vegada, en activar-se
+        if (s.id == SetId.Dart && shooting != null) shooting.pierce += 1;
+
+        // la resta d'efectes els consulten directament Projectile, PlayerShooting, DashDamage...
+        if (health != null)
+        {
+            HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2.4f,
+                "CONJUNT! " + s.name + "\n<size=65%>" + s.effect + "</size>",
+                new Color(1f, 0.82f, 0.3f), 2.4f);
+        }
+        Debug.Log("Conjunt: " + s.name + " (" + s.effect + ")");
+    }
+
+    // el conjunt que completaria aquest plat si el triessis ara (o null)
+    SetBonus SetCompletedBy(Boon b)
+    {
+        if (b == null) return null;
+        foreach (SetBonus s in SetBonuses.All)
+        {
+            if (SetBonuses.Has(s.id)) continue;
+
+            BoonType other;
+            if (s.a == b.type) other = s.b;
+            else if (s.b == b.type) other = s.a;
+            else continue;
+
+            if (TypeStacks(other) > 0) return s;
+        }
+        return null;
+    }
+
+    // ---------- MODE DE PROVA ----------
+
+    public Boon[] Library { get { return boons; } }
+
+    public int StacksOf(Boon b)
+    {
+        return b != null && taken.ContainsKey(b) ? taken[b] : 0;
+    }
+
+    // dona un plat sense topall (el mode de prova)
+    public void DebugGive(Boon b)
+    {
+        if (b == null) return;
+        taken[b] = StacksOf(b) + 1;
+        Apply(b);
+        CheckSets();
+        RefreshTakenText();
+    }
+
+    // obre ara la pantalla de triar plat
+    public bool DebugOffer()
+    {
+        if (panel != null && panel.activeSelf) return false;
+        if (Time.timeScale == 0f) return false;
+        StartCoroutine(OfferBoons());
+        return true;
     }
 
     void Apply(Boon boon)
@@ -1011,7 +1095,26 @@ public class BoonManager : MonoBehaviour
         float descTop = sepY + u * 4f;
         RectTransform descRt = MakeRect(card.transform, "Descripcio", Vector2.zero, Vector2.one,
             new Vector2(edge + pad, edge + pad + keyH + pad), new Vector2(-(edge + pad), -descTop));
-        Label(descRt, DescribeBoon(boon), descSize, TextAlignmentOptions.Top, InkSoft, false, true);
+        string descText = DescribeBoon(boon);
+        SetBonus completes = SetCompletedBy(boon);
+        if (completes != null)
+            descText += "\n<color=#A8650A>Conjunt " + completes.name + ": " + completes.effect + "</color>";
+        Label(descRt, descText, descSize, TextAlignmentOptions.Top, InkSoft, false, true);
+
+        // si aquest plat completa un conjunt, una cinta daurada a la capçalera
+        if (completes != null)
+        {
+            string ribbon = "CONJUNT";
+            float ribW = ribbon.Length * tagSize * 0.68f + u * 4f;
+            RectTransform ribRt = MakeFixed(hdr, "EtiquetaConjunt", new Vector2(0f, 0f), new Vector2(0f, 0f),
+                new Vector2(u * 2f, u * 3f), new Vector2(ribW, tagH));
+            Image ribFrame = ribRt.gameObject.AddComponent<Image>();
+            ribFrame.color = Frame;
+            ribFrame.raycastTarget = false;
+            Image ribFace = Box(ribRt, "Fons", Gold, Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+            Label(ribFace.rectTransform, ribbon, tagSize, TextAlignmentOptions.Center, Ink, true, false);
+        }
 
         // la tecla per triar-lo (1, 2, 3...), com una tecla de teclat
         RectTransform keyRt = MakeFixed(card.transform, "Tecla", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
@@ -1325,6 +1428,26 @@ public class BoonManager : MonoBehaviour
             }
 
             n++;
+        }
+
+        // sota les icones, els conjunts activats
+        int rows = (n + perRow - 1) / perRow;
+        float y = -rows * (s + gap) - u;
+        float lh = s * 0.46f;
+        foreach (SetBonus set in SetBonuses.All)
+        {
+            if (!SetBonuses.Has(set.id)) continue;
+
+            string line = set.name;
+            float lw = line.Length * lh * 0.5f + u * 4f;
+            RectTransform chip = MakeFixed(takenStrip, "Conjunt_" + set.id, tl, tl, new Vector2(0f, y), new Vector2(lw, lh));
+            Image fr = chip.gameObject.AddComponent<Image>();
+            fr.color = Frame;
+            fr.raycastTarget = false;
+            Image face = Box(chip, "Fons", new Color(0.30f, 0.20f, 0.12f, 1f), Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+            Label(face.rectTransform, line, lh * 0.55f, TextAlignmentOptions.Center, Gold, true, false);
+            y -= lh + u;
         }
     }
 }
