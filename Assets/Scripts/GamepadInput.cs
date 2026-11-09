@@ -70,7 +70,70 @@ public class GamepadInput : MonoBehaviour
     {
         DetectMode();
         AutoSelectInMenus();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        if (Keyboard.current != null && Keyboard.current.f12Key.wasPressedThisFrame) showDiagnostics = !showDiagnostics;
+#endif
     }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // ---------- DIAGNÒSTIC (F12) ----------
+    // Mostra quins comandaments veu el joc i què marquen, per saber per què un comandament no funciona.
+    private bool showDiagnostics;
+
+    void OnGUI()
+    {
+        if (!showDiagnostics) return;
+        float s = Mathf.Max(1f, Screen.height / 720f);
+        GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
+        GUILayout.BeginArea(new Rect(10, 10, 520, 680), GUI.skin.box);
+        GUILayout.Label("<b>DIAGNÒSTIC DE COMANDAMENTS (F12)</b>", Rich());
+
+        int pads = 0;
+        foreach (InputDevice d in InputSystem.devices)
+        {
+            if (!(d is Gamepad) && !(d is Joystick)) continue;
+            pads++;
+            bool current = d == Gamepad.current;
+            GUILayout.Label((current ? "▶ " : "   ") + d.displayName + "  [" + d.layout + "]" + (d.enabled ? "" : "  (DESACTIVAT)"), Rich());
+        }
+        foreach (InputDevice d in InputSystem.disconnectedDevices)
+            if (d is Gamepad || d is Joystick) GUILayout.Label("   (desconnectat) " + d.displayName + "  [" + d.layout + "]", Rich());
+        if (pads == 0)
+        {
+            GUILayout.Label("<color=#ff8080>Cap comandament detectat.</color>", Rich());
+            GUILayout.Label("Prova: cable USB · tancar Steam (o treure-hi el suport de PlayStation) · tancar DS4Windows", Rich());
+        }
+
+        Gamepad g = Gamepad.current;
+        if (g != null)
+        {
+            GUILayout.Space(6);
+            GUILayout.Label("Joystick esquerre: " + g.leftStick.ReadValue().ToString("F2") + "   dret: " + g.rightStick.ReadValue().ToString("F2"), Rich());
+            GUILayout.Label("Gallets: L " + g.leftTrigger.ReadValue().ToString("F2") + "  R " + g.rightTrigger.ReadValue().ToString("F2"), Rich());
+            string pressed = "";
+            foreach (var c in g.allControls)
+                if (c is UnityEngine.InputSystem.Controls.ButtonControl b && b.isPressed && !(c.parent is UnityEngine.InputSystem.Controls.StickControl))
+                    pressed += c.name + " ";
+            GUILayout.Label("Botons premuts: " + (pressed.Length > 0 ? pressed : "cap"), Rich());
+        }
+
+        // els dispositius que el sistema veu però no sap què són (per exemple, un comandament per Bluetooth mal reconegut)
+        GUILayout.Space(6);
+        GUILayout.Label("Altres dispositius:", Rich());
+        foreach (InputDevice d in InputSystem.devices)
+            if (!(d is Gamepad) && !(d is Joystick) && !(d is Keyboard) && !(d is Mouse))
+                GUILayout.Label("   " + d.displayName + "  [" + d.layout + "]", Rich());
+        GUILayout.Label("Mode actual: " + (UsingGamepad ? "comandament" : "teclat i ratolí"), Rich());
+        GUILayout.EndArea();
+    }
+
+    static GUIStyle rich;
+    static GUIStyle Rich()
+    {
+        if (rich == null) { rich = new GUIStyle(GUI.skin.label) { richText = true, wordWrap = true }; }
+        return rich;
+    }
+#endif
 
     // ---------- AMB QUÈ S'ESTÀ JUGANT ----------
 
