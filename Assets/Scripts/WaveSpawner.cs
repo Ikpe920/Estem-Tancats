@@ -129,8 +129,15 @@ public class WaveSpawner : MonoBehaviour
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
 
-                if (bossManager != null)
-                    yield return StartCoroutine(bossManager.PlayIntro(info.name, info.subtitle));
+                // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
+                Sprite portrait = info.sprite;
+                if (portrait == null && info.prefab != null)
+                {
+                    SpriteRenderer psr = info.prefab.GetComponentInChildren<SpriteRenderer>();
+                    if (psr != null) portrait = psr.sprite;
+                }
+                int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
+                yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave));
 
                 SpawnBoss(info);
                 count /= 2; // a l'onada del boss surten menys enemics normals
