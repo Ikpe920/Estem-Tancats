@@ -66,7 +66,13 @@ public class WaveSpawner : MonoBehaviour
     [Header("Final del joc")]
     public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
 
+    [Header("Onades encallades")]
+    public float stuckCheckInterval = 1f; // cada quant es miren els clients que han sortit de l'arena
+    public float stuckWaveTimeout = 45f;  // segons sense cap baixa (amb el cap ja mort) abans de treure els que queden (0 = mai)
+
     public int currentWave = 0;
+
+    private Enemy currentBoss; // el cap de l'onada actual (no el traiem mai per temps)
 
     public static WaveSpawner Instance; // perquè els caps puguin invocar clients
 
@@ -117,10 +123,7 @@ public class WaveSpawner : MonoBehaviour
                 yield return new WaitForSeconds(Mathf.Max(0.15f, spawnInterval - 0.012f * (currentWave - 1)));
             }
 
-            while (Enemy.Alive > 0)
-            {
-                yield return null;
-            }
+            yield return StartCoroutine(WaitForWaveCleared());
 
             // bonus d'onada (doble si no t'han tocat)
             if (ScoreManager.Instance != null)
@@ -155,6 +158,64 @@ public class WaveSpawner : MonoBehaviour
                 yield return StartCoroutine(boonManager.OfferBoons());
 
             yield return new WaitForSeconds(timeBetweenWaves);
+        }
+    }
+
+    // espera que no quedi cap client. Si algun surt de l'arena el tornem a dins, i si l'onada
+    // porta massa estona sense cap baixa (algun client encallat en un moble) traiem els que queden
+    IEnumerator WaitForWaveCleared()
+    {
+        int lastAlive = Enemy.Alive;
+        float lastProgress = Time.time;
+        float nextCheck = Time.time + stuckCheckInterval;
+
+        while (Enemy.Alive > 0)
+        {
+            if (Enemy.Alive < lastAlive) lastProgress = Time.time;
+            lastAlive = Enemy.Alive;
+
+            if (Time.time >= nextCheck)
+            {
+                nextCheck = Time.time + stuckCheckInterval;
+                RescueOutOfBounds();
+
+                bool bossAlive = currentBoss != null;
+                if (!bossAlive && stuckWaveTimeout > 0f && Time.time - lastProgress >= stuckWaveTimeout)
+                {
+                    RemoveStragglers();
+                    lastProgress = Time.time;
+                }
+            }
+
+            yield return null; // amb Time.time: amb el joc pausat el compte no avança
+        }
+    }
+
+    void RescueOutOfBounds()
+    {
+        if (player == null) return;
+        Vector2 half = HazardManager.ArenaSize * 0.5f + Vector2.one * 0.5f;
+        Vector2 c = HazardManager.ArenaCenter;
+
+        foreach (Enemy e in FindObjectsByType<Enemy>())
+        {
+            Vector2 p = e.transform.position;
+            if (Mathf.Abs(p.x - c.x) <= half.x && Mathf.Abs(p.y - c.y) <= half.y) continue;
+
+            Rigidbody2D erb = e.GetComponent<Rigidbody2D>();
+            Vector2 to = RandomSpawnPosition();
+            if (erb != null) { erb.position = to; erb.linearVelocity = Vector2.zero; }
+            else e.transform.position = to;
+        }
+    }
+
+    // treu els clients que queden sense donar punts (el cap de l'onada no es toca mai)
+    void RemoveStragglers()
+    {
+        foreach (Enemy e in FindObjectsByType<Enemy>())
+        {
+            if (e == currentBoss) continue;
+            Destroy(e.gameObject);
         }
     }
 
@@ -242,6 +303,7 @@ public class WaveSpawner : MonoBehaviour
 
         GameObject b = Instantiate(info.prefab, RandomSpawnPosition(), Quaternion.identity);
         Enemy e = b.GetComponent<Enemy>();
+        currentBoss = e;
 
         if (e != null)
         {

@@ -35,6 +35,7 @@ public class BossManager : MonoBehaviour
         cg.alpha = 0f;
 
         introPanel.SetActive(true);
+        bool wasPaused = Time.timeScale == 0f; // si ja estava pausat, no el reprenem en acabar
         Time.timeScale = 0f; // pausa el joc
 
         float fade = 0.5f;
@@ -56,7 +57,7 @@ public class BossManager : MonoBehaviour
         }
 
         introPanel.SetActive(false);
-        Time.timeScale = 1f;
+        if (!wasPaused) Time.timeScale = 1f;
     }
 
     public void TrackBoss(Enemy boss, string bossName)
