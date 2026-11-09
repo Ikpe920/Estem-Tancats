@@ -42,6 +42,70 @@ public class ActManager : MonoBehaviour
 
     public static event System.Action<int> OnActChanged;
 
+    // ---------- TORN DE NIT (el mode infinit) ----------
+    // Després de l'onada 25 les sales continuen canviant (a l'atzar, mai la mateixa), però la dificultat
+    // ja no torna a baixar: parteix de la de l'última sala i puja una mica a cada sala nova.
+    public bool NightShift { get; private set; }
+    public int NightRooms { get; private set; }               // sales visitades al torn de nit
+    public int NightRound => 2 + Mathf.Max(0, NightRooms - 1) / 5; // la ronda 1 és el servei normal
+
+    static readonly string[] NightSubtitles =
+    {
+        "Han parat taula... i el plat principal ets tu",
+        "L'última ronda no s'acaba mai",
+        "Els fogons encara cremen",
+        "Fa fresca, però ningú no marxa",
+        "Ni la lluna no et salvarà",
+    };
+
+    public void StartNightShift()
+    {
+        NightShift = true;
+        NightRooms = 0;
+    }
+
+    // la dificultat de la sala (al torn de nit, la de la sala més difícil i una mica més)
+    public int ExtraEnemies
+    {
+        get
+        {
+            if (!NightShift) return Current != null ? Current.extraEnemies : 0;
+            int max = 0;
+            if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.extraEnemies);
+            return max + NightRooms;
+        }
+    }
+
+    public float HealthMultiplier
+    {
+        get
+        {
+            if (!NightShift) return Current != null ? Current.enemyHealthMultiplier : 1f;
+            float max = 1f;
+            if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.enemyHealthMultiplier);
+            return max * (1f + 0.12f * NightRooms);
+        }
+    }
+
+    public float SpeedBonus
+    {
+        get
+        {
+            if (!NightShift) return Current != null ? Current.enemySpeedBonus : 0f;
+            float max = 0f;
+            if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.enemySpeedBonus);
+            return max + 0.04f * NightRooms;
+        }
+    }
+
+    // de nit, tot una mica més fosc i blavós
+    public Color TintOf(ActData act)
+    {
+        if (act == null) return Color.white;
+        Color t = act.tint;
+        return NightShift ? new Color(t.r * 0.72f, t.g * 0.76f, t.b * 0.95f, t.a) : t;
+    }
+
     public ActData Current
     {
         get
@@ -182,10 +246,10 @@ public class ActManager : MonoBehaviour
         {
             Sprite sprite = GetActSprite(act);
             if (sprite != null) background.sprite = sprite;
-            background.color = act.tint;
+            background.color = TintOf(act);
             FitBackgroundToArena();
         }
-        if (cam != null) cam.backgroundColor = act.tint * 0.4f;
+        if (cam != null) cam.backgroundColor = TintOf(act) * 0.4f;
         if (musicSource != null && act.music != null)
         {
             musicSource.clip = act.music;
@@ -209,10 +273,18 @@ public class ActManager : MonoBehaviour
 
         yield return StartCoroutine(FadeTo(0f, Color.black));
 
-        ApplyAct(currentAct + 1);
+        if (NightShift && acts.Length > 1)
+        {
+            // torn de nit: una sala a l'atzar, mai la mateixa
+            NightRooms++;
+            int next = Random.Range(0, acts.Length - 1);
+            if (next >= currentAct) next++;
+            ApplyAct(next);
+        }
+        else ApplyAct(currentAct + 1);
 
         ActData act = Current;
-        Color tint = act != null ? act.tint : Color.white;
+        Color tint = TintOf(act);
         if (background != null) background.color = new Color(tint.r, tint.g, tint.b, 0f);
         if (cam != null) cam.backgroundColor = Color.black;
 
@@ -248,7 +320,12 @@ public class ActManager : MonoBehaviour
         ActData act = Current;
         if (act == null) yield break;
         if (actPanel != null) actPanel.SetActive(false);
-        yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint);
+        if (NightShift)
+        {
+            string sub = currentAct < NightSubtitles.Length ? NightSubtitles[currentAct] : act.subtitle;
+            yield return ActBanner.ActTitle("—  TORN DE NIT · RONDA " + NightRound + "  —", act.name, sub, titleDuration, TintOf(act));
+        }
+        else yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint);
     }
 
     // el segell d'onada completada (o "SERVEI PERFECTE!" si no t'han tocat)
