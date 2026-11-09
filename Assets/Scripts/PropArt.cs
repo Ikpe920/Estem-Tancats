@@ -361,6 +361,22 @@ public static class PropArt
         return shadow = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), w); // 1 x 0,5 unitats
     }
 
+    // ---------- ACCESSORIS DELS CLIENTS ESPECIALS ----------
+
+    static Sprite bigTray;
+
+    // safata gran de metall, vista de cantell (l'Escut): fa de paret pel davant
+    public static Sprite BigTray()
+    {
+        if (bigTray != null) return bigTray;
+        PixelCanvas c = new PixelCanvas(10, 40);
+        c.RoundRect(0, 0, 10, 40, 4, MetalDark);
+        c.RoundRect(2, 2, 6, 36, 3, Metal);
+        c.Rect(3, 4, 2, 30, new Color(0.85f, 0.86f, 0.9f)); // reflex
+        c.OutlineAround(Outline);
+        return bigTray = c.ToSprite();
+    }
+
     static Sprite glow;
 
     // llum suau blanca i rodona (1 x 1 unitat) per tenyir del color que calgui

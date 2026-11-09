@@ -303,7 +303,7 @@ public class WaveSpawner : MonoBehaviour
     {
         if (spawnWarningTime <= 0f)
         {
-            ApplyWaveDifficulty(Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>());
+            SpawnNow(prefab, pos);
             return;
         }
         StartCoroutine(SpawnAfterWarning(prefab, pos));
@@ -321,7 +321,15 @@ public class WaveSpawner : MonoBehaviour
         if (generation != spawnGeneration) yield break; // el mode de prova ha saltat d'onada
         if (PlayerHealth.IsDying) yield break;
 
-        ApplyWaveDifficulty(Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>());
+        SpawnNow(prefab, pos);
+    }
+
+    // el client surt ja: vida i velocitat de l'onada, i potser és un client especial (EnemyVariants)
+    void SpawnNow(GameObject prefab, Vector2 pos)
+    {
+        Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
+        ApplyWaveDifficulty(e);
+        EnemyVariants.MaybeApply(e, prefab, currentWave);
     }
 
     // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
@@ -450,6 +458,36 @@ public class WaveSpawner : MonoBehaviour
         // fora tots els clients (sense punts ni plats: és un salt de prova)
         foreach (Enemy e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
             if (e != null) Destroy(e.gameObject);
+        return true;
+    }
+
+    // MODE DE PROVA: fa sortir un client especial de cada tipus al voltant del jugador
+    public bool DebugSpawnSpecials()
+    {
+        if (player == null || enemyTypes == null) return false;
+
+        GameObject prefab = null;
+        foreach (EnemyType t in enemyTypes)
+        {
+            Enemy e = t.prefab != null ? t.prefab.GetComponent<Enemy>() : null;
+            if (e != null && !e.isShooter) { prefab = t.prefab; break; }
+        }
+        if (prefab == null) return false;
+
+        System.Array kinds = System.Enum.GetValues(typeof(EnemyVariants.Kind));
+        for (int i = 0; i < kinds.Length; i++)
+        {
+            float a = i * Mathf.PI * 2f / kinds.Length;
+            Vector2 pos = (Vector2)player.position + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 5f;
+            Vector2 c = HazardManager.ArenaCenter;
+            Vector2 half = HazardManager.ArenaSize * 0.5f - Vector2.one * 2f;
+            pos.x = Mathf.Clamp(pos.x, c.x - half.x, c.x + half.x);
+            pos.y = Mathf.Clamp(pos.y, c.y - half.y, c.y + half.y);
+
+            Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
+            ApplyWaveDifficulty(e);
+            EnemyVariants.Force(e, prefab, (EnemyVariants.Kind)kinds.GetValue(i));
+        }
         return true;
     }
 
