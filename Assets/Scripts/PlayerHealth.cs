@@ -48,7 +48,7 @@ public class PlayerHealth : MonoBehaviour
         lives--;
         if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa
         Progression.OnPlayerHit(); // per als reptes "sense cops"
-        AudioManager.Play("hurt");
+        if (lives > 0) AudioManager.Play("hurt"); // si és l'últim cor, ja sona la mort
         nextDamageTime = Time.time + invulnerabilityTime;
         OnLivesChanged?.Invoke(lives);
         CameraFX.Shake(0.18f, 0.16f);
