@@ -218,6 +218,125 @@ public static class PropArt
         c.Rect(1, h - 1, w - 2, 1, Shade(wood, 1.2f));
     }
 
+    // ---------- PREMIS QUE SURTEN DE LES CAIXES ----------
+
+    static Sprite coffee, pepper, coin, heart;
+
+    // tassa de cafè amb plat i fum (0,8 x 0,8)
+    public static Sprite Coffee()
+    {
+        if (coffee != null) return coffee;
+        PixelCanvas c = new PixelCanvas(32, 32);
+        Color china = new Color(0.97f, 0.95f, 0.92f);
+        Color chinaShade = new Color(0.78f, 0.76f, 0.74f);
+
+        // plat
+        c.Ellipse(16, 6, 13, 4, chinaShade);
+        c.Ellipse(16, 7, 12, 3, china);
+        // nansa
+        c.Ring(24, 15, 4, 2, china);
+        // tassa
+        c.RoundRect(7, 6, 16, 15, 3, china);
+        c.Rect(7, 6, 16, 3, chinaShade);
+        c.Rect(19, 9, 3, 10, chinaShade);
+        // cafè a dalt
+        c.Ellipse(15, 20, 7, 2, new Color(0.38f, 0.22f, 0.11f));
+        c.Set(12, 21, new Color(0.62f, 0.42f, 0.25f));
+        c.OutlineAround(Outline);
+
+        // fum (sense contorn)
+        Color steam = new Color(1f, 1f, 1f, 0.75f);
+        for (int i = 0; i < 2; i++)
+        {
+            int sx = 12 + i * 6;
+            for (int y = 24; y < 31; y++)
+                c.Set(sx + ((y / 2) % 2 == 0 ? 0 : 1), y, steam);
+        }
+        return coffee = c.ToSprite();
+    }
+
+    // bitxo vermell amb la cua verda (0,8 x 0,8)
+    public static Sprite Pepper()
+    {
+        if (pepper != null) return pepper;
+        PixelCanvas c = new PixelCanvas(32, 32);
+        Color red = new Color(0.86f, 0.15f, 0.12f);
+        Color redDark = new Color(0.62f, 0.08f, 0.08f);
+
+        // el cos: cercles cada cop més petits seguint una corba, de dalt a l'esquerra cap a baix a la dreta
+        for (int i = 0; i <= 20; i++)
+        {
+            float t = i / 20f;
+            float x = Mathf.Lerp(10f, 25f, t);
+            float y = Mathf.Lerp(22f, 4f, t) + Mathf.Sin(t * Mathf.PI) * 3f;
+            int r = Mathf.RoundToInt(Mathf.Lerp(6f, 1.5f, t));
+            c.Circle(Mathf.RoundToInt(x), Mathf.RoundToInt(y), r, red);
+        }
+        // ombra i reflex
+        for (int i = 0; i <= 14; i++)
+        {
+            float t = i / 20f;
+            c.Set(Mathf.RoundToInt(Mathf.Lerp(12f, 25f, t)) + 2, Mathf.RoundToInt(Mathf.Lerp(20f, 4f, t) + Mathf.Sin(t * Mathf.PI) * 3f) - 3, redDark);
+            c.Set(Mathf.RoundToInt(Mathf.Lerp(8f, 22f, t)), Mathf.RoundToInt(Mathf.Lerp(23f, 7f, t) + Mathf.Sin(t * Mathf.PI) * 3f) + 1, new Color(1f, 0.55f, 0.5f));
+        }
+        // la cua i el capoll verds
+        Color green = new Color(0.25f, 0.62f, 0.22f);
+        c.Ellipse(9, 25, 5, 2, green);
+        c.Line(8, 26, 5, 30, 2, green);
+        c.OutlineAround(Outline);
+        return pepper = c.ToSprite();
+    }
+
+    // moneda daurada amb una estrella (0,8 x 0,8)
+    public static Sprite Coin()
+    {
+        if (coin != null) return coin;
+        PixelCanvas c = new PixelCanvas(32, 32);
+        Color gold = new Color(1f, 0.80f, 0.20f);
+        Color goldDark = new Color(0.80f, 0.55f, 0.10f);
+        Color goldLight = new Color(1f, 0.95f, 0.60f);
+
+        c.Circle(16, 16, 13, goldDark);
+        c.Circle(16, 17, 12, gold);
+        c.Ring(16, 17, 9, 1, goldDark);
+        // estrella de cinc puntes al mig
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 32; x++)
+                if (InStar(x + 0.5f - 16f, y + 0.5f - 17f, 6.5f, 2.8f)) c.Set(x, y, goldLight);
+        // reflex
+        c.Line(8, 22, 11, 26, 2, goldLight);
+        c.OutlineAround(Outline);
+        return coin = c.ToSprite();
+    }
+
+    // cor vermell (per si el HUD no té sprite de cor)
+    public static Sprite Heart()
+    {
+        if (heart != null) return heart;
+        PixelCanvas c = new PixelCanvas(32, 32);
+        Color red = new Color(0.90f, 0.18f, 0.25f);
+        for (int y = 0; y < 32; y++)
+            for (int x = 0; x < 32; x++)
+            {
+                float u = (x + 0.5f - 16f) / 13f, v = (y + 0.5f - 15f) / 13f;
+                float a = u * u + v * v - 1f;
+                if (a * a * a - u * u * v * v * v <= 0f) c.Set(x, y, red); // la corba del cor
+            }
+        c.Circle(10, 20, 2, new Color(1f, 0.6f, 0.65f));
+        c.OutlineAround(Outline);
+        return heart = c.ToSprite();
+    }
+
+    static bool InStar(float x, float y, float outer, float inner)
+    {
+        float ang = Mathf.Atan2(y, x) + Mathf.PI / 2f; // una punta cap amunt
+        float seg = Mathf.PI * 2f / 5f;
+        float a = Mathf.Repeat(ang, seg) - seg / 2f;    // -seg/2 .. seg/2
+        float k = Mathf.Abs(a) / (seg / 2f);            // 0 a la punta, 1 entre puntes
+        float r = Mathf.Lerp(outer, inner, k);
+        return x * x + y * y <= r * r;
+    }
+
     // ---------- OMBRA ----------
 
     // ombra suau (el·lipse fosca) per posar a sota de taules i caixes
@@ -240,6 +359,28 @@ public static class PropArt
         tex.SetPixels32(px);
         tex.Apply();
         return shadow = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0.5f), w); // 1 x 0,5 unitats
+    }
+
+    static Sprite glow;
+
+    // llum suau blanca i rodona (1 x 1 unitat) per tenyir del color que calgui
+    public static Sprite Glow()
+    {
+        if (glow != null) return glow;
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        Color32[] px = new Color32[size * size];
+        for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(size / 2f, size / 2f)) / (size / 2f);
+                float a = Mathf.Clamp01(1f - d);
+                px[y * size + x] = new Color32(255, 255, 255, (byte)(a * a * 255f));
+            }
+        tex.SetPixels32(px);
+        tex.Apply();
+        return glow = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
     // ---------- AJUDES ----------
@@ -324,6 +465,26 @@ public static class PropArt
             for (int y = cy - r; y <= cy + r; y++)
                 for (int x = cx - r; x <= cx + r; x++)
                     if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r + r * 0.8f) Set(x, y, c); // +r: sense piquets d'un píxel a les vores
+        }
+
+        public void Ellipse(int cx, int cy, int rx, int ry, Color c)
+        {
+            for (int y = cy - ry; y <= cy + ry; y++)
+                for (int x = cx - rx; x <= cx + rx; x++)
+                {
+                    float dx = (x - cx) / (rx + 0.5f), dy = (y - cy) / (ry + 0.5f);
+                    if (dx * dx + dy * dy <= 1f) Set(x, y, c);
+                }
+        }
+
+        public void Ring(int cx, int cy, int r, int thickness, Color c)
+        {
+            for (int y = cy - r - 1; y <= cy + r + 1; y++)
+                for (int x = cx - r - 1; x <= cx + r + 1; x++)
+                {
+                    float d = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                    if (d <= r + 0.5f && d >= r - thickness + 0.5f) Set(x, y, c);
+                }
         }
 
         public void Line(int x0, int y0, int x1, int y1, int thickness, Color c)
