@@ -96,7 +96,7 @@ public class FilmFilter : MonoBehaviour
         {
             profile = ScriptableObject.CreateInstance<VolumeProfile>();
             ColorAdjustments ca = profile.Add<ColorAdjustments>(true);
-            ca.saturation.Override(-65f);
+            ca.saturation.Override(-50f);
             ca.contrast.Override(14f);
             ca.colorFilter.Override(new Color(1f, 0.9f, 0.74f));
             ca.postExposure.Override(0.1f);
@@ -121,14 +121,14 @@ public class FilmFilter : MonoBehaviour
         Transform root = overlay.transform;
 
         // vel càlid i vinyeta
-        Full(root, "Vel").color = new Color(0.55f, 0.40f, 0.20f, 0.09f);
+        Full(root, "Vel").color = new Color(0.55f, 0.40f, 0.20f, 0.05f);
         RawImage vig = FullRaw(root, "Vinyeta");
         vig.texture = VignetteTexture();
 
         // gra
         grain = FullRaw(root, "Gra");
         grain.texture = NoiseTexture();
-        grain.color = new Color(1f, 1f, 1f, 0.55f);
+        grain.color = new Color(1f, 1f, 1f, 0.22f); // suau: que es vegi bé el fons
 
         // ratlles verticals
         for (int i = 0; i < 3; i++)
@@ -168,7 +168,7 @@ public class FilmFilter : MonoBehaviour
         if (t > nextFlicker)
         {
             nextFlicker = t + 1f / 12f;
-            flicker.color = new Color(0f, 0f, 0f, Random.Range(0f, 0.055f));
+            flicker.color = new Color(0f, 0f, 0f, Random.Range(0f, 0.03f));
         }
 
         for (int i = 0; i < scratches.Count; i++)
@@ -177,7 +177,7 @@ public class FilmFilter : MonoBehaviour
             if (t > scratchUntil[i])
             {
                 // de tant en tant n'apareix una de nova
-                bool show = Random.value < 0.02f;
+                bool show = Random.value < 0.012f;
                 s.enabled = show;
                 if (show)
                 {
@@ -202,7 +202,7 @@ public class FilmFilter : MonoBehaviour
             Image d = dust[i];
             if (t > dustUntil[i])
             {
-                bool show = Random.value < 0.015f;
+                bool show = Random.value < 0.007f;
                 d.enabled = show;
                 dustUntil[i] = t + (show ? Random.Range(0.04f, 0.12f) : 0.05f);
                 if (show)
@@ -264,8 +264,8 @@ public class FilmFilter : MonoBehaviour
         for (int i = 0; i < px.Length; i++)
         {
             double r = rnd.NextDouble();
-            if (r < 0.10) px[i] = new Color32(20, 14, 10, (byte)rnd.Next(40, 110));
-            else if (r < 0.16) px[i] = new Color32(255, 248, 230, (byte)rnd.Next(30, 80));
+            if (r < 0.035) px[i] = new Color32(20, 14, 10, (byte)rnd.Next(30, 80));
+            else if (r < 0.05) px[i] = new Color32(255, 248, 230, (byte)rnd.Next(20, 60));
             else px[i] = new Color32(0, 0, 0, 0);
         }
         tex.SetPixels32(px);
@@ -285,7 +285,7 @@ public class FilmFilter : MonoBehaviour
             {
                 float dx = (x + 0.5f) / n - 0.5f, dy = (y + 0.5f) / n - 0.5f;
                 float d = Mathf.Sqrt(dx * dx + dy * dy) / 0.707f;
-                float a = Mathf.SmoothStep(0f, 0.55f, (d - 0.55f) / 0.45f);
+                float a = Mathf.SmoothStep(0f, 0.35f, (d - 0.6f) / 0.4f);
                 px[y * n + x] = new Color32(30, 18, 10, (byte)(a * 255));
             }
         tex.SetPixels32(px);
