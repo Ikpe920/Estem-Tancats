@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class HUD : MonoBehaviour
@@ -22,6 +23,110 @@ public class HUD : MonoBehaviour
                 - new Vector2(0f, scoreText.fontSize * 1.25f);
             comboText.text = "";
         }
+        Decorate();
+    }
+
+    // ---------- ASPECTE ----------
+    // panells foscos darrere dels textos, contorn, requadres més amples (el text en sortia),
+    // els punts que compten cap amunt i fan un salt, l'onada que fa un salt en canviar,
+    // i una barra amb el temps que queda de ratxa
+    private Image scorePanel, wavePanel, comboBarBg, comboBar;
+    private float displayedScore;
+    private float scorePop, wavePop;
+    private int lastWaveShown = -1;
+
+    void Decorate()
+    {
+        if (scoreText != null)
+        {
+            RectTransform rt = scoreText.rectTransform;
+            rt.sizeDelta = new Vector2(380f, 56f);
+            rt.anchoredPosition = new Vector2(-24f, -16f);
+            UIStyle.Outline(scoreText);
+            scorePanel = UIStyle.Panel(rt.parent, "PanellPunts", rt.anchorMin, rt.anchorMax, Vector2.zero, Vector2.zero);
+            scorePanel.rectTransform.pivot = rt.pivot;
+            scorePanel.rectTransform.anchoredPosition = new Vector2(-12f, -10f);
+        }
+        if (comboText != null)
+        {
+            RectTransform rt = comboText.rectTransform;
+            rt.sizeDelta = new Vector2(380f, 50f);
+            rt.anchoredPosition = new Vector2(-24f, -76f);
+            UIStyle.Outline(comboText);
+            // barra del temps de ratxa, sota el text
+            comboBarBg = MakeBar(rt.parent, new Color(0f, 0f, 0f, 0.55f));
+            comboBar = MakeBar(rt.parent, Color.white);
+            comboBar.type = Image.Type.Filled;
+            comboBar.fillMethod = Image.FillMethod.Horizontal;
+            comboBar.sprite = SpriteFactory.Square();
+        }
+        if (waveText != null)
+        {
+            RectTransform rt = waveText.rectTransform;
+            rt.sizeDelta = new Vector2(760f, 56f);
+            rt.anchoredPosition = new Vector2(0f, -14f);
+            UIStyle.Outline(waveText);
+            wavePanel = UIStyle.Panel(rt.parent, "PanellOnada", rt.anchorMin, rt.anchorMax, Vector2.zero, Vector2.zero);
+            wavePanel.rectTransform.pivot = rt.pivot;
+            wavePanel.rectTransform.anchoredPosition = new Vector2(0f, -8f);
+        }
+    }
+
+    Image MakeBar(Transform parent, Color color)
+    {
+        GameObject go = new GameObject("BarraRatxa", typeof(RectTransform), typeof(Image));
+        go.transform.SetParent(parent, false);
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(1f, 1f);
+        rt.sizeDelta = new Vector2(240f, 8f);
+        rt.anchoredPosition = new Vector2(-24f, -124f);
+        Image img = go.GetComponent<Image>();
+        img.color = color;
+        img.raycastTarget = false;
+        go.SetActive(false);
+        return img;
+    }
+
+    void LateUpdate()
+    {
+        float dt = Time.unscaledDeltaTime;
+        ScoreManager sm = ScoreManager.Instance;
+
+        // els punts compten cap amunt (i fan un salt quan en guanyes)
+        if (sm != null && scoreText != null)
+        {
+            if (sm.totalScore > displayedScore + 0.5f) scorePop = 1f;
+            displayedScore = Mathf.MoveTowards(displayedScore, sm.totalScore, Mathf.Max(30f, Mathf.Abs(sm.totalScore - displayedScore) * 6f) * dt);
+            int show = Mathf.RoundToInt(displayedScore);
+            if (show != shownScore) { shownScore = show; scoreText.text = "Punts: " + show; } // només quan canvia
+            scorePop = Mathf.MoveTowards(scorePop, 0f, dt * 4f);
+            scoreText.transform.localScale = Vector3.one * (1f + 0.15f * scorePop);
+        }
+        if (scorePanel != null && scoreText != null)
+            scorePanel.rectTransform.sizeDelta = new Vector2(scoreText.preferredWidth + 40f, 68f);
+
+        // l'onada fa un salt (i brilla) quan canvia
+        if (spawner != null && waveText != null)
+        {
+            if (spawner.currentWave != lastWaveShown) { if (lastWaveShown >= 0) wavePop = 1f; lastWaveShown = spawner.currentWave; }
+            wavePop = Mathf.MoveTowards(wavePop, 0f, dt * 1.6f);
+            waveText.transform.localScale = Vector3.one * (1f + 0.3f * wavePop);
+            waveText.color = Color.Lerp(Color.white, UIStyle.Gold, wavePop);
+            if (wavePanel != null) wavePanel.rectTransform.sizeDelta = new Vector2(waveText.preferredWidth + 50f, 68f);
+        }
+
+        // la barra de la ratxa: el temps que queda per despatxar el següent client
+        if (comboBar != null && sm != null)
+        {
+            bool on = sm.Combo >= 2;
+            if (comboBar.gameObject.activeSelf != on) { comboBar.gameObject.SetActive(on); comboBarBg.gameObject.SetActive(on); }
+            if (on)
+            {
+                comboBar.fillAmount = Mathf.Clamp01(sm.ComboTimeLeft / Mathf.Max(0.01f, sm.comboWindow));
+                comboBar.color = comboText != null ? comboText.color : UIStyle.Gold;
+            }
+        }
     }
 
     // els últims valors mostrats: el text només es refà quan canvien (abans es reconstruïa cada fotograma)
@@ -42,11 +147,7 @@ public class HUD : MonoBehaviour
         if (ScoreManager.Instance != null)
         {
             ScoreManager sm = ScoreManager.Instance;
-            if (scoreText != null && sm.totalScore != shownScore)
-            {
-                shownScore = sm.totalScore;
-                scoreText.text = "Punts: " + shownScore;
-            }
+            // (el text dels punts el porta LateUpdate: compta cap amunt)
 
             if (comboText != null)
             {
