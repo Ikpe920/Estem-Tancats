@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
@@ -65,6 +67,8 @@ public class BoonManager : MonoBehaviour
     private Button healButton;                 // l'opció de curar (en lloc d'un plat)
     private TextMeshProUGUI healLabel;
     private TextMeshProUGUI titleText;
+    private RectTransform takenStrip;          // la fila d'icones dels plats que ja tens (dalt a l'esquerra)
+    private readonly Dictionary<string, Sprite> iconCache = new Dictionary<string, Sprite>();
     public int healAmount = 1;     // cors que cura l'opció de curar
 
     void Awake()
@@ -161,6 +165,10 @@ public class BoonManager : MonoBehaviour
         return wave % everyNWaves == 0;
     }
 
+    // tecles per triar carta: 1-5 (fila de dalt i teclat numèric)
+    static readonly Key[] DigitKeys = { Key.Digit1, Key.Digit2, Key.Digit3, Key.Digit4, Key.Digit5 };
+    static readonly Key[] NumpadKeys = { Key.Numpad1, Key.Numpad2, Key.Numpad3, Key.Numpad4, Key.Numpad5 };
+
     public IEnumerator OfferBoons()
     {
         Boon[] picked = PickBoons(optionsPerOffer);
@@ -179,13 +187,22 @@ public class BoonManager : MonoBehaviour
 
         while (!picking) // espera que el jugador trii un boó
         {
-            // es pot triar amb el ratolí o amb les tecles 1, 2 i 3
+            // es pot triar amb el ratolí o amb les tecles 1-5 (també el teclat numèric); H per curar-se
             Keyboard kb = Keyboard.current;
-            if (kb != null)
+            if (kb != null && !picking)
             {
-                if (kb.digit1Key.wasPressedThisFrame && picked.Length > 0) Choose(picked[0]);
-                else if (kb.digit2Key.wasPressedThisFrame && picked.Length > 1) Choose(picked[1]);
-                else if (kb.digit3Key.wasPressedThisFrame && picked.Length > 2) Choose(picked[2]);
+                // currentOffer, no "picked": si es canvien les cartes (reroll), les tecles han de triar les noves
+                Boon[] offer = currentOffer != null ? currentOffer : picked;
+                for (int i = 0; i < offer.Length && i < DigitKeys.Length; i++)
+                {
+                    if (kb[DigitKeys[i]].wasPressedThisFrame || kb[NumpadKeys[i]].wasPressedThisFrame)
+                    {
+                        Choose(offer[i]);
+                        break;
+                    }
+                }
+
+                if (!picking && kb.hKey.wasPressedThisFrame) ChooseHeal();
             }
             yield return null;
         }
@@ -417,19 +434,199 @@ public class BoonManager : MonoBehaviour
 
     void RefreshTakenText()
     {
-        if (takenText == null) return;
-        string s = "Plats: ";
-        bool first = true;
-        foreach (Boon b in taken.Keys)
+        // si algú ha cablejat un text a mà, el fem servir com abans
+        if (takenText != null)
         {
-            if (!first) s += " · ";
-            s += b.name + (taken[b] > 1 ? " x" + taken[b] : "");
-            first = false;
+            string s = "Plats: ";
+            bool first = true;
+            foreach (Boon b in taken.Keys)
+            {
+                if (!first) s += " · ";
+                s += b.name + (taken[b] > 1 ? " x" + taken[b] : "");
+                first = false;
+            }
+            takenText.text = s;
+            return;
         }
-        takenText.text = s;
+
+        RefreshTakenStrip();
     }
 
     // ---------- LA INTERFÍCIE (es crea sola si no la cableges) ----------
+    //
+    // Estil: targetes de carta de restaurant en pixel art. Marc fosc gruixut, paper cru,
+    // capçalera de tovalles de quadres amb el plat dibuixat a sobre, i la tecla per triar-lo.
+    // Les icones dels plats són a Assets/Resources/Dishes (una per plat, pel nom).
+
+    static readonly Color Frame = new Color(0.16f, 0.11f, 0.13f, 1f);   // marc fosc
+    static readonly Color Paper = new Color(0.96f, 0.92f, 0.82f, 1f);   // paper de la carta
+    static readonly Color Ink = new Color(0.24f, 0.15f, 0.12f, 1f);     // tinta del nom
+    static readonly Color InkSoft = new Color(0.45f, 0.33f, 0.26f, 1f); // tinta de la descripció
+    static readonly Color Gold = new Color(1f, 0.8f, 0.3f, 1f);
+
+    // "píxel" de la interfície: marcs i detalls es dibuixen amb múltiples d'aquest valor
+    float PixelUnit()
+    {
+        return Mathf.Max(2f, Mathf.Round(Mathf.Max(240f, Screen.height) / 270f));
+    }
+
+    // ---- petites eines per muntar la interfície ----
+
+    RectTransform MakeRect(Transform parent, string objName, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
+    {
+        GameObject go = new GameObject(objName, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        RectTransform r = go.GetComponent<RectTransform>();
+        r.anchorMin = aMin;
+        r.anchorMax = aMax;
+        r.offsetMin = oMin;
+        r.offsetMax = oMax;
+        return r;
+    }
+
+    // rectangle de mida fixa, ancorat a un punt
+    RectTransform MakeFixed(Transform parent, string objName, Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size)
+    {
+        GameObject go = new GameObject(objName, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        RectTransform r = go.GetComponent<RectTransform>();
+        r.anchorMin = anchor;
+        r.anchorMax = anchor;
+        r.pivot = pivot;
+        r.sizeDelta = size;
+        r.anchoredPosition = pos;
+        return r;
+    }
+
+    Image Box(Transform parent, string objName, Color col, Vector2 aMin, Vector2 aMax, Vector2 oMin, Vector2 oMax)
+    {
+        RectTransform r = MakeRect(parent, objName, aMin, aMax, oMin, oMax);
+        Image img = r.gameObject.AddComponent<Image>();
+        img.color = col;
+        img.raycastTarget = false;
+        return img;
+    }
+
+    Image FixedBox(Transform parent, string objName, Color col, Vector2 anchor, Vector2 pivot, Vector2 pos, Vector2 size)
+    {
+        RectTransform r = MakeFixed(parent, objName, anchor, pivot, pos, size);
+        Image img = r.gameObject.AddComponent<Image>();
+        img.color = col;
+        img.raycastTarget = false;
+        return img;
+    }
+
+    // text que omple el seu pare
+    TextMeshProUGUI Label(Transform parent, string text, float size, TextAlignmentOptions align, Color color, bool bold, bool autoSize)
+    {
+        GameObject go = new GameObject("Text", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+
+        RectTransform r = go.GetComponent<RectTransform>();
+        r.anchorMin = Vector2.zero;
+        r.anchorMax = Vector2.one;
+        r.offsetMin = Vector2.zero;
+        r.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
+        if (TMP_Settings.defaultFontAsset != null) tmp.font = TMP_Settings.defaultFontAsset;
+        tmp.text = text;
+        tmp.fontSize = size;
+        tmp.alignment = align;
+        tmp.color = color;
+        tmp.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
+        tmp.textWrappingMode = TextWrappingModes.Normal;
+        tmp.raycastTarget = false;
+        if (autoSize)
+        {
+            tmp.enableAutoSizing = true;
+            tmp.fontSizeMax = size;
+            tmp.fontSizeMin = Mathf.Max(8f, size * 0.6f);
+        }
+        return tmp;
+    }
+
+    // ---- icones dels plats ----
+
+    // "Escudella i carn d'olla" -> "escudella_i_carn_d_olla" (el nom del fitxer a Resources/Dishes)
+    static string Slug(string name)
+    {
+        string d = (name ?? "").Normalize(NormalizationForm.FormD);
+        StringBuilder sb = new StringBuilder();
+        foreach (char ch in d.ToLowerInvariant())
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) == UnicodeCategory.NonSpacingMark) continue;
+            sb.Append(char.IsLetterOrDigit(ch) ? ch : '_');
+        }
+        return sb.ToString().Trim('_');
+    }
+
+    // la icona del plat: la que tingui el boon, i si no, la de Resources/Dishes amb el seu nom
+    Sprite GetIcon(Boon boon)
+    {
+        if (boon.icon != null) return boon.icon;
+
+        Sprite s;
+        if (iconCache.TryGetValue(boon.name, out s)) return s;
+
+        s = Resources.Load<Sprite>("Dishes/" + Slug(boon.name));
+        iconCache[boon.name] = s;
+        return s;
+    }
+
+    // etiqueta de la carta segons el tipus de plat
+    static string TagFor(Boon boon, out Color col)
+    {
+        if (boon.type2 != BoonType.None)
+        {
+            col = new Color(0.72f, 0.16f, 0.14f);
+            return "AMB RISC";
+        }
+
+        switch (boon.type)
+        {
+            case BoonType.MultiShot:
+            case BoonType.Pierce:
+            case BoonType.Explosive:
+            case BoonType.SlowOnHit:
+            case BoonType.DashDamage:
+            case BoonType.HealOnKills:
+            case BoonType.MoreChoices:
+                col = new Color(0.42f, 0.26f, 0.64f);
+                return "ESPECIALITAT";
+        }
+
+        col = new Color(0.17f, 0.45f, 0.30f);
+        return "DEL DIA";
+    }
+
+    // tovalles de quadres amb el color del plat (textura petita, es veu amb píxels grossos)
+    Texture2D MakeGingham(Color baseCol, int tw, int th)
+    {
+        Color mid = new Color(baseCol.r * 0.88f, baseCol.g * 0.88f, baseCol.b * 0.88f, 1f);
+        Color light = Color.Lerp(mid, Color.white, 0.38f);
+        Color deep = new Color(mid.r * 0.72f, mid.g * 0.72f, mid.b * 0.72f, 1f);
+
+        Texture2D tex = new Texture2D(tw, th, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Point;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        Color[] px = new Color[tw * th];
+        for (int y = 0; y < th; y++)
+        {
+            for (int x = 0; x < tw; x++)
+            {
+                bool sx = ((x / 2) % 2) == 0;
+                bool sy = ((y / 2) % 2) == 0;
+                px[y * tw + x] = (sx && sy) ? deep : (sx || sy) ? mid : light;
+            }
+        }
+        tex.SetPixels(px);
+        tex.Apply();
+        return tex;
+    }
+
+    // ---- les cartes ----
 
     void BuildCards(Boon[] picked)
     {
@@ -455,64 +652,171 @@ public class BoonManager : MonoBehaviour
         float w = Mathf.Clamp(sw * 0.17f, 150f, 320f);
         float h = Mathf.Clamp(sh * 0.42f, 190f, 460f);
         float gap = w * 0.07f;
-        float iconSize = w * 0.22f;
         float cardY = sh * 0.10f; // les cartes van una mica amunt, els serveis queden a sota
-        int titleSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.125f, 16f, 34f));
-        int descSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.085f, 12f, 24f));
 
         float totalW = picked.Length * w + (picked.Length - 1) * gap;
 
         for (int i = 0; i < picked.Length; i++)
         {
-            Boon b = picked[i];
-            int index = i;
-
-            GameObject card = new GameObject("Carta" + index, typeof(RectTransform), typeof(Image), typeof(Button));
-            card.transform.SetParent(panel.transform, false);
-
-            RectTransform rt = card.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f);
-            rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.sizeDelta = new Vector2(w, h);
-            rt.anchoredPosition = new Vector2(-totalW / 2f + w / 2f + index * (w + gap), cardY);
-
-            Image bg = card.GetComponent<Image>();
-            bg.color = new Color(0.13f, 0.12f, 0.15f, 0.98f);
-
-            Button btn = card.GetComponent<Button>();
-            btn.targetGraphic = bg;
-            ColorBlock colors = btn.colors;
-            colors.normalColor = Color.white;
-            colors.highlightedColor = new Color(1.35f, 1.35f, 1.35f, 1f);
-            colors.selectedColor = colors.highlightedColor;
-            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-            colors.fadeDuration = 0.08f;
-            btn.colors = colors;
-            btn.onClick.AddListener(() => Choose(b));
-
-            // el requadre de color (icono)
-            GameObject icon = new GameObject("Icona", typeof(RectTransform), typeof(Image));
-            icon.transform.SetParent(card.transform, false);
-            RectTransform irt = icon.GetComponent<RectTransform>();
-            irt.anchorMin = new Vector2(0.5f, 1f);
-            irt.anchorMax = new Vector2(0.5f, 1f);
-            irt.pivot = new Vector2(0.5f, 1f);
-            irt.sizeDelta = new Vector2(iconSize, iconSize);
-            irt.anchoredPosition = new Vector2(0f, -iconSize * 0.5f - 12f);
-            Image iimg = icon.GetComponent<Image>();
-            iimg.color = b.icon != null ? Color.white : b.color;
-
-            if (b.icon != null) iimg.sprite = b.icon;
-
-            // el nom, sota l'icono
-            CreateText(card.transform, "Nom", b.name, titleSize, TextAlignmentOptions.Center,
-                new Vector2(0f, -(iconSize + 24f)), new Vector2(w - 24f, titleSize * 1.8f), Color.white);
-
-            // la descripcio, sota el nom
-            CreateText(card.transform, "Descripcio", b.description, descSize, TextAlignmentOptions.Top,
-                new Vector2(0f, -(iconSize + 24f + titleSize * 1.9f)), new Vector2(w - 28f, descSize * 4.5f), new Color(0.85f, 0.85f, 0.85f));
+            Vector2 pos = new Vector2(-totalW / 2f + w / 2f + i * (w + gap), cardY);
+            BuildCard(picked[i], i, pos, w, h);
         }
+    }
+
+    void BuildCard(Boon boon, int index, Vector2 pos, float w, float h)
+    {
+        float u = PixelUnit();
+        float edge = u;                          // gruix del marc
+        float pad = u * 2f;
+        float hh = Mathf.Round(h * 0.46f);       // alçada de la capçalera
+        float iconSize = hh * 0.8f;
+        float keyH = u * 7f;
+        int titleSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.105f, 15f, 30f));
+        int descSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.078f, 12f, 22f));
+        int tagSize = Mathf.RoundToInt(Mathf.Clamp(w * 0.05f, 9f, 15f));
+
+        Vector2 top = new Vector2(0.5f, 1f);
+        Vector2 mid = new Vector2(0.5f, 0.5f);
+
+        // arrel: invisible, rep els clics, i DishCardFx la mou i l'escala
+        GameObject card = new GameObject("Carta" + index, typeof(RectTransform), typeof(Image), typeof(Button), typeof(CanvasGroup), typeof(DishCardFx));
+        card.transform.SetParent(panel.transform, false);
+
+        RectTransform rt = card.GetComponent<RectTransform>();
+        rt.anchorMin = mid;
+        rt.anchorMax = mid;
+        rt.pivot = mid;
+        rt.sizeDelta = new Vector2(w, h);
+        rt.anchoredPosition = pos;
+
+        Image hit = card.GetComponent<Image>();
+        hit.color = new Color(0f, 0f, 0f, 0f);
+
+        Button btn = card.GetComponent<Button>();
+        btn.targetGraphic = hit;
+        btn.transition = Selectable.Transition.None; // el ressalt el fa DishCardFx
+        Navigation nav = btn.navigation;
+        nav.mode = Navigation.Mode.None;
+        btn.navigation = nav;
+        Boon chosen = boon;
+        btn.onClick.AddListener(() => Choose(chosen));
+
+        // ombra dura (desplaçada), marc i paper
+        Box(card.transform, "Ombra", new Color(0f, 0f, 0f, 0.5f), Vector2.zero, Vector2.one,
+            new Vector2(u * 2f, -u * 2f), new Vector2(u * 2f, -u * 2f));
+        Image frame = Box(card.transform, "Vora", Frame, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Box(card.transform, "Paper", Paper, Vector2.zero, Vector2.one, new Vector2(edge, edge), new Vector2(-edge, -edge));
+
+        // capçalera de tovalles de quadres
+        RectTransform hdr = MakeRect(card.transform, "Capcalera", new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(edge, -(edge + hh)), new Vector2(-edge, -edge));
+
+        Texture2D tex = MakeGingham(boon.color,
+            Mathf.Max(8, Mathf.RoundToInt((w - 2f * edge) / (u * 2f))),
+            Mathf.Max(6, Mathf.RoundToInt(hh / (u * 2f))));
+        RectTransform ginghamRt = MakeRect(hdr, "Quadres", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        RawImage gingham = ginghamRt.gameObject.AddComponent<RawImage>();
+        gingham.texture = tex;
+        gingham.raycastTarget = false;
+
+        Box(hdr, "Linia", Frame, Vector2.zero, new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, u));
+
+        // l'ombra del plat a terra, i el plat
+        Image shadow = FixedBox(hdr, "OmbraPlat", new Color(0f, 0f, 0f, 0.28f), mid, mid,
+            new Vector2(0f, -iconSize * 0.34f), new Vector2(iconSize * 0.85f, iconSize * 0.16f));
+        shadow.sprite = SpriteFactory.Circle();
+
+        RectTransform iconRt = MakeFixed(hdr, "Plat", mid, mid, new Vector2(0f, hh * 0.02f), new Vector2(iconSize, iconSize));
+        Image iimg = iconRt.gameObject.AddComponent<Image>();
+        iimg.raycastTarget = false;
+        iimg.preserveAspect = true;
+        Sprite iconSprite = GetIcon(boon);
+        if (iconSprite != null)
+        {
+            iimg.sprite = iconSprite;
+            iimg.color = Color.white;
+        }
+        else
+        {
+            // si no hi ha dibuix d'aquest plat, un cercle del seu color
+            iimg.sprite = SpriteFactory.Circle();
+            iimg.color = boon.color;
+        }
+
+        // etiqueta del tipus de plat (a dalt a l'esquerra)
+        Color tagCol;
+        string tag = TagFor(boon, out tagCol);
+        float tagH = tagSize * 1.5f + u;
+        float tagW = tag.Length * tagSize * 0.68f + u * 4f;
+        RectTransform tagRt = MakeFixed(hdr, "Etiqueta", new Vector2(0f, 1f), new Vector2(0f, 1f),
+            new Vector2(u * 2f, -u * 2f), new Vector2(tagW, tagH));
+        Image tagFrame = tagRt.gameObject.AddComponent<Image>();
+        tagFrame.color = Frame;
+        tagFrame.raycastTarget = false;
+        Image tagFace = Box(tagRt, "Fons", tagCol, Vector2.zero, Vector2.one,
+            new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+        Label(tagFace.rectTransform, tag, tagSize, TextAlignmentOptions.Center, Paper, true, false);
+
+        // si ja en tens algun, ho diu a dalt a la dreta
+        int have = taken.ContainsKey(boon) ? taken[boon] : 0;
+        if (have > 0)
+        {
+            string haveText = "TENS x" + have;
+            float haveW = haveText.Length * tagSize * 0.68f + u * 4f;
+            RectTransform haveRt = MakeFixed(hdr, "Tens", new Vector2(1f, 1f), new Vector2(1f, 1f),
+                new Vector2(-u * 2f, -u * 2f), new Vector2(haveW, tagH));
+            Image haveFrame = haveRt.gameObject.AddComponent<Image>();
+            haveFrame.color = Frame;
+            haveFrame.raycastTarget = false;
+            Image haveFace = Box(haveRt, "Fons", new Color(0.24f, 0.17f, 0.15f, 1f), Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+            Label(haveFace.rectTransform, haveText, tagSize, TextAlignmentOptions.Center, Gold, true, false);
+        }
+
+        // el nom (fins a dues línies)
+        float nameH = titleSize * 2.4f;
+        float bodyTop = edge + hh + pad;
+        RectTransform nameRt = MakeRect(card.transform, "Nom", new Vector2(0f, 1f), new Vector2(1f, 1f),
+            new Vector2(edge + pad, -(bodyTop + nameH)), new Vector2(-(edge + pad), -bodyTop));
+        Label(nameRt, boon.name, titleSize, TextAlignmentOptions.Center, Ink, true, true);
+
+        // separador: dues ratlles i un quadradet al mig
+        float sepY = bodyTop + nameH + u;
+        float lineW = w * 0.14f;
+        Color sepCol = new Color(0.72f, 0.58f, 0.40f, 1f);
+        FixedBox(card.transform, "SepEsq", sepCol, top, top, new Vector2(-(lineW / 2f + u * 3f), -sepY), new Vector2(lineW, u));
+        FixedBox(card.transform, "SepDre", sepCol, top, top, new Vector2(lineW / 2f + u * 3f, -sepY), new Vector2(lineW, u));
+        FixedBox(card.transform, "SepCentre", new Color(0.85f, 0.52f, 0.2f, 1f), top, top,
+            new Vector2(0f, -sepY + u), new Vector2(u * 3f, u * 3f));
+
+        // la descripció, entre el separador i la tecla
+        float descTop = sepY + u * 4f;
+        RectTransform descRt = MakeRect(card.transform, "Descripcio", Vector2.zero, Vector2.one,
+            new Vector2(edge + pad, edge + pad + keyH + pad), new Vector2(-(edge + pad), -descTop));
+        Label(descRt, boon.description, descSize, TextAlignmentOptions.Top, InkSoft, false, true);
+
+        // la tecla per triar-lo (1, 2, 3...), com una tecla de teclat
+        RectTransform keyRt = MakeFixed(card.transform, "Tecla", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
+            new Vector2(0f, edge + pad), new Vector2(keyH, keyH));
+        Image keyFrame = keyRt.gameObject.AddComponent<Image>();
+        keyFrame.color = Frame;
+        keyFrame.raycastTarget = false;
+        Image keyFace = Box(keyRt, "Cara", Paper, Vector2.zero, Vector2.one,
+            new Vector2(u * 0.5f, u * 1.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+        Label(keyFace.rectTransform, (index + 1).ToString(), keyH * 0.6f, TextAlignmentOptions.Center, Ink, true, false);
+
+        // animació: entrada, plat que floteja i ressalt en passar-hi el ratolí
+        DishCardFx fx = card.GetComponent<DishCardFx>();
+        fx.border = frame;
+        fx.icon = iconRt;
+        fx.borderNormal = Frame;
+        fx.borderHover = Gold;
+        fx.basePos = pos;
+        fx.delay = index * 0.07f;
+        fx.lift = u * 3f;
+        fx.bob = u * 0.8f;
+        fx.Own(tex);
+        fx.Init();
     }
 
     void BuildPanel()
@@ -536,7 +840,7 @@ public class BoonManager : MonoBehaviour
         rt.offsetMax = Vector2.zero;
 
         Image bg = panelGo.GetComponent<Image>();
-        bg.color = new Color(0f, 0f, 0f, 0.72f);
+        bg.color = new Color(0.06f, 0.04f, 0.06f, 0.86f);
 
         panel = panelGo;
     }
@@ -549,11 +853,47 @@ public class BoonManager : MonoBehaviour
         if (panel == null) return;
         if (titleText != null) return;
 
+        float sw = Mathf.Max(320f, Screen.width);
         float sh = Mathf.Max(240f, Screen.height);
-        int size = Mathf.RoundToInt(Mathf.Clamp(sh * 0.05f, 22f, 56f));
+        float u = PixelUnit();
+        int size = Mathf.RoundToInt(Mathf.Clamp(sh * 0.045f, 22f, 52f));
+        float bannerH = size * 2.5f;
+        float bannerW = Mathf.Clamp(sh * 0.9f, 360f, sw * 0.8f);
+        Vector2 top = new Vector2(0.5f, 1f);
 
-        titleText = CreateText(panel.transform, "Titol", "Tria un plat", size, TextAlignmentOptions.Center,
-            new Vector2(0f, -30f), new Vector2(sh * 0.9f, size * 1.6f), Color.white);
+        // un cartell granat amb filets daurats
+        RectTransform ban = MakeFixed(panel.transform, "Titol", top, top, new Vector2(0f, -sh * 0.04f), new Vector2(bannerW, bannerH));
+        Image banFrame = ban.gameObject.AddComponent<Image>();
+        banFrame.color = Frame;
+        banFrame.raycastTarget = false;
+        Box(ban, "Fons", new Color(0.30f, 0.12f, 0.14f, 1f), Vector2.zero, Vector2.one, new Vector2(u, u), new Vector2(-u, -u));
+        Box(ban, "FiletDalt", Gold, new Vector2(0f, 1f), Vector2.one, new Vector2(u * 2f, -u * 3f), new Vector2(-u * 2f, -u * 2f));
+        Box(ban, "FiletBaix", Gold, Vector2.zero, new Vector2(1f, 0f), new Vector2(u * 2f, u * 2f), new Vector2(-u * 2f, u * 3f));
+
+        RectTransform titleRt = MakeRect(ban, "Text", Vector2.zero, Vector2.one,
+            new Vector2(u * 4f, bannerH * 0.30f), new Vector2(-u * 4f, -u * 3f));
+        titleText = Label(titleRt, "Tria un plat", size, TextAlignmentOptions.Center, Paper, true, false);
+
+        RectTransform subRt = MakeRect(ban, "Subtitol", Vector2.zero, new Vector2(1f, 0f),
+            new Vector2(u * 4f, u * 4f), new Vector2(-u * 4f, bannerH * 0.34f));
+        Label(subRt, "Clica un plat o prem la seva tecla", size * 0.4f, TextAlignmentOptions.Center,
+            new Color(0.95f, 0.8f, 0.5f), false, false);
+
+        // una paella a cada costat del cartell
+        Sprite deco = Resources.Load<Sprite>("Dishes/paella_mixta");
+        if (deco != null)
+        {
+            float ds = bannerH * 0.95f;
+            Image left = FixedBox(ban, "DecoEsq", Color.white, new Vector2(0f, 0.5f), new Vector2(1f, 0.5f),
+                new Vector2(-u * 2f, 0f), new Vector2(ds, ds));
+            left.sprite = deco;
+            left.preserveAspect = true;
+
+            Image right = FixedBox(ban, "DecoDre", Color.white, new Vector2(1f, 0.5f), new Vector2(0f, 0.5f),
+                new Vector2(u * 2f, 0f), new Vector2(ds, ds));
+            right.sprite = deco;
+            right.preserveAspect = true;
+        }
     }
 
     // ---------- L'OPCIÓ DE CURAR (en lloc d'agafar un plat) ----------
@@ -566,6 +906,7 @@ public class BoonManager : MonoBehaviour
 
         float sw = Mathf.Max(320f, Screen.width);
         float sh = Mathf.Max(240f, Screen.height);
+        float u = PixelUnit();
         float w = Mathf.Clamp(sw * 0.34f, 280f, 560f);
         float h = Mathf.Clamp(sh * 0.08f, 46f, 80f);
         float y = -sh * 0.30f; // a sota de les cartes
@@ -580,11 +921,17 @@ public class BoonManager : MonoBehaviour
         rt.sizeDelta = new Vector2(w, h);
         rt.anchoredPosition = new Vector2(0f, y);
 
-        Image bg = go.GetComponent<Image>();
-        bg.color = new Color(0.16f, 0.24f, 0.18f, 0.98f);
+        // mateix llenguatge que les cartes: marc fosc, cara verda i una ratlla de llum a dalt
+        Image frame = go.GetComponent<Image>();
+        frame.color = Frame;
+
+        Image face = Box(rt, "Fons", new Color(0.20f, 0.42f, 0.28f, 1f), Vector2.zero, Vector2.one,
+            new Vector2(u, u), new Vector2(-u, -u));
+        Box(face.rectTransform, "Llum", new Color(1f, 1f, 1f, 0.18f), new Vector2(0f, 1f), Vector2.one,
+            new Vector2(0f, -u), Vector2.zero);
 
         Button btn = go.GetComponent<Button>();
-        btn.targetGraphic = bg;
+        btn.targetGraphic = face;
         ColorBlock colors = btn.colors;
         colors.normalColor = Color.white;
         colors.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
@@ -595,14 +942,8 @@ public class BoonManager : MonoBehaviour
         btn.colors = colors;
         btn.onClick.AddListener(ChooseHeal);
 
-        TextMeshProUGUI label = CreateText(go.transform, "Text", "", Mathf.RoundToInt(Mathf.Clamp(h * 0.32f, 13f, 24f)),
-            TextAlignmentOptions.Center, Vector2.zero, new Vector2(w - 14f, h), Color.white);
-        RectTransform lrt = label.rectTransform;
-        lrt.anchorMin = new Vector2(0.5f, 0.5f);
-        lrt.anchorMax = new Vector2(0.5f, 0.5f);
-        lrt.pivot = new Vector2(0.5f, 0.5f);
-        lrt.anchoredPosition = Vector2.zero;
-        label.raycastTarget = false;
+        TextMeshProUGUI label = Label(face.rectTransform, "", Mathf.Clamp(h * 0.34f, 13f, 26f),
+            TextAlignmentOptions.Center, Color.white, true, true);
 
         healButton = btn;
         healLabel = label;
@@ -631,7 +972,8 @@ public class BoonManager : MonoBehaviour
         Debug.Log("Has triat curar-te en lloc d'agafar un plat");
     }
 
-    // el llistat de plats actius (sota els cors, a dalt a l'esquerra)
+    // ---------- ELS PLATS ACTIUS (sota els cors, a dalt a l'esquerra) ----------
+
     void BuildTakenText()
     {
         Canvas canvas = FindAnyObjectByType<Canvas>();
@@ -648,37 +990,57 @@ public class BoonManager : MonoBehaviour
         rt.sizeDelta = new Vector2(Mathf.Max(240f, Screen.width * 0.32f), Mathf.Max(90f, Screen.height * 0.2f));
         rt.anchoredPosition = new Vector2(12f, -60f);
 
-        TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
-        if (TMP_Settings.defaultFontAsset != null) tmp.font = TMP_Settings.defaultFontAsset;
-        tmp.text = "";
-        tmp.fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height * 0.022f, 14f, 26f));
-        tmp.alignment = TextAlignmentOptions.TopLeft;
-        tmp.color = new Color(1f, 0.88f, 0.55f);
-        tmp.textWrappingMode = TextWrappingModes.Normal;
-
-        takenText = tmp;
+        takenStrip = rt;
     }
 
-    TextMeshProUGUI CreateText(Transform parent, string objName, string text, float size, TextAlignmentOptions align, Vector2 pos, Vector2 box, Color color)
+    // una icona petita per cada plat que has agafat, amb el número si en tens més d'un
+    void RefreshTakenStrip()
     {
-        GameObject go = new GameObject(objName, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
+        if (takenStrip == null) return;
 
-        RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0.5f, 1f);
-        rt.anchorMax = new Vector2(0.5f, 1f);
-        rt.pivot = new Vector2(0.5f, 1f);
-        rt.sizeDelta = box;
-        rt.anchoredPosition = pos;
+        for (int i = takenStrip.childCount - 1; i >= 0; i--)
+            Destroy(takenStrip.GetChild(i).gameObject);
 
-        TextMeshProUGUI tmp = go.AddComponent<TextMeshProUGUI>();
-        if (TMP_Settings.defaultFontAsset != null) tmp.font = TMP_Settings.defaultFontAsset;
-        tmp.text = text;
-        tmp.fontSize = size;
-        tmp.alignment = align;
-        tmp.color = color;
-        tmp.textWrappingMode = TextWrappingModes.Normal;
-        return tmp;
+        float u = PixelUnit();
+        float sh = Mathf.Max(240f, Screen.height);
+        float s = Mathf.Round(Mathf.Clamp(sh * 0.06f, 36f, 68f));
+        float gap = u;
+        int perRow = Mathf.Max(1, Mathf.FloorToInt(takenStrip.sizeDelta.x / (s + gap)));
+        Vector2 tl = new Vector2(0f, 1f);
+
+        int n = 0;
+        foreach (KeyValuePair<Boon, int> kv in taken)
+        {
+            int col = n % perRow;
+            int row = n / perRow;
+
+            RectTransform chip = MakeFixed(takenStrip, "Plat" + n, tl, tl,
+                new Vector2(col * (s + gap), -row * (s + gap)), new Vector2(s, s));
+            Image fr = chip.gameObject.AddComponent<Image>();
+            fr.color = Frame;
+            fr.raycastTarget = false;
+
+            Box(chip, "Fons", Color.Lerp(kv.Key.color, Paper, 0.45f), Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+
+            Sprite sp = GetIcon(kv.Key);
+            Image ic = Box(chip, "Icona", sp != null ? Color.white : kv.Key.color, Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+            ic.sprite = sp != null ? sp : SpriteFactory.Circle();
+            ic.preserveAspect = true;
+
+            if (kv.Value > 1)
+            {
+                Vector2 br = new Vector2(1f, 0f);
+                RectTransform badge = MakeFixed(chip, "Quantitat", br, br, new Vector2(u * 0.5f, -u * 0.5f),
+                    new Vector2(s * 0.46f, s * 0.38f));
+                Image bf = badge.gameObject.AddComponent<Image>();
+                bf.color = Frame;
+                bf.raycastTarget = false;
+                Label(badge, "x" + kv.Value, s * 0.28f, TextAlignmentOptions.Center, Gold, true, false);
+            }
+
+            n++;
+        }
     }
-
 }
