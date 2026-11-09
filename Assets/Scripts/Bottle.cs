@@ -32,8 +32,7 @@ public class Bottle : MonoBehaviour
             if (e != null) e.TakeDamage(enemyDamage);
         }
 
-        SpriteRenderer fx = HazardFx.MakeCircle(transform.position, blastRadius, new Color(1f, 0.6f, 0.15f, 0.7f), 5);
-        Destroy(fx.gameObject, 0.25f);
+        Fx.Explosion(transform.position, blastRadius, 1.2f);
         HazardFx.Shake(0.22f, 0.2f);
 
         Destroy(gameObject);

@@ -340,6 +340,10 @@ public class Enemy : MonoBehaviour
 
         UpdateColor();
         UpdateShooting(); // abans el "return" del flaix/frenat se saltava el tir
+
+        // frenat pel gel: li cauen flocs de neu
+        if (Time.time < slowUntil && Random.value < Time.deltaTime * 7f)
+            Fx.Snowflake((Vector2)transform.position + new Vector2(Random.Range(-0.4f, 0.4f), Random.Range(0.1f, 0.6f)));
     }
 
     // només toca els sprites quan canvia l'estat (abans els reescrivia cada frame)
@@ -406,6 +410,7 @@ public class Enemy : MonoBehaviour
         {
             dead = true;
             AudioManager.Play(isBoss ? "explosion" : "enemy_die");
+            if (isBoss) Fx.Explosion(transform.position, 2.2f, 2f); else Fx.Poof(transform.position);
             if (isBoss) GamepadInput.Rumble(0.8f, 0.8f, 0.45f);
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddKill(points, transform.position);

@@ -180,7 +180,7 @@ public class Golafre : MonoBehaviour
         if (e != enemy || prefab == null) return;
 
         Vector2 pos = transform.position;
-        EnemyVariants.Burst(pos, 0.9f, new Color(1f, 0.85f, 0.85f, 0.6f));
+        Fx.Poof(pos);
         AudioManager.Play("enemy_die", 1f, 0.8f);
         for (int i = 0; i < 2; i++)
         {
@@ -278,7 +278,7 @@ public class OllaPressio : MonoBehaviour
         if (dangerRing != null) Destroy(dangerRing.gameObject);
 
         Vector2 pos = transform.position;
-        EnemyVariants.Burst(pos, Radius, new Color(1f, 0.55f, 0.15f, 0.55f), 0.3f);
+        Fx.Explosion(pos, Radius, 1.6f);
         AudioManager.Play("explosion");
         GamepadInput.Rumble(0.5f, 0.4f, 0.2f);
         CameraFX.Shake(0.2f, 0.2f);
@@ -363,12 +363,12 @@ public class SafataEscut : MonoBehaviour
 
         hitsLeft--;
         flashUntil = Time.time + 0.08f;
-        EnemyVariants.Burst(shotPos, 0.25f, new Color(1f, 1f, 0.8f, 0.8f), 0.12f);
+        Fx.Hit(shotPos, shotVelocity, false); // el tret rebota a la safata
 
         if (hitsLeft <= 0)
         {
             HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.1f, "SAFATA TRENCADA!", new Color(0.85f, 0.9f, 1f));
-            EnemyVariants.Burst(tray.position, 0.6f, new Color(0.85f, 0.88f, 0.95f, 0.7f));
+            Fx.Shockwave(tray.position, 0.6f, new Color(0.85f, 0.88f, 0.95f));
             Destroy(tray.gameObject);
             tray = null;
         }
@@ -457,6 +457,7 @@ public class Cambrer : MonoBehaviour
         }
 
         // es veu l'abast de la cura (encara que no hagi curat ningú, perquè sàpigues què fa)
-        EnemyVariants.Burst(transform.position, HealRadius, new Color(0.45f, 1f, 0.5f, healedAny ? 0.28f : 0.12f), 0.45f);
+        Fx.Shockwave(transform.position, HealRadius * 0.5f, new Color(0.45f, 1f, 0.5f, healedAny ? 1f : 0.5f));
+        if (healedAny) Fx.Sparkles(transform.position, new Color(0.5f, 1f, 0.55f), 8, HealRadius * 0.6f);
     }
 }

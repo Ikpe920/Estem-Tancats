@@ -7,8 +7,11 @@ public class SlipperyHazard : MonoBehaviour
         for (int i = 0; i < 5; i++)
         {
             Vector2 pos = HazardFx.RandomPoint(3f);
-            SpriteRenderer sr = HazardFx.MakeCircle(pos, Random.Range(2f, 3f), new Color(0.45f, 0.75f, 1f, 0.35f), -3);
+            SpriteRenderer sr = HazardFx.MakeCircle(pos, Random.Range(2f, 3f), Color.white, -3);
             sr.gameObject.name = "Bassa";
+            sr.sprite = Fx.OilPuddle(); // bassal d'oli irregular, amb reflexos
+            sr.transform.localRotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+            sr.gameObject.AddComponent<PuddleShine>();
             sr.transform.SetParent(transform, true);
 
             CircleCollider2D col = sr.gameObject.AddComponent<CircleCollider2D>();
