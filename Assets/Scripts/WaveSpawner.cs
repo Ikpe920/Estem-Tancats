@@ -196,7 +196,7 @@ public class WaveSpawner : MonoBehaviour
                     int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
                     int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
                     RunStats.Save(currentWave, points, combo);
-                    SceneManager.LoadScene(SceneNames.Win);
+                    Iris.LoadScene(SceneNames.Win);
                     yield break; // la partida s'acaba: no hi ha més onades
                 }
 

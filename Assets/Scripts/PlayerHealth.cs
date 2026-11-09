@@ -17,7 +17,7 @@ public class PlayerHealth : MonoBehaviour
     [Header("Mort")]
     public float deathSlowMotion = 0.25f;    // el temps del joc va a aquesta velocitat mentre caus
     public float deathHoldTime = 1.0f;       // segons (reals) de càmera lenta abans del fos
-    public float deathFadeTime = 0.8f;       // segons (reals) del fos a negre
+    public float deathFadeTime = 0.8f;       // segons (reals) que tarda a tancar-se el cercle negre
 
     private int lives;
     private float nextDamageTime;
@@ -67,7 +67,7 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // en lloc de saltar de cop a Game Over: càmera lenta, el xef cau i fos a negre
+    // en lloc de saltar de cop a Game Over: càmera lenta, el xef cau i el cercle negre es tanca al seu voltant
     IEnumerator DeathSequence(WaveSpawner spawner)
     {
         IsDying = true;
@@ -87,7 +87,7 @@ public class PlayerHealth : MonoBehaviour
         CameraFX.Shake(0.4f, 0.3f);
         Time.timeScale = deathSlowMotion;
 
-        Image fade = CreateFadeOverlay();
+        bool irisStarted = false;
         Vector3 startScale = transform.localScale;
         Color deathColor = new Color(1f, 0.35f, 0.35f, baseColor.a);
 
@@ -103,37 +103,19 @@ public class PlayerHealth : MonoBehaviour
             transform.localScale = startScale * Mathf.Lerp(1f, 0.6f, k);
             transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Lerp(0f, 90f, Mathf.SmoothStep(0f, 1f, k)));
 
-            // fos a negre al final
-            if (fade != null)
-                fade.color = new Color(0f, 0f, 0f, Mathf.Clamp01((t - deathHoldTime) / Mathf.Max(0.01f, deathFadeTime)));
+            // al final, el cercle negre es tanca al voltant del xef, com als dibuixos antics
+            if (!irisStarted && t >= deathHoldTime)
+            {
+                irisStarted = true;
+                Iris.CloseOn(transform.position, Mathf.Max(0.2f, deathFadeTime));
+            }
 
             yield return null;
         }
 
         Time.timeScale = 1f;
         IsDying = false;
-        SceneManager.LoadScene(SceneNames.GameOver);
-    }
-
-    // una imatge negra transparent per sobre de tot, que anirem enfosquint
-    Image CreateFadeOverlay()
-    {
-        GameObject canvasGo = new GameObject("FosMort", typeof(Canvas));
-        Canvas canvas = canvasGo.GetComponent<Canvas>();
-        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        canvas.sortingOrder = 1000;
-
-        GameObject imgGo = new GameObject("Negre", typeof(RectTransform), typeof(Image));
-        imgGo.transform.SetParent(canvasGo.transform, false);
-        RectTransform rt = imgGo.GetComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        Image img = imgGo.GetComponent<Image>();
-        img.color = new Color(0f, 0f, 0f, 0f);
-        img.raycastTarget = false;
-        return img;
+        Iris.LoadScene(SceneNames.GameOver);
     }
 
     // canvia els cors màxims i omple la vida (el xef triat ho fa en començar)
