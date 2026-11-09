@@ -14,10 +14,11 @@ public class GameOver : MonoBehaviour
         if (resultText == null) resultText = EndScreenUI.FindText("resultText");
 
         TextMeshProUGUI title = EndScreenUI.FindText("TitleText");
-        if (title != null) title.text = "FIN DEL JOC";
+        if (title != null) title.text = RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC";
 
         if (resultText != null)
-            resultText.text = "Has arribat a l'onada " + RunStats.wave + "\nPunts: " + RunStats.points + RunStats.ExtraLines();
+            resultText.text = (RunStats.endless ? "Mode infinit: has arribat a l'onada " : "Has arribat a l'onada ") + RunStats.wave
+                + "\nPunts: " + RunStats.points + RunStats.ExtraLines();
 
         Canvas canvas = FindAnyObjectByType<Canvas>();
         if (canvas == null) return;

@@ -68,6 +68,7 @@ public class HUD : MonoBehaviour
         if (spawner != null && waveText != null)
         {
             string act = spawner.actManager != null && spawner.actManager.Current != null ? spawner.actManager.Current.name : "";
+            if (spawner.endless) act = act.Length > 0 ? act + " · INFINIT" : "INFINIT";
             if (spawner.currentWave != shownWave || act != shownAct)
             {
                 shownWave = spawner.currentWave;

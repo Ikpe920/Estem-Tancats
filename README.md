@@ -18,6 +18,13 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 
+### Mode infinit
+
+En acabar l'onada 25 pots acabar la partida o continuar en **mode infinit**:
+- les onades no s'acaben i cada cop són més difícils;
+- els actes tornen a començar;
+- a cada volta, els caps tenen +75% de vida.
+
 ### Onades especials
 
 A partir de l'onada 3, un 30% de les onades (mai la d'un cap ni dues seguides) tenen un esdeveniment:

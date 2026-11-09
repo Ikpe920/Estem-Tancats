@@ -11,6 +11,7 @@ public static class RunStats
     public static int points;      // els punts totals de la partida
     public static int maxCombo;    // la ratxa més llarga de la partida
     public static bool newRecord;  // aquesta partida ha batut el rècord de punts
+    public static bool endless;    // la partida ha continuat en mode infinit
 
     public static int BestPoints { get { return PlayerPrefs.GetInt(BestPointsKey, 0); } }
     public static int BestWave { get { return PlayerPrefs.GetInt(BestWaveKey, 0); } }
@@ -35,6 +36,7 @@ public static class RunStats
         points = 0;
         maxCombo = 0;
         newRecord = false;
+        endless = false;
     }
 
     // les línies de sota els punts a les pantalles finals
