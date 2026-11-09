@@ -7,6 +7,16 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 - Entre onades tries un **plat** (millora). Si en combines alguns, completes **conjunts** amb efectes especials.
 - Les **ratxes** (encadenar clients sense que et toquin) multipliquen els punts. El rècord es guarda.
 
+### Propines, dificultat i reptes
+
+- En acabar cada partida guanyes **propines**: punts / 25 + onada × 4, multiplicat segons la dificultat.
+- Amb les propines **desbloqueges xefs**. El Xef està obert des del principi; la resta costen: Carnisser 150, Pastisser 250 i Sushiman 400.
+- La **dificultat** es tria a la pantalla de triar xef:
+  - Fàcil: +1 cor i clients més fluixos (×0,75 propines).
+  - Normal: com sempre.
+  - Difícil: més clients, més forts i més ràpids (×1,5 propines).
+- Hi ha **10 reptes** que donen propines la primera vegada que els completes (botó *Reptes* o tecla R a la pantalla de triar xef).
+
 ### Xefs
 
 En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la propera partida.
@@ -72,6 +82,7 @@ A partir de certes onades, alguns clients surten amb un comportament propi:
 | F7 | Obre ara la pantalla de triar plat |
 | F8 | Fa sortir un client especial de cada tipus |
 | F9 | La propera onada tindrà un esdeveniment (cada cop que el prems, en tria un altre) |
+| F10 | +500 propines |
 
 ## Obrir el projecte
 

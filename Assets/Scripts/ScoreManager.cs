@@ -57,6 +57,7 @@ public class ScoreManager : MonoBehaviour
 
         Combo++;
         if (Combo > MaxCombo) MaxCombo = Combo;
+        Progression.OnCombo(Combo);
         ComboTimeLeft = comboWindow;
 
         totalScore += Mathf.RoundToInt(basePoints * ComboMultiplier * scoreMultiplier);

@@ -15,6 +15,7 @@ using UnityEngine.SceneManagement;
 //   F7  obre ara la pantalla de triar plat
 //   F8  fa sortir un client especial de cada tipus (Golafre, Olla, Safata, Cambrer)
 //   F9  la propera onada tindrà un esdeveniment (cada cop que el prems, en tria un altre)
+//   F10 +500 propines (per provar els desbloquejos)
 public class DebugMode : MonoBehaviour
 {
     // el ratolí és a sobre del quadre? PlayerShooting ho mira perquè no disparis en clicar els botons
@@ -84,6 +85,7 @@ public class DebugMode : MonoBehaviour
             if (kb.f7Key.wasPressedThisFrame) OfferNow();
             if (kb.f8Key.wasPressedThisFrame) SpawnSpecials();
             if (kb.f9Key.wasPressedThisFrame) NextEvent();
+            if (kb.f10Key.wasPressedThisFrame) { Progression.AddTips(500); Say("+500 propines (" + Progression.Tips + ")"); }
         }
 
         UpdateMouseOver();
@@ -250,6 +252,7 @@ public class DebugMode : MonoBehaviour
         if (GUILayout.Button("Obre la tria de plats (F7)")) OfferNow();
         if (GUILayout.Button("Clients especials (F8)")) SpawnSpecials();
         if (GUILayout.Button("Esdeveniment a la propera onada (F9)")) NextEvent();
+        if (GUILayout.Button("+500 propines (F10)")) { Progression.AddTips(500); Say("+500 propines (" + Progression.Tips + ")"); }
         GUILayout.Space(4f);
     }
 

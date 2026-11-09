@@ -23,6 +23,8 @@ public static class RunStats
         points = totalPoints;
         maxCombo = longestCombo;
 
+        Progression.EndRun(totalPoints, finalWave); // propines guanyades en aquesta partida
+
         newRecord = totalPoints > BestPoints;
         if (newRecord) PlayerPrefs.SetInt(BestPointsKey, totalPoints);
         if (finalWave > BestWave) PlayerPrefs.SetInt(BestWaveKey, finalWave);
@@ -43,6 +45,7 @@ public static class RunStats
     public static string ExtraLines()
     {
         string s = "\nMillor ratxa: " + maxCombo;
+        s += "\n<color=#8FE39B>+" + Progression.LastRunTips + " propines</color> (en tens " + Progression.Tips + ")";
         s += newRecord
             ? "\n<color=#FFD24D>NOU RÈCORD!</color>"
             : "\nRècord: " + BestPoints;
