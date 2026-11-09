@@ -393,7 +393,7 @@ public class Enemy : MonoBehaviour
         int dealt = Mathf.RoundToInt(amount * damageMultiplier);
         health -= dealt;
         ForceHitFlash();
-        AudioManager.Play(crit ? "crit" : "hit");
+        if (health > 0) AudioManager.Play(crit ? "crit" : "hit"); // si mor, ja sona la mort
 
         // "suc" de l'impacte: número de dany (groc als crítics) i una mica de pausa als crítics
         DamageNumber.Spawn((Vector2)transform.position + Vector2.up * 0.7f, dealt, crit);

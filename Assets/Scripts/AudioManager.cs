@@ -39,6 +39,21 @@ public class AudioManager : MonoBehaviour
         { "bounce", 0.05f }, { "explosion", 0.06f }, { "coin", 0.05f }, { "pickup", 0.05f },
     };
 
+    // quantes còpies del mateix so poden sonar alhora (si no hi és, 3)
+    static readonly Dictionary<string, int> MaxSame = new Dictionary<string, int>
+    {
+        { "shoot", 2 }, { "hit", 3 }, { "crit", 2 }, { "enemy_die", 3 }, { "explosion", 2 },
+        { "bounce", 2 }, { "coin", 2 }, { "pickup", 2 }, { "combo", 1 }, { "fuse", 2 },
+        { "boss_intro", 1 }, { "death", 1 }, { "hurt", 1 }, { "set", 1 }, { "challenge", 1 }, { "event", 1 },
+    };
+
+    // els sons que es poden saltar quan ja n'hi ha molts sonant alhora
+    static readonly HashSet<string> LowPriority = new HashSet<string>
+    {
+        "shoot", "hit", "crit", "enemy_die", "bounce", "coin", "pickup", "explosion", "combo",
+    };
+    const int MaxBusy = 10; // a partir d'aquí, els sons poc importants no sonen
+
     static readonly Dictionary<string, float> MusicGain = new Dictionary<string, float>
     {
         { "win", 0.6f }, { "gameover", 0.85f },
@@ -46,6 +61,7 @@ public class AudioManager : MonoBehaviour
 
     private readonly Dictionary<string, AudioClip> clips = new Dictionary<string, AudioClip>();
     private readonly Dictionary<string, float> lastPlayed = new Dictionary<string, float>();
+    private readonly List<KeyValuePair<string, float>> playing = new List<KeyValuePair<string, float>>(); // so i quan acaba
     private AudioSource[] voices;
     private int nextVoice;
 
@@ -106,6 +122,18 @@ public class AudioManager : MonoBehaviour
 
         float now = Time.unscaledTime;
         if (MinGap.TryGetValue(name, out float gap) && lastPlayed.TryGetValue(name, out float last) && now - last < gap) return;
+
+        // quants sons sonen ara (i quants d'aquest mateix)
+        int same = 0;
+        for (int i = playing.Count - 1; i >= 0; i--)
+        {
+            if (playing[i].Value <= now) { playing.RemoveAt(i); continue; }
+            if (playing[i].Key == name) same++;
+        }
+        int maxSame = MaxSame.TryGetValue(name, out int m) ? m : 3;
+        if (same >= maxSame) return;
+        if (playing.Count >= MaxBusy && LowPriority.Contains(name)) return;
+
         lastPlayed[name] = now;
 
         AudioSource s = voices[nextVoice];
@@ -113,6 +141,7 @@ public class AudioManager : MonoBehaviour
         s.pitch = pitch > 0f ? pitch : Random.Range(0.95f, 1.05f);
         float v = Volumes.TryGetValue(name, out float vol) ? vol : 0.5f;
         s.PlayOneShot(clip, v * volume * SfxVolume);
+        playing.Add(new KeyValuePair<string, float>(name, now + clip.length / Mathf.Max(0.5f, s.pitch)));
     }
 
     AudioClip Clip(string path)
@@ -165,36 +194,47 @@ public class AudioManager : MonoBehaviour
     void PlayClip(string name, AudioClip clip, bool loop)
     {
         if (clip == null) return;
-        if (name == musicName && musicNow != null && musicNow.isPlaying) return;
+        // ja sona (o ja està entrant) aquest mateix tema
+        if (name == musicName && musicNow != null && (musicNow.isPlaying || fade != null)) return;
         musicName = name;
 
+        if (fade != null) StopCoroutine(fade);
+
+        // les dues fonts: la que sona i la que entrarà. Si un fos anterior s'havia quedat a mitges,
+        // totes dues poden estar sonant: ens assegurem que la nova comenci aturada.
         AudioSource from = musicNow;
         AudioSource to = musicNow == musicA ? musicB : musicA;
+        to.Stop();
         to.clip = clip;
         to.loop = loop;
         to.volume = 0f;
-        to.Play();
         musicNow = to;
 
         float target = MusicVolume * (MusicGain.TryGetValue(name, out float g) ? g : 1f);
-        if (fade != null) StopCoroutine(fade);
-        fade = StartCoroutine(Crossfade(from, to, target, loop ? 0.8f : 0.2f));
+        fade = StartCoroutine(FadeOutThenIn(from, to, target, loop ? 0.35f : 0.15f, loop ? 0.5f : 0.1f));
     }
 
-    IEnumerator Crossfade(AudioSource from, AudioSource to, float target, float seconds)
+    // primer s'apaga la música vella i després entra la nova: mai sonen dues músiques alhora
+    IEnumerator FadeOutThenIn(AudioSource from, AudioSource to, float target, float outTime, float inTime)
     {
-        float t = 0f;
-        float fromStart = from != null ? from.volume : 0f;
-        while (t < seconds)
+        if (from != null && from.isPlaying)
         {
-            t += Time.unscaledDeltaTime; // també amb el joc en pausa
-            float k = Mathf.Clamp01(t / seconds);
-            to.volume = target * k;
-            if (from != null) from.volume = fromStart * (1f - k);
+            float start = from.volume;
+            for (float t = 0f; t < outTime; t += Time.unscaledDeltaTime) // també amb el joc en pausa
+            {
+                from.volume = start * (1f - t / outTime);
+                yield return null;
+            }
+        }
+        if (from != null) { from.Stop(); from.volume = 0f; }
+
+        to.Play();
+        for (float t = 0f; t < inTime; t += Time.unscaledDeltaTime)
+        {
+            to.volume = target * (t / inTime);
             yield return null;
         }
         to.volume = target;
-        if (from != null) { from.Stop(); from.volume = 0f; }
         fade = null;
     }
 
