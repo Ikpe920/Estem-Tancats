@@ -28,12 +28,13 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 
-### Mode infinit
+### Mode infinit: el torn de nit
 
-En acabar l'onada 25 pots acabar la partida o continuar en **mode infinit**:
-- les onades no s'acaben i cada cop són més difícils;
-- els actes tornen a començar;
-- a cada volta, els caps tenen +75% de vida.
+En acabar l'onada 25 pots acabar la partida o quedar-te al **torn de nit** (mode infinit):
+- cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "TORN DE NIT · RONDA N";
+- la dificultat no torna a baixar: parteix de la de la Teulada i puja una mica a cada sala nova;
+- els caps tornen **enfurismats** (més vida, més ràpids i vermells);
+- tot es veu més fosc i blavós, i cada sala té la seva música de nit (la mateixa melodia, en menor, més ràpida i amb timbales).
 
 ### Onades especials
 

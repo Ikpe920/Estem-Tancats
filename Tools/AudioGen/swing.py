@@ -354,7 +354,9 @@ def compose(name, bpm, key, scale, prog, bars=32, seed=1, lead='clarinet', answe
                     T.add(piano(note(v), T.dur(0.5), 0.6), b * 4 + (0 if beat == 0 else 1.5), 0.13)
 
             # bateria
-            if drums in ('brush', 'hot'):
+            if drums in ('brush', 'hot', 'night'):
+                if drums == 'night' and beat in (0, 2):
+                    T.add(tom(100 if beat == 0 else 130), b * 4 + beat, 0.22)
                 T.add(ride(), b * 4 + beat, 0.055)
                 if beat in (1, 3):
                     T.add(ride(), b * 4 + beat + 0.5, 0.035)   # el "ding-a-ding"
@@ -368,12 +370,12 @@ def compose(name, bpm, key, scale, prog, bars=32, seed=1, lead='clarinet', answe
                 if beat in (1, 3):
                     T.add(chick(), b * 4 + beat, 0.10)
                 T.add(kick(), b * 4 + beat, 0.14)
-        if drums in ('brush', 'hot'):
+        if drums in ('brush', 'hot', 'night'):
             T.add(brush_swish(T.dur(1.8)), b * 4, 0.012)
             T.add(brush_swish(T.dur(1.8)), b * 4 + 2, 0.012)
 
         # redoblament cada 4 compassos (bateria "hot")
-        if drums in ('hot', 'toms') and b % 4 == 3:
+        if drums in ('hot', 'toms', 'night') and b % 4 == 3:
             for k, bt in enumerate((2.5, 3.0, 3.5)):
                 T.add(brush_slap(), b * 4 + bt, 0.10 + k * 0.03)
             T.add(kick(), b * 4 + 3.5, 0.18)
@@ -500,6 +502,18 @@ def win():
     save_ogg('win', record(T[:int((t + 1.2) * SR)]))
 
 
+def night_prog(prog):
+    """Els mateixos acords, però en menor (la versió de nit d'una sala)."""
+    def conv(ch):
+        root, q = ch
+        if q in ('6', 'maj'): q = 'm6'
+        elif q == 'maj7': q = 'm7'
+        elif q == '7' and root in (0, 5): q = 'm7'
+        elif q == '9': q = '7'
+        return (root, q)
+    return [[conv(c) for c in cs] if isinstance(cs, list) else conv(cs) for cs in prog]
+
+
 # ---------------------------------------------------------------------
 #  ELS TEMES
 # ---------------------------------------------------------------------
@@ -507,30 +521,44 @@ I, ii, iii, IV, V, vi = 0, 2, 4, 5, 7, 9
 
 if __name__ == '__main__':
     print('música swing:')
-    # menú: swing tranquil amb piano stride i clarinet
-    compose('menu', 118, 53, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'),
-                                     (I, 'maj7'), (I, '7'), (IV, '6'), (IV, 'm6'), (I, '6'), (V, '7'), (I, '6'), (V, '7')],
-            bars=32, seed=3, lead='clarinet', answer='trumpet', drums='brush', density=0.45)
     # LES SALES: animades (més ràpides, bateria "hot", redoblaments i metalls que responen)
-    # la sala: swing alegre (els "rhythm changes")
-    compose('act0', 176, 58, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (iii, 'm7'), (vi, '7'), (ii, 'm7'), (V, '7')],
-            bars=32, seed=12, lead='clarinet', answer='open', drums='hot', density=0.8, stabs=True, shout=True, bright=True)
-    # la barra: un blues ràpid de 12 compassos, amb la trompeta amb sordina
     blues = [(I, '7'), (IV, '7'), (I, '7'), (I, '7'), (IV, '7'), (IV, '7'), (I, '7'), (vi, '7'), (ii, 'm7'), (V, '7'), [(I, '7'), (vi, '7')], [(ii, 'm7'), (V, '7')]]
-    compose('act1', 152, 55, BLUES, blues, bars=24, seed=21, lead='trumpet', answer='clarinet', comp='stride',
-            drums='hot', density=0.75, form='blues', lead_range=(62, 80), stabs=True, shout=True, bright=True)
-    # la cuina: swing gitano en menor, molt ràpid i frenètic
-    compose('act2', 212, 62, HMINOR, [(0, 'm6'), (0, 'm6'), (5, 'm6'), (5, 'm6'), (0, 'm6'), (0, 'm6'), (7, '7'), (7, '7')],
-            bars=32, seed=33, lead='clarinet', answer='open', drums='hot', density=0.85, stabs=True, shout=True, bright=True)
-    # la terrassa: ragtime alegre (cercle de quintes), amb banjo
-    compose('act3', 168, 60, MAJOR, [(iii, '7'), (iii, '7'), (vi, '7'), (vi, '7'), (ii, '7'), (ii, '7'), (V, '7'), (V, '7')],
-            bars=32, seed=44, lead='open', answer='banjo', drums='hot', density=0.8, form='AB', stabs=True, shout=True, bright=True)
-    # la teulada: swing menor, ràpid i tens
-    compose('act4', 188, 52, HMINOR, [(0, 'm6'), (8, '7'), (2, 'm7b5'), (7, '7'), (0, 'm6'), (5, 'm6'), (2, 'm7b5'), (7, '7')],
-            bars=32, seed=55, lead='trumpet', answer='clarinet', drums='hot', density=0.8, stabs=True, shout=True, bright=True)
+    HOT = dict(drums='hot', stabs=True, shout=True, bright=True)
+    ACTS = [
+        # la sala: swing alegre (els "rhythm changes")
+        ('act0', 176, 58, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (iii, 'm7'), (vi, '7'), (ii, 'm7'), (V, '7')],
+         dict(bars=32, seed=12, lead='clarinet', answer='open', density=0.8, **HOT)),
+        # la barra: un blues ràpid de 12 compassos, amb la trompeta amb sordina
+        ('act1', 152, 55, BLUES, blues,
+         dict(bars=24, seed=21, lead='trumpet', answer='clarinet', density=0.75, form='blues', lead_range=(62, 80), **HOT)),
+        # la cuina: swing gitano en menor, molt ràpid i frenètic
+        ('act2', 212, 62, HMINOR, [(0, 'm6'), (0, 'm6'), (5, 'm6'), (5, 'm6'), (0, 'm6'), (0, 'm6'), (7, '7'), (7, '7')],
+         dict(bars=32, seed=33, lead='clarinet', answer='open', density=0.85, **HOT)),
+        # la terrassa: ragtime alegre (cercle de quintes), amb banjo
+        ('act3', 168, 60, MAJOR, [(iii, '7'), (iii, '7'), (vi, '7'), (vi, '7'), (ii, '7'), (ii, '7'), (V, '7'), (V, '7')],
+         dict(bars=32, seed=44, lead='open', answer='banjo', density=0.8, form='AB', **HOT)),
+        # la teulada: swing menor, ràpid i tens
+        ('act4', 188, 52, HMINOR, [(0, 'm6'), (8, '7'), (2, 'm7b5'), (7, '7'), (0, 'm6'), (5, 'm6'), (2, 'm7b5'), (7, '7')],
+         dict(bars=32, seed=55, lead='trumpet', answer='clarinet', density=0.8, **HOT)),
+    ]
+    only_night = len(sys.argv) > 2 and sys.argv[2] == 'night'
+    if not only_night:
+        # menú: swing tranquil amb piano stride i clarinet
+        compose('menu', 118, 53, MAJOR, [(I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'), (I, '6'), (vi, '7'), (ii, 'm7'), (V, '7'),
+                                         (I, 'maj7'), (I, '7'), (IV, '6'), (IV, 'm6'), (I, '6'), (V, '7'), (I, '6'), (V, '7')],
+                bars=32, seed=3, lead='clarinet', answer='trumpet', drums='brush', density=0.45)
+        for (name, bpm, key, scale, prog, kw) in ACTS:
+            compose(name, bpm, key, scale, prog, **kw)
     # el cap: timbales de la selva, metalls i clarinet esgarrifós
-    compose('boss', 184, 48, HMINOR, [(0, 'm6'), (0, 'm6'), (8, '7'), (7, '7')],
+    if not only_night:
+        compose('boss', 184, 48, HMINOR, [(0, 'm6'), (0, 'm6'), (8, '7'), (7, '7')],
             bars=32, seed=66, lead='clarinet', answer='open', drums='toms', density=0.8, stabs=True, lead_range=(67, 86), form='AB')
-    gameover()
-    win()
+        gameover()
+        win()
+
+    # TORN DE NIT (mode infinit): la mateixa melodia de cada sala, però en menor, més ràpida i amb timbales
+    #   python3 swing.py ../../Assets/Resources/Audio/Music night   -> només aquestes
+    for (name, bpm, key, scale, prog, kw) in ACTS:
+        kw = dict(kw, drums='night', answer='trumpet' if kw['lead'] != 'trumpet' else 'open')
+        compose('night' + name[-1], int(bpm * 1.1), key, HMINOR, night_prog(prog), **kw)
     print('fet')

@@ -33,6 +33,17 @@ public class BossInfo
     public Sprite sprite;                // opcional: canvia la imatge del cap
     public Color tint = Color.white;     // blanc = sense tenyir
     public GameObject projectilePrefab;  // per als caps que disparen
+
+    // la versió del torn de nit: mateix cap, però enfurismat (nom, frase i color)
+    public BossInfo Furious()
+    {
+        BossInfo b = (BossInfo)MemberwiseClone();
+        bool fem = name != null && name.StartsWith("LA ");
+        b.name = (name ?? "") + (fem ? " ENFURISMADA" : " ENFURISMAT");
+        b.subtitle = "Ha tornat. I ara sí que està de mal humor.";
+        b.tint = new Color(tint.r * 1f, tint.g * 0.62f, tint.b * 0.58f, tint.a);
+        return b;
+    }
 }
 
 
@@ -112,10 +123,9 @@ public class WaveSpawner : MonoBehaviour
             currentWave++;
             inWave = true;
 
-            ActData act = actManager != null ? actManager.Current : null;
 
             int count = startEnemies + (currentWave - 1) * enemiesPerWave;
-            if (act != null) count += act.extraEnemies;
+            if (actManager != null) count += actManager.ExtraEnemies; // al torn de nit no torna a baixar
 
             bool isBossWave = bosses != null && bosses.Length > 0
                               && currentWave % bossEveryNWaves == 0;
@@ -130,6 +140,7 @@ public class WaveSpawner : MonoBehaviour
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
+                if (endless) info = info.Furious(); // al torn de nit tornen enfurismats
 
                 // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
                 Sprite portrait = info.sprite;
@@ -139,7 +150,8 @@ public class WaveSpawner : MonoBehaviour
                     if (psr != null) portrait = psr.sprite;
                 }
                 int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
-                yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave));
+                string bossTag = endless ? "— TORN DE NIT · ONADA " + currentWave + " —" : null;
+                yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
 
                 SpawnBoss(info);
                 count /= 2; // a l'onada del boss surten menys enemics normals
@@ -202,6 +214,7 @@ public class WaveSpawner : MonoBehaviour
 
                 endless = true;
                 RunStats.endless = true;
+                if (actManager != null) actManager.StartNightShift(); // comença el torn de nit
             }
 
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
@@ -396,11 +409,10 @@ public class WaveSpawner : MonoBehaviour
         float healthMul = 1f + healthPerWave * level;
         float speedBonus = speedPerWave * level;
 
-        ActData act = actManager != null ? actManager.Current : null;
-        if (act != null)
+        if (actManager != null)
         {
-            healthMul *= act.enemyHealthMultiplier;
-            speedBonus += act.enemySpeedBonus;
+            healthMul *= actManager.HealthMultiplier;
+            speedBonus += actManager.SpeedBonus;
         }
 
         healthMul *= Progression.EnemyHealthMul; // dificultat triada

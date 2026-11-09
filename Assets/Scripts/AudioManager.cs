@@ -174,7 +174,11 @@ public class AudioManager : MonoBehaviour
         int act = am != null ? am.currentAct : 0;
         ActData data = am != null ? am.Current : null;
         if (data != null && data.music != null) { PlayClip("act_custom_" + act, data.music, true); return; }
-        PlayMusic("act" + Mathf.Clamp(act, 0, 4), true);
+        // al torn de nit, la versió de nit de la sala (si no hi és, la normal)
+        string actName = "act" + Mathf.Clamp(act, 0, 4);
+        if (am != null && am.NightShift && Clip("Audio/Music/night" + Mathf.Clamp(act, 0, 4)) != null)
+            actName = "night" + Mathf.Clamp(act, 0, 4);
+        PlayMusic(actName, true);
     }
 
     // la música dels caps: sona mentre dura l'onada del cap

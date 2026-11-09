@@ -47,6 +47,12 @@ public class ActBanner : MonoBehaviour
 
     public static IEnumerator ActTitle(int actNumber, string name, string subtitle, float hold, Color tint)
     {
+        return ActTitle("—  ACTE " + actNumber + "  —", name, subtitle, hold, tint);
+    }
+
+    // el mateix cartell amb una etiqueta qualsevol a dalt (per exemple, "TORN DE NIT · RONDA 2")
+    public static IEnumerator ActTitle(string header, string name, string subtitle, float hold, Color tint)
+    {
         ActBanner b = Create(240);
         RectTransform root = b.canvasRt;
 
@@ -57,7 +63,7 @@ public class ActBanner : MonoBehaviour
         Image top = Box(band, edge, new Vector2(0f, 1f), Vector2.one); top.rectTransform.sizeDelta = new Vector2(0f, 6f);
         Image bot = Box(band, edge, Vector2.zero, new Vector2(1f, 0f)); bot.rectTransform.sizeDelta = new Vector2(0f, 6f);
 
-        TextMeshProUGUI act = MenuScreens.Text(band, "—  ACTE " + actNumber + "  —", 38f, new Vector2(0.5f, 0.5f), new Vector2(0f, 95f), new Vector2(900f, 56f), UIStyle.Gold, true);
+        TextMeshProUGUI act = MenuScreens.Text(band, header, 38f, new Vector2(0.5f, 0.5f), new Vector2(0f, 95f), new Vector2(900f, 56f), UIStyle.Gold, true);
         TextMeshProUGUI title = MenuScreens.Text(band, name, 110f, new Vector2(0.5f, 0.5f), new Vector2(0f, 10f), new Vector2(1600f, 130f), Color.white, true);
         TextMeshProUGUI sub = MenuScreens.Text(band, subtitle, 36f, new Vector2(0.5f, 0.5f), new Vector2(0f, -90f), new Vector2(1500f, 56f), new Color(1f, 0.92f, 0.8f), false);
         sub.fontStyle = FontStyles.Italic;

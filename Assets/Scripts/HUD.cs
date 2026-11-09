@@ -169,7 +169,11 @@ public class HUD : MonoBehaviour
         if (spawner != null && waveText != null)
         {
             string act = spawner.actManager != null && spawner.actManager.Current != null ? spawner.actManager.Current.name : "";
-            if (spawner.endless) act = act.Length > 0 ? act + " · INFINIT" : "INFINIT";
+            if (spawner.endless)
+            {
+                string night = "TORN DE NIT " + (spawner.actManager != null ? spawner.actManager.NightRound : 2);
+                act = act.Length > 0 ? act + " · " + night : night;
+            }
             if (spawner.currentWave != shownWave || act != shownAct)
             {
                 shownWave = spawner.currentWave;

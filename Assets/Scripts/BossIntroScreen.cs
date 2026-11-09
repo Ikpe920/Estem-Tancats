@@ -55,10 +55,10 @@ public class BossIntroScreen : MonoBehaviour
     }
 
     // la presentació sencera; acaba quan el combat ha de començar
-    public static IEnumerator Play(BossInfo info, Sprite sprite, int act, int wave)
+    public static IEnumerator Play(BossInfo info, Sprite sprite, int act, int wave, string tagLine = null)
     {
         BossIntroScreen s = new GameObject("PresentacioCap").AddComponent<BossIntroScreen>();
-        s.Build(info, sprite, act, wave);
+        s.Build(info, sprite, act, wave, tagLine);
         yield return s.Run(ColorFor(info.type));
         Destroy(s.gameObject);
     }
@@ -174,7 +174,7 @@ public class BossIntroScreen : MonoBehaviour
 
     // ---------- LA INTERFÍCIE ----------
 
-    void Build(BossInfo info, Sprite sprite, int act, int wave)
+    void Build(BossInfo info, Sprite sprite, int act, int wave, string tagLine)
     {
         GameObject canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler));
         canvasGo.transform.SetParent(transform, false);
@@ -223,7 +223,7 @@ public class BossIntroScreen : MonoBehaviour
         }
 
         // textos (a l'esquerra, a sobre de la franja)
-        string tagText = "— CAP DE L'ACTE " + act + " · ONADA " + wave + " —"; // (la font no té estrelles)
+        string tagText = tagLine ?? "— CAP DE L'ACTE " + act + " · ONADA " + wave + " —"; // (la font no té estrelles)
         tag = Text(canvasRt, tagText, 30f, new Vector2(-330f, 125f), new Vector2(1000f, 50f), new Color(1f, 0.85f, 0.4f), true);
         nameText = Text(canvasRt, info.name, 96f, new Vector2(-330f, 40f), new Vector2(1150f, 130f), Color.white, true);
         nameText.outlineWidth = 0.22f;
