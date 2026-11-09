@@ -10,6 +10,7 @@ public class PlayerShooting : MonoBehaviour
     public int damage = 1;
 
     private Camera cam;
+    public static int ShotsFired; // trets fets des que ha començat el joc (el tutorial ho mira)
     private float nextFireTime;
     private Vector2 lastPadAim = Vector2.right; // última direcció apuntada amb el joystick dret
     public float aimDeadZone = 0.3f;            // zona morta del joystick dret
@@ -99,6 +100,7 @@ public class PlayerShooting : MonoBehaviour
     void Shoot(Vector2 baseDir)
     {
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
+        ShotsFired++;
 
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 

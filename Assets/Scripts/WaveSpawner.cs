@@ -66,13 +66,18 @@ public class WaveSpawner : MonoBehaviour
     [Header("Final del joc")]
     public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
 
+    [Header("Avís de sortida")]
+    public float spawnWarningTime = 0.6f; // segons que es veu el cercle vermell abans que surti el client (0 = sense avís)
+
     [Header("Onades encallades")]
     public float stuckCheckInterval = 1f; // cada quant es miren els clients que han sortit de l'arena
     public float stuckWaveTimeout = 45f;  // segons sense cap baixa (amb el cap ja mort) abans de treure els que queden (0 = mai)
 
     public int currentWave = 0;
 
-    private Enemy currentBoss; // el cap de l'onada actual (no el traiem mai per temps)
+    private Enemy currentBoss;
+    private int pendingSpawns;   // clients avisats que encara no han sortit (l'onada no s'acaba fins que surtin)
+    private int spawnGeneration; // el mode de prova el canvia per anul·lar els avisos pendents // el cap de l'onada actual (no el traiem mai per temps)
 
     public static WaveSpawner Instance; // perquè els caps puguin invocar clients
 
@@ -189,7 +194,7 @@ public class WaveSpawner : MonoBehaviour
         float lastProgress = Time.time;
         float nextCheck = Time.time + stuckCheckInterval;
 
-        while (Enemy.Alive > 0)
+        while (Enemy.Alive > 0 || pendingSpawns > 0)
         {
             if (Enemy.Alive < lastAlive) lastProgress = Time.time;
             lastAlive = Enemy.Alive;
@@ -290,8 +295,33 @@ public class WaveSpawner : MonoBehaviour
         GameObject prefab = PickEnemy();
         if (prefab == null) return;
 
-        Enemy e = Instantiate(prefab, RandomSpawnPosition(), Quaternion.identity).GetComponent<Enemy>();
-        ApplyWaveDifficulty(e);
+        SpawnWithWarning(prefab, RandomSpawnPosition());
+    }
+
+    // primer surt un cercle vermell a terra i, al cap d'una estona, el client
+    void SpawnWithWarning(GameObject prefab, Vector2 pos)
+    {
+        if (spawnWarningTime <= 0f)
+        {
+            ApplyWaveDifficulty(Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>());
+            return;
+        }
+        StartCoroutine(SpawnAfterWarning(prefab, pos));
+    }
+
+    IEnumerator SpawnAfterWarning(GameObject prefab, Vector2 pos)
+    {
+        pendingSpawns++;
+        int generation = spawnGeneration;
+        SpawnWarning.Show(pos, spawnWarningTime);
+
+        yield return new WaitForSeconds(spawnWarningTime);
+
+        pendingSpawns--;
+        if (generation != spawnGeneration) yield break; // el mode de prova ha saltat d'onada
+        if (PlayerHealth.IsDying) yield break;
+
+        ApplyWaveDifficulty(Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>());
     }
 
     // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
@@ -415,6 +445,7 @@ public class WaveSpawner : MonoBehaviour
         debugTarget = Mathf.Max(1, wave);
         if (finalWave > 0) debugTarget = Mathf.Min(debugTarget, finalWave);
         debugAbort = true;
+        spawnGeneration++; // els clients avisats que encara no han sortit ja no sortiran
 
         // fora tots els clients (sense punts ni plats: és un salt de prova)
         foreach (Enemy e in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
@@ -431,8 +462,7 @@ public class WaveSpawner : MonoBehaviour
             if (prefab == null) return;
 
             Vector2 pos = around + Random.insideUnitCircle.normalized * 2.5f;
-            Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
-            ApplyWaveDifficulty(e);
+            SpawnWithWarning(prefab, pos);
         }
     }
 }

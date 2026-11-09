@@ -13,6 +13,7 @@ public class Enemy : MonoBehaviour
     {
         speedMultiplier = 1f;
         Alive = 0;
+        All.Clear();
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -78,8 +79,11 @@ public class Enemy : MonoBehaviour
         CacheRenderers();
     }
 
-    void OnEnable()  { Alive++; }
-    void OnDisable() { Alive--; }
+    // tots els clients vius (les fletxes de la vora de la pantalla els fan servir)
+    public static readonly List<Enemy> All = new List<Enemy>();
+
+    void OnEnable()  { Alive++; All.Add(this); }
+    void OnDisable() { Alive--; All.Remove(this); }
 
     void CacheRenderers()
     {
