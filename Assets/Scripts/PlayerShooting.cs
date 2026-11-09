@@ -11,8 +11,6 @@ public class PlayerShooting : MonoBehaviour
 
     private Camera cam;
     private float nextFireTime;
-    private Vector2 lastPadAim = Vector2.right; // última direcció apuntada amb el joystick dret
-    public float aimDeadZone = 0.3f;            // zona morta del joystick dret
 
     // efectes dels plats (els posa el BoonManager)
     public int extraShots = 0;        // projectils extra en ventall
@@ -33,51 +31,22 @@ public class PlayerShooting : MonoBehaviour
     void Update()
     {
         if (Time.timeScale == 0) return; // no disparar mentre la botiga està oberta
-        if (Time.time < nextFireTime) return;
 
-        if (TryGetAim(out Vector2 dir))
+        if (Mouse.current == null) return;
+
+        if (Mouse.current.leftButton.isPressed && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + fireRate;
-            Shoot(dir);
+            Shoot();
         }
     }
 
-    // ratolí: clic esquerre i apunta al cursor
-    // comandament: apunta amb el joystick dret i dispara movent-lo o amb el gallet dret
-    bool TryGetAim(out Vector2 dir)
-    {
-        dir = Vector2.zero;
-
-        Gamepad pad = Gamepad.current;
-        if (pad != null)
-        {
-            Vector2 stick = pad.rightStick.ReadValue();
-            if (stick.magnitude > aimDeadZone) lastPadAim = stick.normalized;
-
-            bool trigger = pad.rightTrigger.isPressed;
-            if (stick.magnitude > aimDeadZone || trigger)
-            {
-                dir = lastPadAim;
-                return true;
-            }
-        }
-
-        Mouse mouse = Mouse.current;
-        if (mouse != null && mouse.leftButton.isPressed && cam != null)
-        {
-            Vector2 mouseWorld = cam.ScreenToWorldPoint(mouse.position.ReadValue());
-            dir = (mouseWorld - (Vector2)transform.position).normalized;
-            if (dir == Vector2.zero) dir = lastPadAim;
-            return true;
-        }
-
-        return false;
-    }
-
-    void Shoot(Vector2 baseDir)
+    void Shoot()
     {
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
 
+        Vector2 mouseWorld = cam.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector2 baseDir = (mouseWorld - (Vector2)transform.position).normalized;
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 
         int total = 1 + extraShots;
@@ -92,7 +61,6 @@ public class PlayerShooting : MonoBehaviour
             GameObject p = Instantiate(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle));
 
             Projectile proj = p.GetComponent<Projectile>();
-            if (proj == null) { Destroy(p); continue; } // prefab mal configurat
             proj.damage += damage - 1; // dany del prefab + millores
             bool isCenter = total % 2 == 1 && i == total / 2;
             if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideShotDamage));
@@ -106,8 +74,7 @@ public class PlayerShooting : MonoBehaviour
             proj.slowFactor = slowFactor;
             proj.slowDuration = slowDuration;
 
-            Rigidbody2D prb = p.GetComponent<Rigidbody2D>();
-            if (prb != null) prb.linearVelocity = dir * projectileSpeed;
+            p.GetComponent<Rigidbody2D>().linearVelocity = dir * projectileSpeed;
         }
     }
 }
