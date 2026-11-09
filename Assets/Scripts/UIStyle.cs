@@ -29,7 +29,15 @@ public static class UIStyle
     }
 
     // els botons de les escenes (Jugar, Sortir, Començar el joc...) encara són els de Unity: els posem a to
+    // si alguna cosa falla aquí, que no aturi els altres scripts que esperen l'escena (Unity els crida
+    // un darrere l'altre i un error talla la resta: per exemple, el que crea les taules i les caixes)
     static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        try { OnSceneLoadedSafe(scene, mode); }
+        catch (System.Exception e) { Debug.LogException(e); }
+    }
+
+    static void OnSceneLoadedSafe(Scene scene, LoadSceneMode mode)
     {
         foreach (Button b in Resources.FindObjectsOfTypeAll<Button>()) // també els inactius
         {
@@ -126,8 +134,7 @@ public static class UIStyle
         {
             label.color = Color.white;
             label.fontStyle |= FontStyles.Bold;
-            label.outlineWidth = 0.18f;
-            label.outlineColor = new Color32(30, 20, 22, 255);
+            Outline(label, 0.18f);
         }
 
         if (b.GetComponent<ButtonJuice>() == null) b.gameObject.AddComponent<ButtonJuice>();
@@ -152,11 +159,42 @@ public static class UIStyle
     }
 
     // contorn fosc per a textos que van sobre el joc (es llegeixen sobre qualsevol fons)
+    // Compte: a un text desactivat (que encara no s'ha preparat) no se li pot posar contorn, TextMeshPro peta
+    // (NullReferenceException a SetOutlineThickness). En aquest cas es posa quan s'activi per primer cop.
     public static void Outline(TextMeshProUGUI t, float width = 0.2f)
     {
         if (t == null) return;
-        t.outlineWidth = width;
-        t.outlineColor = new Color32(25, 16, 18, 255);
+        if (!t.isActiveAndEnabled)
+        {
+            DeferredOutline d = t.GetComponent<DeferredOutline>();
+            if (d == null) d = t.gameObject.AddComponent<DeferredOutline>();
+            d.width = width;
+            return;
+        }
+        ApplyOutline(t, width);
+    }
+
+    public static void ApplyOutline(TextMeshProUGUI t, float width)
+    {
+        try
+        {
+            t.outlineWidth = width;
+            t.outlineColor = new Color32(25, 16, 18, 255);
+        }
+        catch (System.Exception e) { Debug.LogWarning("No s'ha pogut posar el contorn a " + t.name + ": " + e.Message); }
+    }
+}
+
+// posa el contorn al text la primera vegada que s'activa (vegeu UIStyle.Outline)
+public class DeferredOutline : MonoBehaviour
+{
+    public float width = 0.2f;
+
+    void Start()
+    {
+        TextMeshProUGUI t = GetComponent<TextMeshProUGUI>();
+        if (t != null) UIStyle.ApplyOutline(t, width);
+        Destroy(this);
     }
 }
 

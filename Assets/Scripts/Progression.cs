@@ -155,7 +155,15 @@ public static class Progression
         Enemy.OnKilled += OnEnemyKilled;
     }
 
+    // si alguna cosa falla aquí, que no aturi els altres scripts que esperen l'escena (Unity els crida
+    // un darrere l'altre i un error talla la resta: per exemple, el que crea les taules i les caixes)
     static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        try { OnSceneLoadedSafe(scene, mode); }
+        catch (System.Exception e) { Debug.LogException(e); }
+    }
+
+    static void OnSceneLoadedSafe(Scene scene, LoadSceneMode mode)
     {
         inGame = scene.name == SceneNames.Game;
         if (!inGame) return;

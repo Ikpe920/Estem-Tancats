@@ -96,6 +96,8 @@ public class WaveSpawner : MonoBehaviour
 
     void Start()
     {
+        HazardManager.EnsureExists(); // taules, caixes i portes, segur (abans de fer sortir cap client)
+
         // si el component Act Manager és al mateix objecte, el trobem sols
         if (actManager == null) actManager = GetComponent<ActManager>();
         if (boonManager == null) boonManager = GetComponent<BoonManager>();
