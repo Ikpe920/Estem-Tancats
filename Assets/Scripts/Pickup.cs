@@ -8,7 +8,8 @@ public class Pickup : MonoBehaviour
     public float life = 12f;
 
     private float born;
-    private Vector3 basePos;
+    private Transform body;          // el dibuix (fa el moviment; l'ombra es queda a terra)
+    private SpriteRenderer glow;     // la llum de sota, que batega
     private SpriteRenderer[] renderers;
     private bool collected;
 
@@ -45,49 +46,60 @@ public class Pickup : MonoBehaviour
         Pickup p = go.AddComponent<Pickup>();
         p.type = t;
 
+        // el sprite de cada premi (el cor, si pot, és el mateix que el dels cors del HUD)
+        Sprite sprite;
+        Color glow;
         switch (t)
         {
             case PickupType.Heart:
-            {
                 LifeHearts lh = FindAnyObjectByType<LifeHearts>();
-                if (lh != null && lh.heartSprite != null)
-                {
-                    SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-                    sr.sprite = lh.heartSprite;
-                    sr.sortingOrder = 3;
-                    go.transform.localScale = Vector3.one * 0.8f;
-                }
-                else
-                {
-                    Dot(go.transform, Vector2.zero, 0.35f, new Color(0.9f, 0.15f, 0.2f));
-                }
+                sprite = lh != null && lh.heartSprite != null ? lh.heartSprite : PropArt.Heart();
+                glow = new Color(1f, 0.35f, 0.45f);
                 break;
-            }
             case PickupType.Coffee:
-                Dot(go.transform, Vector2.zero, 0.32f, new Color(0.45f, 0.28f, 0.14f));
-                Dot(go.transform, Vector2.zero, 0.18f, new Color(0.95f, 0.88f, 0.75f));
+                sprite = PropArt.Coffee();
+                glow = new Color(1f, 0.85f, 0.6f);
                 break;
             case PickupType.Pepper:
-                Dot(go.transform, Vector2.zero, 0.30f, new Color(0.9f, 0.15f, 0.1f));
-                Dot(go.transform, new Vector2(0f, 0.28f), 0.12f, new Color(0.2f, 0.7f, 0.25f));
+                sprite = PropArt.Pepper();
+                glow = new Color(1f, 0.4f, 0.25f);
                 break;
-            case PickupType.Points:
-                Dot(go.transform, Vector2.zero, 0.30f, new Color(1f, 0.82f, 0.2f));
-                Dot(go.transform, Vector2.zero, 0.17f, new Color(1f, 0.95f, 0.6f));
+            default:
+                sprite = PropArt.Coin();
+                glow = new Color(1f, 0.9f, 0.35f);
                 break;
         }
+
+        // a sota: una ombra que es queda a terra i una llum suau del color del premi
+        p.glow = Layer(go.transform, "Llum", PropArt.Glow(), new Color(glow.r, glow.g, glow.b, 0.45f), 2,
+            new Vector3(0f, 0.08f, 0f), new Vector3(1.4f, 1.4f, 1f));
+        Layer(go.transform, "Ombra", PropArt.Shadow(), new Color(1f, 1f, 1f, 0.3f), 2,
+            new Vector3(0f, -0.38f, 0f), new Vector3(0.7f, 0.5f, 1f));
+
+        // el dibuix, que és el que fa el moviment amunt i avall
+        SpriteRenderer body = Layer(go.transform, "Dibuix", sprite, Color.white, 3, Vector3.zero, Vector3.one);
+        // els sprites de PropArt fan 0,8 unitats; el del HUD es fa de la mateixa mida
+        float size = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+        if (size > 0.01f) body.transform.localScale = Vector3.one * (0.8f / size);
+        p.body = body.transform;
     }
 
-    static void Dot(Transform parent, Vector2 offset, float radius, Color color)
+    static SpriteRenderer Layer(Transform parent, string name, Sprite sprite, Color color, int order, Vector3 pos, Vector3 scale)
     {
-        SpriteRenderer sr = HazardFx.MakeCircle((Vector2)parent.position + offset, radius, color, 3);
-        sr.transform.SetParent(parent, true);
+        GameObject go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = pos;
+        go.transform.localScale = scale;
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.color = color;
+        sr.sortingOrder = order;
+        return sr;
     }
 
     void Start()
     {
         born = Time.time;
-        basePos = transform.position;
         renderers = GetComponentsInChildren<SpriteRenderer>();
     }
 
@@ -95,7 +107,13 @@ public class Pickup : MonoBehaviour
     {
         float age = Time.time - born;
 
-        transform.position = basePos + Vector3.up * Mathf.Sin(age * 5f) * 0.12f;
+        if (body != null) body.localPosition = Vector3.up * (0.08f + Mathf.Sin(age * 5f) * 0.12f);
+        if (glow != null)
+        {
+            Color g = glow.color;
+            g.a = 0.3f + 0.2f * Mathf.Sin(age * 4f);
+            glow.color = g;
+        }
 
         // l'últim parell de segons parpelleja, i desapareix
         if (life - age < 3f)
