@@ -24,6 +24,8 @@ public class PauseMenu : MonoBehaviour
     private Button continueButton;
     private TextMeshProUGUI volumeText;
     private Button tutorialButton;
+    private Button vibrationButton;
+    private TextMeshProUGUI helpText;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
@@ -89,6 +91,7 @@ public class PauseMenu : MonoBehaviour
         Time.timeScale = 0f;
         RefreshVolume();
         RefreshTutorialButton();
+        RefreshVibration();
         root.SetActive(true);
         AudioManager.Play("ui_click");
 
@@ -138,6 +141,24 @@ public class PauseMenu : MonoBehaviour
         t.fontSizeMin = 18f;
         t.fontSizeMax = 30f;
         t.text = TutorialHints.Done ? "Tornar a veure el tutorial" : "Tutorial activat (propera partida)";
+    }
+
+    void ToggleVibration()
+    {
+        GamepadInput.Vibration = !GamepadInput.Vibration;
+        RefreshVibration();
+        if (GamepadInput.Vibration) GamepadInput.Rumble(0.4f, 0.4f, 0.2f); // perquè es noti que torna a anar
+    }
+
+    void RefreshVibration()
+    {
+        if (vibrationButton == null) return;
+        TextMeshProUGUI t = vibrationButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (t != null) t.text = "Vibració del comandament: " + (GamepadInput.Vibration ? "Sí" : "No");
+        if (helpText != null)
+            helpText.text = GamepadInput.UsingGamepad
+                ? GamepadInput.StartButton() + " o " + GamepadInput.East() + " per continuar"
+                : "Esc per continuar";
     }
 
     void ChangeVolume(float delta)
@@ -206,7 +227,12 @@ public class PauseMenu : MonoBehaviour
         EndScreenUI.CreateButton(p, "+", new Vector2(0.60f, 0.26f), small,
             new Color(0.30f, 0.30f, 0.35f), () => ChangeVolume(VolumeStep));
 
-        EndScreenUI.CreateText(p, "Ajuda", "Esc / Start per continuar", 28f, new Vector2(0.5f, 0.13f),
+        // vibració del comandament: sí / no
+        vibrationButton = EndScreenUI.CreateButton(p, "", new Vector2(0.5f, 0.175f), new Vector2(420f, 64f),
+            new Color(0.30f, 0.30f, 0.35f), ToggleVibration);
+
+        helpText = EndScreenUI.CreateText(p, "Ajuda", "", 28f, new Vector2(0.5f, 0.08f),
             new Vector2(900f, 60f), new Color(0.85f, 0.78f, 0.65f));
+        helpText.raycastTarget = false;
     }
 }

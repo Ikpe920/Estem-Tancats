@@ -35,6 +35,7 @@ public class ChefSelectScreen : MonoBehaviour
     private readonly Image[] diffButtons = new Image[3];
     private TextMeshProUGUI diffHint;
     private GameObject challengesPanel;
+    private TextMeshProUGUI helpText;
 
     class Card
     {
@@ -58,6 +59,8 @@ public class ChefSelectScreen : MonoBehaviour
     void Awake()
     {
         IsOpen = true;
+        GamepadInput.CustomScreens++; // aquesta pantalla es controla sola amb el comandament
+        GamepadInput.OnModeChanged += RefreshHelp;
         selected = ChefRoster.Selected;
         Build();
         Select(selected);
@@ -66,7 +69,22 @@ public class ChefSelectScreen : MonoBehaviour
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
 
-    void OnDestroy() { IsOpen = false; }
+    void OnDestroy()
+    {
+        IsOpen = false;
+        GamepadInput.CustomScreens = Mathf.Max(0, GamepadInput.CustomScreens - 1);
+        GamepadInput.OnModeChanged -= RefreshHelp;
+    }
+
+    // l'ajuda de sota diu les tecles o els botons del comandament
+    void RefreshHelp()
+    {
+        if (helpText == null) return;
+        helpText.text = GamepadInput.UsingGamepad
+            ? "Creu triar  ·  " + GamepadInput.LeftShoulder() + "/" + GamepadInput.RightShoulder() + " dificultat  ·  " + GamepadInput.North() + " reptes  ·  "
+              + GamepadInput.South() + " començar  ·  " + GamepadInput.East() + " tornar"
+            : "← → triar  ·  Tab dificultat  ·  R reptes  ·  Enter començar  ·  Esc tornar";
+    }
 
     void Update()
     {
@@ -264,9 +282,10 @@ public class ChefSelectScreen : MonoBehaviour
 
         messageText = EndScreenUI.CreateText(bg, "Missatge", "", 30f, new Vector2(0.5f, 0.27f), new Vector2(1200f, 50f), Color.white, true);
         messageText.raycastTarget = false;
-        TextMeshProUGUI help = EndScreenUI.CreateText(bg, "Ajuda", "← → triar  ·  Tab dificultat  ·  R reptes  ·  Enter començar  ·  Esc tornar",
+        TextMeshProUGUI help = helpText = EndScreenUI.CreateText(bg, "Ajuda", "",
             22f, new Vector2(0.5f, 0.025f), new Vector2(1500f, 36f), new Color(0.7f, 0.64f, 0.55f));
         help.raycastTarget = false;
+        RefreshHelp();
 
         BuildChallenges(canvasGo.transform);
     }

@@ -60,14 +60,22 @@ A partir de certes onades, alguns clients surten amb un comportament propi:
 
 ## Controls
 
-| Acció | Teclat i ratolí | Comandament |
+| Acció | Teclat i ratolí | Comandament (Xbox · PlayStation) |
 |---|---|---|
 | Moure's | WASD o fletxes | Joystick esquerre |
-| Apuntar i disparar | Ratolí + clic esquerre | Joystick dret (o gallet dret) |
-| Dash | Espai | RB |
-| Bolcar una taula | E | — |
-| Triar plat | Clic o 1–5 · H cura · R canvia les opcions | — |
-| Pausa | Esc | Start |
+| Apuntar i disparar | Ratolí + clic esquerre | Joystick dret (o RT · R2), amb una mica d'ajuda a apuntar |
+| Dash | Espai | RB · R1 |
+| Bolcar una taula | E | X · Quadrat |
+| Triar plat | Clic o 1–5 · H cura · R canvia les opcions | Creu o joystick per triar · A · Creu per agafar · X · Quadrat cura · Y · Triangle canvia |
+| Triar xef | Fletxes o 1–4 · Tab dificultat · R reptes · Enter | Creu · LB/RB dificultat · Y reptes · A |
+| Pausa | Esc | Start · Options (B · Cercle per tornar) |
+| Menús | Ratolí | Creu o joystick i A · Creu |
+
+Amb comandament:
+- els textos d'ajuda diuen els botons del comandament que tens connectat (Xbox, PlayStation o Switch);
+- el cursor del ratolí s'amaga;
+- davant del xef hi ha una mira que indica cap on apuntes;
+- el comandament vibra (es pot treure al menú de pausa).
 
 ### Mode de prova (només a l'Editor i a les *Development Build*)
 
@@ -115,6 +123,7 @@ Scripts principals:
 - `ScoreManager` i `RunStats`: els punts, les ratxes i el rècord.
 - `AudioManager`: els efectes de so (`AudioManager.Play("nom")`) i la música de cada escena i cada acte. Els sons es generen amb `Tools/AudioGen`.
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).
+- `GamepadInput`: detecta si es juga amb comandament, els noms dels botons, la vibració i la selecció de botons als menús.
 - `ChefRoster` i `ChefSelectScreen`: els xefs que es poden triar i la pantalla per triar-los.
 - `PauseMenu`, `TutorialHints`, `OffscreenIndicators`, `DebugMode`, `HitStop` i `CameraFX`: es creen sols o es criden des de qualsevol lloc. No cal posar-los a cap escena.
 
