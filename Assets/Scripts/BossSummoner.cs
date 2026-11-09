@@ -26,7 +26,7 @@ public class BossSummoner : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
 
         // es queda a distància en lloc de tirar-se a sobre del jugador

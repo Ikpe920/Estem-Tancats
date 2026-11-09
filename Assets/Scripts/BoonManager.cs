@@ -101,9 +101,9 @@ public class BoonManager : MonoBehaviour
 
     void Awake()
     {
-        if (shooting == null) shooting = FindAnyObjectByType<PlayerShooting>();
-        if (movement == null) movement = FindAnyObjectByType<PlayerMovement>();
-        if (health == null) health = FindAnyObjectByType<PlayerHealth>();
+        if (shooting == null) shooting = PlayerRef.Shooting;
+        if (movement == null) movement = PlayerRef.Movement;
+        if (health == null) health = PlayerRef.Health;
 
         if (useCodeDishes || boons == null || boons.Length == 0) BuildDefaultBoons();
 

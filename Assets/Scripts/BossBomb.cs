@@ -22,7 +22,7 @@ public class BossBomb : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
 
         sr = GetComponent<SpriteRenderer>();

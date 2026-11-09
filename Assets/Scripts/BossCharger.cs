@@ -31,7 +31,7 @@ public class BossCharger : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
 
         enemy.externalMovement = true; // aquest cap es mou sol

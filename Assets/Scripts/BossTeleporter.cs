@@ -23,7 +23,7 @@ public class BossTeleporter : MonoBehaviour
 
     void Start()
     {
-        GameObject p = GameObject.FindGameObjectWithTag("Player");
+        GameObject p = PlayerRef.Root;
         if (p != null) player = p.transform;
 
         nextBomb = Time.time + 1.5f;

@@ -16,14 +16,137 @@ public class Projectile : MonoBehaviour
 
     private readonly HashSet<Enemy> alreadyHit = new HashSet<Enemy>();
 
+    // ---------- RESERVA DE PROJECTILS ----------
+    // Es dispara molt (i més amb el ventall), així que els projectils no es destrueixen:
+    // es desactiven i es tornen a fer servir al tret següent.
+    static readonly Dictionary<GameObject, Stack<Projectile>> pools = new Dictionary<GameObject, Stack<Projectile>>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetPools() { pools.Clear(); }
+
+    private GameObject sourcePrefab;  // de quin prefab ve (null = creat a mà, es destrueix com abans)
+    private bool launched;            // ja s'ha preparat amb Launch (si no, Start fa el que feia abans)
+    private bool alive;
+    private float dieAt;
+    private Rigidbody2D rb;
+    private TrailRenderer trailRenderer;
+
+    // l'estat del prefab, per deixar-lo net cada cop que es reaprofita
+    private bool defaultsSaved;
+    private int defaultDamage;
+    private Vector3 defaultScale;
+    private SpriteRenderer[] renderers;
+    private Color[] defaultColors;
+
+    // agafa un projectil de la reserva (o en crea un) a la posició donada, a punt per configurar
+    public static Projectile Get(GameObject prefab, Vector2 position, Quaternion rotation)
+    {
+        if (prefab == null) return null;
+        if (!pools.TryGetValue(prefab, out Stack<Projectile> pool))
+        {
+            pool = new Stack<Projectile>();
+            pools[prefab] = pool;
+        }
+
+        Projectile p = null;
+        while (pool.Count > 0 && p == null) p = pool.Pop(); // els de l'escena anterior ja no existeixen
+
+        if (p == null)
+        {
+            GameObject go = Instantiate(prefab, position, rotation);
+            p = go.GetComponent<Projectile>();
+            if (p == null) { Destroy(go); return null; } // prefab mal configurat
+            p.sourcePrefab = prefab;
+        }
+        else
+        {
+            p.transform.SetPositionAndRotation(position, rotation);
+            p.gameObject.SetActive(true);
+            if (p.rb != null) { p.rb.position = position; p.rb.rotation = rotation.eulerAngles.z; }
+        }
+
+        p.ResetState();
+        return p;
+    }
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        if (rb != null) rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        SaveDefaults();
+    }
+
+    void SaveDefaults()
+    {
+        if (defaultsSaved) return;
+        defaultsSaved = true;
+        defaultDamage = damage;
+        defaultScale = transform.localScale;
+        renderers = GetComponentsInChildren<SpriteRenderer>(true);
+        defaultColors = new Color[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++) defaultColors[i] = renderers[i].color;
+    }
+
+    // deixa el projectil com el prefab: sense plats, sense crític, sense estela
+    void ResetState()
+    {
+        SaveDefaults();
+        damage = defaultDamage;
+        pierce = 0;
+        explosionRadius = 0f;
+        slowFactor = 1f;
+        slowDuration = 0f;
+        isCrit = false;
+        flicker = false;
+        alreadyHit.Clear();
+        transform.localScale = defaultScale;
+        for (int i = 0; i < renderers.Length; i++)
+            if (renderers[i] != null) renderers[i].color = defaultColors[i];
+        if (trailRenderer != null)
+        {
+            trailRenderer.Clear();
+            trailRenderer.emitting = false;
+            trailRenderer.enabled = false;
+        }
+        launched = false;
+        alive = true;
+    }
+
+    // es crida quan ja s'han posat el dany i els efectes: aplica l'aspecte i el llança
+    public void Launch(Vector2 velocity)
+    {
+        launched = true;
+        alive = true;
+        dieAt = Time.time + lifetime;
+        ApplyDishLook();
+        if (trailRenderer != null && trailRenderer.enabled) trailRenderer.Clear(); // que no surti una ratlla des de l'última posició
+        if (rb != null) rb.linearVelocity = velocity;
+    }
+
     void Start()
     {
-        Destroy(gameObject, lifetime);
+        // projectil creat amb Instantiate sense passar per Launch: com sempre
+        if (!launched)
+        {
+            launched = true;
+            alive = true;
+            dieAt = Time.time + lifetime;
+            ApplyDishLook();
+        }
+    }
 
-        Rigidbody2D prb = GetComponent<Rigidbody2D>();
-        if (prb != null) prb.interpolation = RigidbodyInterpolation2D.Interpolate;
+    // en lloc de Destroy: torna a la reserva (o es destrueix si no en ve de cap)
+    void Despawn()
+    {
+        if (!alive) return;
+        alive = false;
 
-        ApplyDishLook();
+        if (sourcePrefab == null) { Destroy(gameObject); return; }
+
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+        gameObject.SetActive(false);
+        if (pools.TryGetValue(sourcePrefab, out Stack<Projectile> pool)) pool.Push(this);
+        else Destroy(gameObject);
     }
 
     // l'aspecte del projectil canvia segons els plats que has triat
@@ -32,7 +155,7 @@ public class Projectile : MonoBehaviour
         if (isCrit)
         {
             transform.localScale *= 1.35f;
-            foreach (SpriteRenderer csr in GetComponentsInChildren<SpriteRenderer>())
+            foreach (SpriteRenderer csr in renderers)
                 csr.color = Color.Lerp(csr.color, new Color(1f, 0.92f, 0.4f), 0.55f);
         }
 
@@ -50,15 +173,22 @@ public class Projectile : MonoBehaviour
         tint = sum / n;
         tint.a = 1f;
 
-        foreach (SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>())
+        foreach (SpriteRenderer sr in renderers)
             sr.color = Color.Lerp(sr.color, tint, fire || ice ? 0.6f : 0.3f);
 
         // estela: llarga amb Bunyols, curta amb foc o gel
         if (trail || fire || ice)
         {
-            TrailRenderer tr = gameObject.AddComponent<TrailRenderer>();
-            Material mat = TrailMaterial();
-            if (mat != null) tr.sharedMaterial = mat;
+            // l'estela es crea un sol cop per projectil i es reaprofita
+            if (trailRenderer == null)
+            {
+                trailRenderer = gameObject.AddComponent<TrailRenderer>();
+                Material mat = TrailMaterial();
+                if (mat != null) trailRenderer.sharedMaterial = mat;
+            }
+            TrailRenderer tr = trailRenderer;
+            tr.enabled = true;
+            tr.emitting = true;
             tr.time = trail ? 0.3f : 0.15f;
             tr.startWidth = trail ? 0.22f : 0.16f;
             tr.endWidth = 0f;
@@ -88,6 +218,8 @@ public class Projectile : MonoBehaviour
 
     void Update()
     {
+        if (alive && Time.time >= dieAt) { Despawn(); return; }
+
         transform.Rotate(0f, 0f, spinSpeed * Time.deltaTime);
         if (flicker)
         {
@@ -98,13 +230,14 @@ public class Projectile : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.GetComponentInParent<ArenaWalls>() != null) { Destroy(gameObject); return; }
+        if (!alive) return; // ja ha tocat alguna cosa en aquest mateix pas de física
+        if (other.GetComponentInParent<ArenaWalls>() != null) { Despawn(); return; }
         Breakable prop = other.GetComponent<Breakable>();
         if (prop != null)
         {
             prop.Hit(damage);
             if (pierce > 0) pierce--;
-            else Destroy(gameObject);
+            else Despawn();
             return;
         }
         Enemy enemy = other.GetComponent<Enemy>();
@@ -118,7 +251,7 @@ public class Projectile : MonoBehaviour
         if (explosionRadius > 0f) Explode(enemy);
 
         if (pierce > 0) pierce--;
-        else Destroy(gameObject);
+        else Despawn();
     }
 
     void HitEnemy(Enemy e)
@@ -139,8 +272,7 @@ public class Projectile : MonoBehaviour
 
         bool push = SetBonuses.Has(SetId.Shockwave); // Traca: l'explosió empeny els clients
         Vector2 origin = transform.position;
-        Rigidbody2D prb = GetComponent<Rigidbody2D>();
-        Vector2 forward = prb != null && prb.linearVelocity.sqrMagnitude > 0.01f ? prb.linearVelocity.normalized : Vector2.right;
+        Vector2 forward = rb != null && rb.linearVelocity.sqrMagnitude > 0.01f ? rb.linearVelocity.normalized : Vector2.right;
 
         if (push) Push(center, origin, forward);
 
