@@ -417,6 +417,31 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    // ---------- PER ALS CLIENTS ESPECIALS (EnemyVariants) ----------
+
+    public bool IsDead => dead;
+    public int MaxHealth => maxHealth;
+
+    // empès o glaçat: no es pot moure pel seu compte
+    public bool IsStunned => Time.time < knockbackUntil || Time.time < frozenUntil;
+
+    // la velocitat real ara mateix (amb els boons de lentitud i el gel)
+    public float MoveSpeed => speed * speedMultiplier * (Time.time < slowUntil ? slowFactor : 1f);
+
+    public void Heal(int amount)
+    {
+        if (dead || amount <= 0) return;
+        health = Mathf.Min(maxHealth, health + amount);
+    }
+
+    // desapareix sense donar punts ni comptar com a baixa (el de l'olla, quan explota sol)
+    public void RemoveSilently()
+    {
+        if (dead) return;
+        dead = true;
+        Destroy(gameObject);
+    }
+
     public void ForceHitFlash()
     {
         if (dead) return;

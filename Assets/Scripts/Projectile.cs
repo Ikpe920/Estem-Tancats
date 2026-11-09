@@ -244,6 +244,15 @@ public class Projectile : MonoBehaviour
         if (enemy == null) enemy = other.GetComponentInParent<Enemy>();
         if (enemy == null) return;
         if (alreadyHit.Contains(enemy)) return;
+
+        // el de la safata para els trets que li arriben pel davant
+        SafataEscut shield = enemy.GetComponent<SafataEscut>();
+        if (shield != null && rb != null && shield.TryBlock(rb.linearVelocity, transform.position))
+        {
+            Despawn();
+            return;
+        }
+
         alreadyHit.Add(enemy);
 
         HitEnemy(enemy);

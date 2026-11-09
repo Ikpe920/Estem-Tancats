@@ -7,6 +7,17 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 - Entre onades tries un **plat** (millora). Si en combines alguns, completes **conjunts** amb efectes especials.
 - Les **ratxes** (encadenar clients sense que et toquin) multipliquen els punts. El rècord es guarda.
 
+### Clients especials
+
+A partir de certes onades, alguns clients surten amb un comportament propi:
+
+| Client | Des de | Què fa |
+|---|---|---|
+| El Golafre | onada 4 | Gros i resistent. En morir es divideix en dos de petits i ràpids |
+| L'Olla a pressió | onada 6 | Ràpid. A prop teu s'atura, xiula i explota. Si el mates abans, explota igual, però només fa mal als clients |
+| El de la Safata | onada 8 | La safata para els trets pel davant i gira a poc a poc. Ataca'l de costat o per darrere, o trenca-la (6 cops) |
+| El Cambrer | onada 11 | Es queda lluny i cada 3 s cura els clients del voltant. Com a molt n'hi ha 2 alhora |
+
 ## Controls
 
 | Acció | Teclat i ratolí | Comandament |
@@ -29,6 +40,7 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 | F5 | Cura tots els cors |
 | F6 | Invencible sí / no |
 | F7 | Obre ara la pantalla de triar plat |
+| F8 | Fa sortir un client especial de cada tipus |
 
 ## Obrir el projecte
 
@@ -56,7 +68,7 @@ Scripts principals:
 - `BoonManager`: els plats que tries entre onades, la botiga i la seva interfície.
 - `SetBonuses`: els conjunts de plats.
 - `PlayerMovement`, `PlayerShooting` i `PlayerHealth`: el xef. `PlayerRef` dona accés ràpid al jugador des de qualsevol script.
-- `Enemy`: els clients. Els caps hi afegeixen `BossMelee`, `BossCharger`, `BossSummoner`, `BossTeleporter` o `BossPhases`.
+- `Enemy`: els clients. `EnemyVariants` en fa els clients especials. Els caps hi afegeixen `BossMelee`, `BossCharger`, `BossSummoner`, `BossTeleporter` o `BossPhases`.
 - `ScoreManager` i `RunStats`: els punts, les ratxes i el rècord.
 - `PauseMenu`, `TutorialHints`, `OffscreenIndicators`, `DebugMode`, `HitStop` i `CameraFX`: es creen sols o es criden des de qualsevol lloc. No cal posar-los a cap escena.
 

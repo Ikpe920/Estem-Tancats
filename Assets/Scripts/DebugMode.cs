@@ -13,6 +13,7 @@ using UnityEngine.SceneManagement;
 //   F5  cura tots els cors
 //   F6  invencible sí / no
 //   F7  obre ara la pantalla de triar plat
+//   F8  fa sortir un client especial de cada tipus (Golafre, Olla, Safata, Cambrer)
 public class DebugMode : MonoBehaviour
 {
     // el ratolí és a sobre del quadre? PlayerShooting ho mira perquè no disparis en clicar els botons
@@ -80,6 +81,7 @@ public class DebugMode : MonoBehaviour
             if (kb.f5Key.wasPressedThisFrame) HealFull();
             if (kb.f6Key.wasPressedThisFrame) ToggleGod();
             if (kb.f7Key.wasPressedThisFrame) OfferNow();
+            if (kb.f8Key.wasPressedThisFrame) SpawnSpecials();
         }
 
         UpdateMouseOver();
@@ -132,6 +134,12 @@ public class DebugMode : MonoBehaviour
     {
         PlayerHealth.GodMode = !PlayerHealth.GodMode;
         Say(PlayerHealth.GodMode ? "Invencible: SÍ" : "Invencible: no");
+    }
+
+    void SpawnSpecials()
+    {
+        if (spawner == null) return;
+        Say(spawner.DebugSpawnSpecials() ? "Clients especials al voltant!" : "No s'han pogut fer sortir");
     }
 
     void OfferNow()
@@ -230,6 +238,7 @@ public class DebugMode : MonoBehaviour
         if (GUILayout.Button("Cura tots els cors (F5)")) HealFull();
         if (GUILayout.Button(PlayerHealth.GodMode ? "Invencible: SÍ (F6)" : "Invencible: no (F6)")) ToggleGod();
         if (GUILayout.Button("Obre la tria de plats (F7)")) OfferNow();
+        if (GUILayout.Button("Clients especials (F8)")) SpawnSpecials();
         GUILayout.Space(4f);
     }
 
