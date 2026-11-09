@@ -25,6 +25,7 @@ public class PauseMenu : MonoBehaviour
     private TextMeshProUGUI volumeText;
     private Button tutorialButton;
     private Button vibrationButton;
+    private Button filmButton;
     private TextMeshProUGUI helpText;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -100,6 +101,7 @@ public class PauseMenu : MonoBehaviour
         RefreshVolume();
         RefreshTutorialButton();
         RefreshVibration();
+        RefreshFilm();
         root.SetActive(true);
         AudioManager.Play("ui_click");
 
@@ -171,6 +173,19 @@ public class PauseMenu : MonoBehaviour
                 : "Esc per continuar";
     }
 
+    void ToggleFilm()
+    {
+        FilmFilter.Enabled = !FilmFilter.Enabled;
+        RefreshFilm();
+    }
+
+    void RefreshFilm()
+    {
+        if (filmButton == null) return;
+        TextMeshProUGUI t = filmButton.GetComponentInChildren<TextMeshProUGUI>();
+        if (t != null) t.text = "Filtre de pel·lícula antiga: " + (FilmFilter.Enabled ? "Sí" : "No");
+    }
+
     void ChangeVolume(float delta)
     {
         float v = Mathf.Clamp01(Mathf.Round((AudioListener.volume + delta) * 10f) / 10f);
@@ -212,36 +227,40 @@ public class PauseMenu : MonoBehaviour
         root.GetComponent<Image>().color = new Color(0.06f, 0.04f, 0.06f, 0.82f);
 
         Transform p = root.transform;
-        EndScreenUI.CreateText(p, "Titol", "PAUSA", 96f, new Vector2(0.5f, 0.80f), new Vector2(900f, 140f),
+        EndScreenUI.CreateText(p, "Titol", "PAUSA", 96f, new Vector2(0.5f, 0.83f), new Vector2(900f, 140f),
             new Color(1f, 0.8f, 0.3f), true);
 
         Vector2 size = new Vector2(420f, 80f);
-        continueButton = EndScreenUI.CreateButton(p, "Continuar", new Vector2(0.5f, 0.64f), size,
+        continueButton = EndScreenUI.CreateButton(p, "Continuar", new Vector2(0.5f, 0.69f), size,
             new Color(0.20f, 0.45f, 0.25f), Resume);
-        EndScreenUI.CreateButton(p, "Tornar a començar", new Vector2(0.5f, 0.55f), size,
+        EndScreenUI.CreateButton(p, "Tornar a començar", new Vector2(0.5f, 0.605f), size,
             new Color(0.55f, 0.33f, 0.12f), Restart);
-        EndScreenUI.CreateButton(p, "Menú principal", new Vector2(0.5f, 0.46f), size,
+        EndScreenUI.CreateButton(p, "Menú principal", new Vector2(0.5f, 0.52f), size,
             new Color(0.30f, 0.30f, 0.35f), GoToMenu);
 
         // tornar a veure el tutorial a la propera partida
-        tutorialButton = EndScreenUI.CreateButton(p, "Tornar a veure el tutorial", new Vector2(0.5f, 0.37f), size,
+        tutorialButton = EndScreenUI.CreateButton(p, "Tornar a veure el tutorial", new Vector2(0.5f, 0.435f), size,
             new Color(0.25f, 0.35f, 0.50f), EnableTutorial);
 
         // volum: [-]  Volum: 80%  [+]
         Vector2 small = new Vector2(80f, 80f);
-        EndScreenUI.CreateButton(p, "-", new Vector2(0.40f, 0.26f), small,
+        EndScreenUI.CreateButton(p, "-", new Vector2(0.40f, 0.345f), small,
             new Color(0.30f, 0.30f, 0.35f), () => ChangeVolume(-VolumeStep));
-        volumeText = EndScreenUI.CreateText(p, "Volum", "", 40f, new Vector2(0.5f, 0.26f), new Vector2(260f, 80f),
+        volumeText = EndScreenUI.CreateText(p, "Volum", "", 40f, new Vector2(0.5f, 0.345f), new Vector2(260f, 80f),
             Color.white);
         volumeText.raycastTarget = false; // que no tapi els botons del costat
-        EndScreenUI.CreateButton(p, "+", new Vector2(0.60f, 0.26f), small,
+        EndScreenUI.CreateButton(p, "+", new Vector2(0.60f, 0.345f), small,
             new Color(0.30f, 0.30f, 0.35f), () => ChangeVolume(VolumeStep));
 
         // vibració del comandament: sí / no
-        vibrationButton = EndScreenUI.CreateButton(p, "", new Vector2(0.5f, 0.175f), new Vector2(420f, 64f),
+        vibrationButton = EndScreenUI.CreateButton(p, "", new Vector2(0.5f, 0.258f), new Vector2(420f, 64f),
             new Color(0.30f, 0.30f, 0.35f), ToggleVibration);
 
-        helpText = EndScreenUI.CreateText(p, "Ajuda", "", 28f, new Vector2(0.5f, 0.08f),
+        // filtre de pel·lícula antiga: sí / no
+        filmButton = EndScreenUI.CreateButton(p, "", new Vector2(0.5f, 0.183f), new Vector2(420f, 64f),
+            new Color(0.40f, 0.30f, 0.18f), ToggleFilm);
+
+        helpText = EndScreenUI.CreateText(p, "Ajuda", "", 28f, new Vector2(0.5f, 0.09f),
             new Vector2(900f, 60f), new Color(0.85f, 0.78f, 0.65f));
         helpText.raycastTarget = false;
     }
