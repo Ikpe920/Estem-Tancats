@@ -222,8 +222,8 @@ public class ActManager : MonoBehaviour
         acts = new ActData[]
         {
             MakeAct("LA SALA", "Les taules ja no serveixen per a ningú", "Sala", new Color(1f, 0.97f, 0.93f), 0, 0f, 1f),
-            MakeAct("LA BARRA", "Les copes s'han buidat... i ells no", "Barra", new Color(1f, 0.93f, 0.82f), 2, 0.15f, 1.2f),
-            MakeAct("LA CUINA", "A la cuina no hi ha foc, i ells han vingut a engegar-lo", "Cuina", new Color(0.88f, 0.95f, 1f), 4, 0.3f, 1.4f),
+            MakeAct("LA BARRA", "Les copes s'han buidat... i ells no", "Barra", new Color(1f, 0.93f, 0.82f), 1, 0.1f, 1.1f),
+            MakeAct("LA CUINA", "A la cuina no hi ha foc, i ells han vingut a engegar-lo", "Cuina", new Color(0.88f, 0.95f, 1f), 4, 0.3f, 1.3f),
             MakeAct("LA TERRASSA", "Fins i tot fora, s'han quedat", "Terrassa", new Color(1f, 0.97f, 0.86f), 6, 0.45f, 1.6f),
             MakeAct("LA TEULADA", "L'últim recurs: el sostre", "Teulada", new Color(0.85f, 0.89f, 1f), 8, 0.6f, 1.8f),
         };

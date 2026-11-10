@@ -340,7 +340,8 @@ public class Projectile : MonoBehaviour
     {
         Fx.Hit(e.transform.position, rb != null ? rb.linearVelocity : Vector2.zero, isCrit);
         if (slowDuration > 0f && explosionRadius <= 0f) Fx.Snowflake(e.transform.position); // el gel s'hi queda enganxat
-        e.TakeDamage(damage, isCrit);
+        if (damage > 0) e.TakeDamage(damage, isCrit);
+        else e.Knockback(rb != null ? rb.linearVelocity : Vector2.zero, 3f, 0.06f); // un tret lateral sense mal: només empeny una mica
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
         if (e != null)
         {

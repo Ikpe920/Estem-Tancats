@@ -727,9 +727,9 @@ MonoBehaviour:
     tint: {r: 1, g: 0.93, b: 0.82, a: 1}
     music: {fileID: 0}
     enemies: []
-    extraEnemies: 2
-    enemySpeedBonus: 0.15
-    enemyHealthMultiplier: 1.2
+    extraEnemies: 1
+    enemySpeedBonus: 0.1
+    enemyHealthMultiplier: 1.1
   - name: LA CUINA
     subtitle: Hem apagat el foc i ells venen a engegar-lo
     resourceName: Cuina
@@ -739,7 +739,7 @@ MonoBehaviour:
     enemies: []
     extraEnemies: 4
     enemySpeedBonus: 0.3
-    enemyHealthMultiplier: 1.4
+    enemyHealthMultiplier: 1.3
   - name: LA TERRASSA
     subtitle: Fins i tot fora, no marxen
     resourceName: Terrassa

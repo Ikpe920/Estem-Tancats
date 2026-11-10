@@ -47,6 +47,7 @@ public static class EnemyVariants
     };
 
     static readonly HashSet<Kind> announced = new HashSet<Kind>();
+    const float MaxSpecialShare = 0.35f;
 
     // per al Bestiari: el nom, la pista i des de quina onada surt cada client especial
     public static void ForEachInfo(System.Action<Kind, string, string, int> f)
@@ -69,7 +70,10 @@ public static class EnemyVariants
     {
         if (e == null || e.isBoss || e.isShooter) return;
 
-        float roll = Random.value;
+        // com a molt un 35% dels clients són especials: si n'hi ha molts de possibles, es reparteixen aquest 35%
+        float total = 0f;
+        foreach (Def d in Defs) if (wave >= d.firstWave) total += d.chance;
+        float roll = Random.value * Mathf.Max(1f, total / MaxSpecialShare);
         foreach (Def d in Defs)
         {
             if (wave < d.firstWave) continue;
