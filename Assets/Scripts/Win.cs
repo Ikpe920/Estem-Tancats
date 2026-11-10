@@ -8,7 +8,7 @@ public class Win : MonoBehaviour
     {
         Time.timeScale = 1f;
 
-        Canvas canvas = FindAnyObjectByType<Canvas>();
+        Canvas canvas = EndScreenUI.SceneCanvas(); // el de l'escena, no el del filtre ni el del cercle
         if (canvas == null) return;
 
         // títol, retrat del xef, estadístiques que compten cap amunt i confeti

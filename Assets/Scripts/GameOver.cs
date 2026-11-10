@@ -20,7 +20,7 @@ public class GameOver : MonoBehaviour
             resultText.text = (RunStats.endless ? "Mode infinit: has arribat a l'onada " : "Has arribat a l'onada ") + RunStats.wave
                 + "\nPunts: " + RunStats.points + RunStats.ExtraLines();
 
-        Canvas canvas = FindAnyObjectByType<Canvas>();
+        Canvas canvas = EndScreenUI.SceneCanvas(); // el de l'escena, no el del filtre ni el del cercle
         if (canvas == null) return;
 
         // la pantalla nova: títol, retrat del xef, estadístiques que compten cap amunt (amaga els textos vells)
