@@ -210,6 +210,13 @@ def item_parts(kind, hx, hy, d):
         m.ellipse(hx, hy - 8, 2.4, 2.6)
         ps.append(m)
         ps.append(Part((220, 40, 40), None).rect(hx - 1.5, hy - 5, hx + 1.5, hy - 4))
+    elif kind == 'icecream':  # cucurutxo de gelat
+        cone = Part((220, 160, 80), (180, 120, 50))
+        for i in range(8):
+            cone.rect(hx - 3 + i * 0.4, hy - 8 + i, hx + 3 - i * 0.4, hy - 8 + i)
+        ps.append(cone)
+        for (dx, dy, c) in ((-1.5, -10, (250, 180, 200)), (1.5, -10, (170, 230, 210)), (0, -13, (250, 245, 230))):
+            ps.append(Part(c, darker(c, 0.85), hi=WHITE).ellipse(hx + dx, hy + dy, 2.4, 2.2))
     elif kind == 'foodbox':  # caixa de repartiment
         b = Part((240, 170, 40), (200, 130, 20), hi=(255, 220, 120))
         b.rect(hx - 5, hy - 9, hx + 5, hy)
@@ -955,6 +962,12 @@ CHARACTERS = {
     'Mim': dict(skin=(246, 246, 248), skin_s=(214, 214, 222), jacket=(250, 250, 250), pants=(30, 30, 36), shoe=(30, 30, 36),
                 hat='beret', pattern='mime', expr='worried', mouth='flat', nose_c=(230, 60, 60), collar='scarf',
                 scarf_c=(220, 40, 40), belly=8, shoulder=4),
+    'Sommelier': dict(SKIN3, jacket=(40, 30, 36), pants=(30, 26, 30), shoe=(20, 18, 20), hat='hair', hair_c=(30, 24, 28),
+                      pattern='shirtfront', collar='bowtie', expr='serious', mouth='smirk', stache='thin', stache_c=(30, 24, 28),
+                      items={1: 'wine', -1: 'bottle'}, belly=11, shoulder=6, hand_x=18, nose_c=(220, 110, 120)),
+    'Gelater': dict(SKIN, jacket=(250, 250, 250), pants=(60, 120, 200), shoe=(40, 40, 50), hat='cap', cap_c=(250, 250, 250),
+                    pattern='stripes', pattern_c=(90, 170, 230), collar='scarf', scarf_c=(90, 170, 230), expr='angry',
+                    mouth='grin', items={1: 'icecream'}, belly=12, shoulder=6, hand_x=18, blush=True),
     'CriticaTV': dict(SKIN3, jacket=(210, 40, 60), pants=(40, 30, 40), shoe=(30, 20, 24), hat='bob', hair_c=(250, 210, 100),
                       pattern='suit', lashes=True, expr='smug', mouth='smirk', nose_c=(240, 150, 130), nose=1.8,
                       items={1: 'mic'}, belly=10, blush=True),
@@ -985,7 +998,8 @@ def sprites():
         ch = CHARACTERS[n]
         out.append(('Sprites/Boss', n, lambda s, ch=ch: to_image(character(ch, 'front', s))))
     # caps que es carreguen des de Resources (els que no són a l'escena)
-    out.append(('Resources/Bosses', 'CriticaTV', lambda s: to_image(character(CHARACTERS['CriticaTV'], 'front', s))))
+    for n in ('CriticaTV', 'Sommelier', 'Gelater'):
+        out.append(('Resources/Bosses', n, lambda s, n=n: to_image(character(CHARACTERS[n], 'front', s))))
     return out
 
 

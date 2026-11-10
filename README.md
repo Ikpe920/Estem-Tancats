@@ -2,7 +2,8 @@
 
 Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant que ja ha tancat, però els clients no marxen. Te'ls has de treure de sobre a cops de menjar, sala per sala, fins a la teulada.
 
-- **25 onades** repartides en **5 actes**: la Sala, la Barra, la Cuina, la Terrassa i la Teulada.
+- **40 onades** repartides en **8 sales**: la Sala, la Barra, la Cuina, la Terrassa, la Teulada, el Celler, la Cambra frigorífica i el Plató.
+- **Un cap cada 5 onades**: el Crític (5), el Borratxo (10), el Xef renegat (15), el Client VIP (20), la Inspectora (25), el Sommelier (30), el Gelater boig (35) i, al final, la Crítica de la tele (40).
 - **5 caps**, un al final de cada acte: el Crític Gastronòmic, el Borratxo de la Barra, el Xef Renegat, el Client VIP i la Inspectora.
 - Entre onades tries un **plat** (millora). Si en combines alguns, completes **conjunts** amb efectes especials.
 - Les **ratxes** (encadenar clients sense que et toquin) multipliquen els punts. El rècord es guarda.
@@ -48,14 +49,13 @@ Al menú principal, el **Rebost** ven millores permanents amb propines: +1 cor, 
 
 ### Mode infinit: hores extres
 
-En acabar l'onada 25 pots acabar la partida o fer **hores extres** (mode infinit):
-- cada onada és una hora (la 26 és la una de la matinada) i passen la nit i el dia: la llum canvia (nit blava, alba rosa, dia, posta taronja) i al HUD hi ha el rellotge;
+En acabar l'onada 40 pots acabar la partida o fer **hores extres** (mode infinit):
+- cada onada és una hora (la 41 és la una de la matinada) i passen la nit i el dia: la llum canvia (nit blava, alba rosa, dia, posta taronja) i al HUD hi ha el rellotge;
 - de nit sonen les versions fosques de les músiques de cada sala, i de dia les normals;
 - cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "HORES EXTRES · 06:00" i un cartell de pel·lícula muda segons l'hora;
-- la dificultat no torna a baixar: parteix de la de la Teulada i puja una mica a cada sala nova;
+- la dificultat no torna a baixar: parteix de la de la sala més difícil i puja una mica a cada sala nova;
 - els caps tornen **enfurismats** (més vida, més ràpids i vermells).
 
-- cada 15 onades surt **la Crítica de la tele** (només a les hores extres): focus que s'encenen a terra i et fan mal i t'enlluernen, i aplaudiments que fan entrar més clients.
 ### Onades especials
 
 A partir de l'onada 3, un 30% de les onades (mai la d'un cap ni dues seguides) tenen un esdeveniment:

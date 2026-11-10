@@ -43,7 +43,7 @@ public class ActManager : MonoBehaviour
     public static event System.Action<int> OnActChanged;
 
     // ---------- HORES EXTRES (el mode infinit) ----------
-    // Després de l'onada 25 el xef fa hores extres: cada onada és una hora (la 26 és la una de la matinada)
+    // Després de l'onada 40 el xef fa hores extres: cada onada és una hora (la 41 és la una de la matinada)
     // i passa el dia i la nit: la llum canvia (nit blava, alba rosa, dia normal, posta taronja) i de nit sonen
     // les versions fosques de les músiques. Les sales continuen canviant (a l'atzar, mai la mateixa) i la
     // dificultat ja no torna a baixar: parteix de la de l'última sala i puja una mica a cada sala nova.
@@ -184,6 +184,7 @@ public class ActManager : MonoBehaviour
 
     void Awake()
     {
+        AddNewActs();
         if (cam == null) cam = Camera.main;
         PrepareBackground();
         HideLegacyBackground();
@@ -227,6 +228,29 @@ public class ActManager : MonoBehaviour
             MakeAct("LA TERRASSA", "Fins i tot fora, s'han quedat", "Terrassa", new Color(1f, 0.97f, 0.86f), 6, 0.45f, 1.6f),
             MakeAct("LA TEULADA", "L'últim recurs: el sostre", "Teulada", new Color(0.85f, 0.89f, 1f), 8, 0.6f, 1.8f),
         };
+    }
+
+    // les sales de l'escena són 5; la partida de 40 onades en necessita 8
+    void AddNewActs()
+    {
+        if (acts == null || acts.Length >= 8) return;
+        var list = new System.Collections.Generic.List<ActData>(acts);
+        if (list.Count < 6) list.Add(MakeAct("EL CELLER", "Les ampolles són bones... els clients, no tant", "Celler", new Color(0.95f, 0.86f, 0.8f), 10, 0.7f, 2.0f));
+        if (list.Count < 7) list.Add(MakeAct("LA CAMBRA FRIGORÍFICA", "Aquí dins no s'hi pot estar. I ells hi són", "Cambra", new Color(0.86f, 0.95f, 1f), 12, 0.8f, 2.2f));
+        if (list.Count < 8) list.Add(MakeAct("EL PLATÓ", "Llums, càmera... i clients!", "Plato", new Color(1f, 0.97f, 0.95f), 14, 0.9f, 2.4f));
+        acts = list.ToArray();
+    }
+
+    // l'aspecte de les parets, les portes i les caixes de cada sala (les noves fan servir el d'una de les velles)
+    public static int LookOf(int act)
+    {
+        switch (act)
+        {
+            case 5: return 1; // el celler: prestatges amb ampolles i bótes
+            case 6: return 2; // la cambra: rajoles
+            case 7: return 0; // el plató: fusta i cadires
+        }
+        return act;
     }
 
     static ActData MakeAct(string actName, string actSubtitle, string resName, Color actTint, int extra, float speed, float hp)

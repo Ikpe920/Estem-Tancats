@@ -53,6 +53,9 @@ public class Intertitle : MonoBehaviour
             case 2: return "Mentrestant, a la cuina...";
             case 3: return "Una mica més tard, a la terrassa...";
             case 4: return "I quan ja no quedava on amagar-se...\na la teulada!";
+            case 5: return "Però encara quedava baixar...\nal celler.";
+            case 6: return "Més avall i més fred...\na la cambra frigorífica.";
+            case 7: return "I per acabar, en directe...\ndes del plató!";
         }
         return "Mentrestant...";
     }

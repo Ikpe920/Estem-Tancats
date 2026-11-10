@@ -695,7 +695,7 @@ MonoBehaviour:
   speedPerWave: 0.03
   actManager: {fileID: 0}
   boonManager: {fileID: 0}
-  finalWave: 25
+  finalWave: 40
   currentWave: 0
 --- !u!114 &223980661
 MonoBehaviour:
