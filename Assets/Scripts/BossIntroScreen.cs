@@ -5,27 +5,30 @@ using UnityEngine.UI;
 using TMPro;
 
 // =====================================================================
-//  PRESENTACIÓ DELS CAPS (estil "versus")
+//  PRESENTACIÓ DELS CAPS (cartell de cinema dels anys 30)
 // =====================================================================
-// 1. la pantalla s'enfosqueix i entren dues franges negres de cinema
-// 2. una franja diagonal del color del cap travessa la pantalla (amb ratlles que es mouen)
-// 3. el retrat gran del cap entra de cop des de la dreta: flaix, cop de càmera i vibració
-// 4. el nom cau de cop, amb l'etiqueta "CAP DE L'ACTE N · ONADA X"
-// 5. la frase s'escriu lletra a lletra, i surt un consell per guanyar-lo
-// 6. tot surt de la pantalla i comença el combat
-// Es pot saltar amb A / Enter / Espai / clic. El joc està aturat mentre dura.
+// 1. el compte enrere de les pel·lícules antigues: 3, 2, 1 (amb l'agulla que gira)
+// 2. el cartell art déco cau des de dalt i s'atura de cop: cop de càmera, flaix i vibració
+// 3. "ESTEM TANCATS PRESENTA", el cap dins d'un medalló amb raigs de sol al darrere,
+//    el seu nom, el títol de la seva "pel·lícula", la frase lletra a lletra i un consell
+// 4. el cartell puja com un fotograma que avança i comença el combat
+// Tot tremola una mica, com la pel·lícula al projector. Es pot saltar amb A / Enter / Espai / clic.
+// El joc està aturat mentre dura.
 public class BossIntroScreen : MonoBehaviour
 {
     const float TypeSpeed = 38f;   // lletres per segon de la frase
-    const float Outro = 0.45f;     // durada de la sortida
+    const float Outro = 0.4f;      // durada de la sortida
+    const float CountTime = 0.32f; // cada número del compte enrere
 
-    private RectTransform canvasRt;
-    private Image dim, flash, barTop, barBottom, portrait, portraitShadow;
-    private RectTransform band;
-    private RawImage stripes;
-    private TextMeshProUGUI tag, nameText, quote, hint, skip;
+    static readonly Color Gold = new Color(0.92f, 0.74f, 0.36f);
+    static readonly Color Paper = new Color(0.17f, 0.11f, 0.08f);
+
+    private RectTransform canvasRt, card, cameo, rays, leader;
+    private Image dim, flash, flicker, sweep;
+    private TextMeshProUGUI presents, nameText, filmPre, filmTitle, quote, hint, footer, skip, countText;
     private string fullQuote;
-    private bool skipRequested;
+    private Vector2 jitter;
+    private float nextJitter;
 
     // el color i el consell de cada cap
     public static Color ColorFor(BossType t)
@@ -54,35 +57,65 @@ public class BossIntroScreen : MonoBehaviour
         return "";
     }
 
+    // el títol de la "pel·lícula" de cada cap
+    public static string FilmTitleFor(BossType t)
+    {
+        switch (t)
+        {
+            case BossType.Critic: return "LA NOTA FINAL";
+            case BossType.Borratxo: return "L'ÚLTIMA RONDA";
+            case BossType.Cuiner: return "CUINA SALVATGE";
+            case BossType.Pallas: return "RESERVAT PER A TU";
+            case BossType.Inspector: return "TANCAT PER INSPECCIÓ";
+        }
+        return "EL SERVEI DE LA NIT";
+    }
+
     // la presentació sencera; acaba quan el combat ha de començar
     public static IEnumerator Play(BossInfo info, Sprite sprite, int act, int wave, string tagLine = null)
     {
         BossIntroScreen s = new GameObject("PresentacioCap").AddComponent<BossIntroScreen>();
         s.Build(info, sprite, act, wave, tagLine);
-        yield return s.Run(ColorFor(info.type));
+        yield return s.Run();
         Destroy(s.gameObject);
     }
 
-    IEnumerator Run(Color color)
+    IEnumerator Run()
     {
         bool wasPaused = Time.timeScale == 0f;
         Time.timeScale = 0f;
         GamepadInput.CustomScreens++;
-        AudioManager.Play("boss_intro");
 
-        float typeStart = 0.85f;
-        float end = Mathf.Max(3.6f, typeStart + fullQuote.Length / TypeSpeed + 1.4f);
+        // ---- 1. el compte enrere
+        bool skipped = false;
+        int shown = 0;
+        for (float c = 0f; c < CountTime * 3f; c += Time.unscaledDeltaTime)
+        {
+            if (c > 0.15f && SkipPressed()) { skipped = true; break; }
+            int n = 3 - Mathf.Min(2, Mathf.FloorToInt(c / CountTime));
+            if (n != shown) { shown = n; AudioManager.Play("ui_click", 1f, 0.7f + (3 - n) * 0.15f); }
+            countText.text = n.ToString();
+            sweep.fillAmount = Mathf.Repeat(c / CountTime, 1f);
+            dim.color = new Color(0f, 0f, 0f, 0.7f * Mathf.Clamp01(c / 0.15f));
+            Jitter(leader, Vector2.zero);
+            yield return null;
+        }
+        leader.gameObject.SetActive(false);
+
+        // ---- 2 i 3. el cartell
+        AudioManager.Play("boss_intro");
+        float typeStart = 0.95f;
+        float end = Mathf.Max(3.8f, typeStart + fullQuote.Length / TypeSpeed + 1.4f);
         bool impact = false;
-        float t = 0f;
+        float t = skipped ? end : 0f;
 
         while (t < end)
         {
             t += Time.unscaledDeltaTime;
-            if (t > 0.6f && SkipPressed()) t = end; // es pot saltar
+            if (t > 0.35f && SkipPressed()) t = end; // es pot saltar
 
-            Animate(t, color);
-
-            if (!impact && t >= 0.6f)
+            Animate(t);
+            if (!impact && t >= 0.3f)
             {
                 impact = true;
                 CameraFX.Shake(0.25f, 0.25f);
@@ -90,23 +123,20 @@ public class BossIntroScreen : MonoBehaviour
                 AudioManager.Play("table", 1.2f, 0.7f); // un cop sord
             }
 
-            // la frase, lletra a lletra
             int chars = Mathf.Clamp(Mathf.FloorToInt((t - typeStart) * TypeSpeed), 0, fullQuote.Length);
             quote.text = fullQuote.Substring(0, chars);
-            skip.alpha = Mathf.Clamp01((t - 0.8f) * 3f) * 0.7f;
+            skip.alpha = Mathf.Clamp01((t - 0.5f) * 3f) * 0.7f;
             yield return null;
         }
-
-        // sortida: tot marxa de la pantalla
+        Animate(end);
         quote.text = fullQuote;
+
+        // ---- 4. el cartell puja com un fotograma que avança
         for (float o = 0f; o < Outro; o += Time.unscaledDeltaTime)
         {
             float k = EaseIn(o / Outro);
-            band.anchoredPosition = new Vector2(-2600f * k, 0f);
-            portrait.rectTransform.anchoredPosition = new Vector2(480f + 1500f * k, 10f);
-            portraitShadow.rectTransform.anchoredPosition = portrait.rectTransform.anchoredPosition + new Vector2(14f, -14f);
-            SetBars(1f - k);
-            dim.color = new Color(0f, 0f, 0f, 0.6f * (1f - k));
+            card.anchoredPosition = new Vector2(0f, 1300f * k);
+            dim.color = new Color(0f, 0f, 0f, 0.7f * (1f - k));
             yield return null;
         }
 
@@ -114,42 +144,46 @@ public class BossIntroScreen : MonoBehaviour
         if (!wasPaused) Time.timeScale = 1f;
     }
 
-    void Animate(float t, Color color)
+    void Animate(float t)
     {
-        dim.color = new Color(0f, 0f, 0f, 0.6f * Mathf.Clamp01(t / 0.25f));
-        SetBars(EaseOut(Mathf.Clamp01(t / 0.3f)));
+        dim.color = new Color(0f, 0f, 0f, 0.7f);
 
-        // la franja diagonal entra des de la dreta
-        float kb = EaseOut(Mathf.Clamp01((t - 0.15f) / 0.3f));
-        band.anchoredPosition = new Vector2(2600f * (1f - kb), 0f);
-        band.localScale = new Vector3(1f, Mathf.Lerp(0.2f, 1f, kb), 1f);
-        Rect uv = stripes.uvRect;
-        uv.x = -t * 0.6f; // les ratlles es mouen
-        stripes.uvRect = uv;
+        // el cartell cau des de dalt i s'atura amb un petit rebot
+        float kc = EaseOutBack(Mathf.Clamp01(t / 0.3f));
+        Jitter(card, new Vector2(0f, Mathf.Lerp(1300f, 0f, kc)));
 
-        // el retrat entra de cop, amb una mica de rebot, i després respira
-        float kp = EaseOutBack(Mathf.Clamp01((t - 0.3f) / 0.3f));
-        float bob = t > 0.6f ? Mathf.Sin((t - 0.6f) * 3f) * 8f : 0f;
-        portrait.rectTransform.anchoredPosition = new Vector2(Mathf.Lerp(1500f, 480f, kp), 10f + bob);
-        portraitShadow.rectTransform.anchoredPosition = portrait.rectTransform.anchoredPosition + new Vector2(14f, -14f);
+        // flaix en aturar-se, i el parpelleig del projector
+        float f = t - 0.3f;
+        flash.color = new Color(1f, 0.95f, 0.85f, f >= 0f && f < 0.22f ? 0.6f * (1f - f / 0.22f) : 0f);
 
-        // flaix blanc en arribar
-        float f = t - 0.6f;
-        flash.color = new Color(1f, 1f, 1f, f >= 0f && f < 0.25f ? 0.75f * (1f - f / 0.25f) : 0f);
+        // el medalló apareix d'una revolada i els raigs giren a poc a poc
+        float km = EaseOutBack(Mathf.Clamp01((t - 0.25f) / 0.3f));
+        cameo.localScale = Vector3.one * km;
+        rays.localRotation = Quaternion.Euler(0f, 0f, -t * 8f);
+        rays.localScale = Vector3.one * Mathf.Clamp01((t - 0.3f) / 0.4f);
 
+        presents.alpha = Mathf.Clamp01((t - 0.2f) / 0.25f);
         // el nom cau de cop (gran -> normal)
-        float kn = Mathf.Clamp01((t - 0.5f) / 0.22f);
+        float kn = Mathf.Clamp01((t - 0.45f) / 0.22f);
         nameText.alpha = kn;
         nameText.transform.localScale = Vector3.one * Mathf.Lerp(2.2f, 1f, EaseOut(kn));
-        tag.alpha = Mathf.Clamp01((t - 0.6f) / 0.2f);
-        hint.alpha = Mathf.Clamp01((t - 1.4f) / 0.3f);
+        filmPre.alpha = Mathf.Clamp01((t - 0.7f) / 0.2f);
+        filmTitle.alpha = Mathf.Clamp01((t - 0.75f) / 0.25f);
+        filmTitle.transform.localScale = Vector3.one * Mathf.Lerp(0.85f, 1f, EaseOut(Mathf.Clamp01((t - 0.75f) / 0.25f)));
+        hint.alpha = Mathf.Clamp01((t - 1.5f) / 0.3f);
+        footer.alpha = Mathf.Clamp01((t - 0.6f) / 0.3f) * 0.85f;
     }
 
-    void SetBars(float k)
+    // tot tremola una mica, com la pel·lícula al projector (12 vegades per segon)
+    void Jitter(RectTransform rt, Vector2 basePos)
     {
-        float h = 130f;
-        barTop.rectTransform.anchoredPosition = new Vector2(0f, h * (1f - k));
-        barBottom.rectTransform.anchoredPosition = new Vector2(0f, -h * (1f - k));
+        if (Time.unscaledTime > nextJitter)
+        {
+            nextJitter = Time.unscaledTime + 1f / 12f;
+            jitter = new Vector2(Random.Range(-2f, 2f), Random.Range(-3f, 3f));
+            flicker.color = new Color(0f, 0f, 0f, Random.Range(0f, 0.07f));
+        }
+        rt.anchoredPosition = basePos + jitter;
     }
 
     bool SkipPressed()
@@ -187,68 +221,167 @@ public class BossIntroScreen : MonoBehaviour
         scaler.matchWidthOrHeight = 0.5f;
         canvasRt = canvasGo.GetComponent<RectTransform>();
 
-        Color color = ColorFor(info.type);
+        Color accent = ColorFor(info.type);
+        bool furious = info.name != null && info.name.Contains("ENFURISMA"); // al torn de nit
+        Color frame = furious ? new Color(0.95f, 0.35f, 0.25f) : Gold;
 
         dim = Box(canvasRt, "Fosc", Color.clear, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        // la franja diagonal, amb les ratlles i dues vores clares
-        band = new GameObject("Franja", typeof(RectTransform)).GetComponent<RectTransform>();
-        band.SetParent(canvasRt, false);
-        band.anchorMin = band.anchorMax = new Vector2(0.5f, 0.5f);
-        band.sizeDelta = new Vector2(2700f, 340f);
-        band.localRotation = Quaternion.Euler(0f, 0f, -6f);
-        Box(band, "Color", color, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        GameObject sg = new GameObject("Ratlles", typeof(RectTransform), typeof(RawImage));
-        sg.transform.SetParent(band, false);
-        RectTransform srt = sg.GetComponent<RectTransform>();
-        srt.anchorMin = Vector2.zero; srt.anchorMax = Vector2.one; srt.offsetMin = srt.offsetMax = Vector2.zero;
-        stripes = sg.GetComponent<RawImage>();
-        stripes.texture = StripeTexture();
-        stripes.uvRect = new Rect(0f, 0f, 2700f / 96f, 340f / 96f);
-        stripes.color = new Color(1f, 1f, 1f, 0.12f);
-        stripes.raycastTarget = false;
-        Color edge = Color.Lerp(color, Color.white, 0.55f);
-        Box(band, "VoraDalt", edge, new Vector2(0f, 1f), Vector2.one, new Vector2(0f, -10f), Vector2.zero);
-        Box(band, "VoraBaix", edge, Vector2.zero, new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 10f));
+        // ---- el compte enrere (la "cua" de les pel·lícules)
+        leader = new GameObject("CompteEnrere", typeof(RectTransform)).GetComponent<RectTransform>();
+        leader.SetParent(canvasRt, false);
+        leader.anchorMin = leader.anchorMax = new Vector2(0.5f, 0.5f);
+        leader.sizeDelta = new Vector2(1920f, 1080f);
+        Color leaderInk = new Color(0.85f, 0.78f, 0.62f);
+        Box(leader, "Fons", new Color(0.30f, 0.24f, 0.18f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        Image ring1 = Centered(leader, "Anell1", leaderInk, Vector2.zero, new Vector2(620f, 620f)); ring1.sprite = Circle();
+        Image ring1b = Centered(leader, "Anell1b", new Color(0.30f, 0.24f, 0.18f), Vector2.zero, new Vector2(600f, 600f)); ring1b.sprite = Circle();
+        sweep = Centered(leader, "Agulla", new Color(0.18f, 0.14f, 0.10f), Vector2.zero, new Vector2(600f, 600f));
+        sweep.sprite = Circle();
+        sweep.type = Image.Type.Filled;
+        sweep.fillMethod = Image.FillMethod.Radial360;
+        sweep.fillOrigin = (int)Image.Origin360.Top;
+        sweep.fillClockwise = true;
+        // la creu del mig, per sobre de l'agulla
+        Centered(leader, "Ratlla1", leaderInk, Vector2.zero, new Vector2(1920f, 4f));
+        Centered(leader, "Ratlla2", leaderInk, Vector2.zero, new Vector2(4f, 1080f));
+        countText = Text(leader, "3", 300f, Vector2.zero, new Vector2(500f, 360f), new Color(0.12f, 0.09f, 0.07f), true);
+        countText.alignment = TextAlignmentOptions.Center;
+        countText.outlineWidth = 0f;
 
-        // el retrat (amb ombra)
-        portraitShadow = Box(canvasRt, "Ombra", new Color(0f, 0f, 0f, 0.55f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        portrait = Box(canvasRt, "Retrat", Color.white, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-        foreach (Image img in new[] { portraitShadow, portrait })
+        // ---- el cartell
+        card = new GameObject("Cartell", typeof(RectTransform)).GetComponent<RectTransform>();
+        card.SetParent(canvasRt, false);
+        card.anchorMin = card.anchorMax = new Vector2(0.5f, 0.5f);
+        card.sizeDelta = new Vector2(1240f, 900f);
+        card.anchoredPosition = new Vector2(0f, 1300f);
+        Image cardBg = Box(card, "Paper", Paper, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        cardBg.raycastTarget = false;
+
+        // els raigs de sol (retallats dins del cartell)
+        RectTransform clip = Box(card, "Retall", Color.clear, Vector2.zero, Vector2.one, new Vector2(14f, 14f), new Vector2(-14f, -14f)).rectTransform;
+        clip.gameObject.AddComponent<RectMask2D>();
+        rays = new GameObject("Raigs", typeof(RectTransform)).GetComponent<RectTransform>();
+        rays.SetParent(clip, false);
+        rays.anchorMin = rays.anchorMax = new Vector2(0.5f, 0.5f);
+        rays.anchoredPosition = new Vector2(0f, 150f);
+        for (int i = 0; i < 18; i++)
         {
-            img.sprite = sprite;
-            img.preserveAspect = true;
-            img.rectTransform.sizeDelta = new Vector2(560f, 560f);
-            img.enabled = sprite != null;
+            Image r = Centered(rays, "Raig", new Color(accent.r, accent.g, accent.b, 0.35f), Vector2.zero, new Vector2(46f, 1100f));
+            r.rectTransform.pivot = new Vector2(0.5f, 0f);
+            r.rectTransform.localRotation = Quaternion.Euler(0f, 0f, i * 20f);
         }
 
-        // textos (a l'esquerra, a sobre de la franja)
-        string tagText = tagLine ?? "— CAP DE L'ACTE " + act + " · ONADA " + wave + " —"; // (la font no té estrelles)
-        tag = Text(canvasRt, tagText, 30f, new Vector2(-330f, 125f), new Vector2(1000f, 50f), new Color(1f, 0.85f, 0.4f), true);
-        nameText = Text(canvasRt, info.name, 96f, new Vector2(-330f, 40f), new Vector2(1150f, 130f), Color.white, true);
+        // el marc art déco: doble línia daurada i diamants a les cantonades
+        Frame(card, frame, 0f, 8f);
+        Frame(card, frame, 24f, 3f);
+        foreach (Vector2 corner in new[] { new Vector2(-1f, -1f), new Vector2(1f, -1f), new Vector2(-1f, 1f), new Vector2(1f, 1f) })
+        {
+            Image d = Centered(card, "Diamant", frame, new Vector2(corner.x * (620f - 25f), corner.y * (450f - 25f)), new Vector2(30f, 30f));
+            d.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+            Image d2 = Centered(card, "DiamantDins", Paper, new Vector2(corner.x * (620f - 25f), corner.y * (450f - 25f)), new Vector2(14f, 14f));
+            d2.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+        }
+        // un parell de franges decoratives a dalt i a baix
+        foreach (float y in new[] { 300f, -360f })
+        {
+            Centered(card, "Franja", frame, new Vector2(-330f, y), new Vector2(260f, 3f));
+            Centered(card, "Franja", frame, new Vector2(330f, y), new Vector2(260f, 3f));
+        }
+
+        // "ESTEM TANCATS PRESENTA"
+        presents = Text(card, "ESTEM TANCATS  PRESENTA", 34f, new Vector2(0f, 385f), new Vector2(1000f, 50f), frame, true);
+        presents.alignment = TextAlignmentOptions.Center;
+        presents.characterSpacing = 12f;
+
+        // el medalló amb el cap
+        cameo = new GameObject("Medallo", typeof(RectTransform)).GetComponent<RectTransform>();
+        cameo.SetParent(card, false);
+        cameo.anchorMin = cameo.anchorMax = new Vector2(0.5f, 0.5f);
+        cameo.anchoredPosition = new Vector2(0f, 150f);
+        Centered(cameo, "Vora", frame, Vector2.zero, new Vector2(330f, 330f)).sprite = Circle();
+        Centered(cameo, "Vora2", Paper, Vector2.zero, new Vector2(316f, 316f)).sprite = Circle();
+        Centered(cameo, "Fons", Color.Lerp(accent, Paper, 0.35f), Vector2.zero, new Vector2(300f, 300f)).sprite = Circle();
+        Image portrait = Centered(cameo, "Retrat", Color.white, new Vector2(0f, -6f), new Vector2(330f, 330f));
+        portrait.sprite = sprite;
+        portrait.preserveAspect = true;
+        portrait.enabled = sprite != null;
+
+        // el nom i la pel·lícula
+        nameText = Text(card, info.name, 84f, new Vector2(0f, -70f), new Vector2(1120f, 110f), Color.white, true);
+        nameText.alignment = TextAlignmentOptions.Center;
         nameText.outlineWidth = 0.22f;
         nameText.outlineColor = new Color32(25, 15, 20, 255);
-        fullQuote = "«" + info.subtitle + "»";
-        quote = Text(canvasRt, "", 36f, new Vector2(-330f, -50f), new Vector2(1100f, 60f), new Color(1f, 0.95f, 0.88f), false);
+        filmPre = Text(card, "a la pel·lícula", 28f, new Vector2(0f, -132f), new Vector2(600f, 40f), new Color(1f, 0.92f, 0.8f), false);
+        filmPre.alignment = TextAlignmentOptions.Center;
+        filmPre.fontStyle = FontStyles.Italic;
+        string film = FilmTitleFor(info.type) + (furious ? " II: LA REVENJA" : "");
+        filmTitle = Text(card, "«" + film + "»", 58f, new Vector2(0f, -190f), new Vector2(1100f, 76f), frame, true);
+        filmTitle.alignment = TextAlignmentOptions.Center;
+        filmTitle.characterSpacing = 4f;
+
+        fullQuote = info.subtitle ?? "";
+        quote = Text(card, "", 30f, new Vector2(0f, -262f), new Vector2(1100f, 48f), new Color(1f, 0.95f, 0.88f), false);
+        quote.alignment = TextAlignmentOptions.Center;
         quote.fontStyle = FontStyles.Italic;
-        hint = Text(canvasRt, HintFor(info.type), 27f, new Vector2(-330f, -118f), new Vector2(1100f, 50f), new Color(1f, 0.85f, 0.45f), false);
-        foreach (TextMeshProUGUI t in new[] { tag, nameText, hint }) t.alpha = 0f;
+        hint = Text(card, HintFor(info.type), 24f, new Vector2(0f, -310f), new Vector2(1100f, 40f), new Color(1f, 0.85f, 0.45f), false);
+        hint.alignment = TextAlignmentOptions.Center;
+        string tagText = tagLine ?? "— CAP DE L'ACTE " + act + " · ONADA " + wave + " —";
+        footer = Text(card, tagText, 22f, new Vector2(0f, -400f), new Vector2(900f, 34f), frame, true);
+        footer.alignment = TextAlignmentOptions.Center;
+        footer.characterSpacing = 6f;
+        foreach (TextMeshProUGUI tx in new[] { presents, nameText, filmPre, filmTitle, hint, footer }) tx.alpha = 0f;
+        cameo.localScale = Vector3.zero;
 
-        // franges de cinema i el flaix (per sobre de tot)
-        barTop = Box(canvasRt, "FranjaDalt", Color.black, new Vector2(0f, 1f), Vector2.one, new Vector2(0f, -130f), Vector2.zero);
-        barBottom = Box(canvasRt, "FranjaBaix", Color.black, Vector2.zero, new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, 130f));
-        barTop.rectTransform.pivot = new Vector2(0.5f, 1f);
-        barBottom.rectTransform.pivot = new Vector2(0.5f, 0f);
-        SetBars(0f);
-
+        // per sobre de tot: el parpelleig del projector, el flaix i el botó de saltar
+        flicker = Box(canvasRt, "Parpelleig", Color.clear, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        flash = Box(canvasRt, "Flaix", Color.clear, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         string skipKey = GamepadInput.UsingGamepad ? GamepadInput.South() : "Enter";
         skip = Text(canvasRt, skipKey + " · Saltar", 24f, Vector2.zero, new Vector2(300f, 40f), new Color(1f, 1f, 1f, 0.7f), false);
         RectTransform skrt = skip.rectTransform;
         skrt.anchorMin = skrt.anchorMax = new Vector2(1f, 0f);
         skrt.anchoredPosition = new Vector2(-170f, 60f);
         skip.alpha = 0f;
+    }
 
-        flash = Box(canvasRt, "Flaix", Color.clear, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+    // un marc de línies (inset des de la vora, gruix)
+    static void Frame(RectTransform parent, Color c, float inset, float w)
+    {
+        Box(parent, "MarcDalt", c, new Vector2(0f, 1f), Vector2.one, new Vector2(inset, -inset - w), new Vector2(-inset, -inset));
+        Box(parent, "MarcBaix", c, Vector2.zero, new Vector2(1f, 0f), new Vector2(inset, inset), new Vector2(-inset, inset + w));
+        Box(parent, "MarcEsq", c, Vector2.zero, new Vector2(0f, 1f), new Vector2(inset, inset), new Vector2(inset + w, -inset));
+        Box(parent, "MarcDreta", c, new Vector2(1f, 0f), Vector2.one, new Vector2(-inset - w, inset), new Vector2(-inset, -inset));
+    }
+
+    static Image Centered(Transform parent, string name, Color color, Vector2 pos, Vector2 size)
+    {
+        Image img = Box(parent, name, color, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
+        img.rectTransform.sizeDelta = size;
+        img.rectTransform.anchoredPosition = pos;
+        return img;
+    }
+
+    static Sprite circle;
+    static Sprite Circle()
+    {
+        if (circle != null) return circle;
+        const int n = 128;
+        Texture2D tex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+        Color32[] px = new Color32[n * n];
+        float r = n / 2f;
+        for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                float d = Mathf.Sqrt((x + 0.5f - r) * (x + 0.5f - r) + (y + 0.5f - r) * (y + 0.5f - r));
+                byte a = (byte)(Mathf.Clamp01(r - d) * 255);
+                px[y * n + x] = new Color32(255, 255, 255, a);
+            }
+        tex.SetPixels32(px);
+        tex.Apply();
+        circle = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), 100f);
+        return circle;
     }
 
     static Image Box(Transform parent, string name, Color color, Vector2 aMin, Vector2 aMax, Vector2 offMin, Vector2 offMax)
@@ -284,23 +417,5 @@ public class BossIntroScreen : MonoBehaviour
         t.raycastTarget = false;
         t.textWrappingMode = TextWrappingModes.NoWrap;
         return t;
-    }
-
-    // ratlles diagonals blanques (es repeteixen; la franja les fa lliscar)
-    static Texture2D stripeTex;
-    static Texture2D StripeTexture()
-    {
-        if (stripeTex != null) return stripeTex;
-        int n = 32;
-        stripeTex = new Texture2D(n, n, TextureFormat.RGBA32, false);
-        stripeTex.wrapMode = TextureWrapMode.Repeat;
-        stripeTex.filterMode = FilterMode.Point;
-        Color32[] px = new Color32[n * n];
-        for (int y = 0; y < n; y++)
-            for (int x = 0; x < n; x++)
-                px[y * n + x] = ((x + y) % n) < n / 3 ? new Color32(255, 255, 255, 255) : new Color32(255, 255, 255, 0);
-        stripeTex.SetPixels32(px);
-        stripeTex.Apply();
-        return stripeTex;
     }
 }
