@@ -122,6 +122,7 @@ public class Enemy : MonoBehaviour
         if (rb != null) lastProgressPos = rb.position;
         lastProgressTime = Time.time;
         nextShotTime = Time.time + Random.Range(0.5f, fireInterval);
+        Squash.Pop(gameObject); // apareix amb un "boing"
     }
 
     public void Freeze(float duration)
@@ -406,11 +407,17 @@ public class Enemy : MonoBehaviour
         // els caps trontollen una mica a cada cop
         if (isBoss && health > 0) CameraFX.Shake(0.07f, crit ? 0.1f : 0.05f);
 
+        // dibuix animat: s'aixafa amb el cop i rebota
+        if (health > 0) Squash.Hit(gameObject, isBoss ? (crit ? 0.18f : 0.1f) : (crit ? 0.4f : 0.28f));
+
         if (health <= 0)
         {
             dead = true;
             AudioManager.Play(isBoss ? "explosion" : "enemy_die");
-            if (isBoss) Fx.Explosion(transform.position, 2.2f, 2f); else Fx.Poof(transform.position);
+            if (isBoss) Fx.Explosion(transform.position, 2.2f, 2f);
+            // dibuix animat: surt volant girant i fa "puf" a dalt de tot
+            Transform from = PlayerRef.Transform;
+            CartoonDeath.Launch(this, from != null ? (Vector2)from.position : (Vector2)transform.position + Vector2.down);
             if (isBoss) GamepadInput.Rumble(0.8f, 0.8f, 0.45f);
             if (ScoreManager.Instance != null)
                 ScoreManager.Instance.AddKill(points, transform.position);
@@ -429,6 +436,7 @@ public class Enemy : MonoBehaviour
     // ---------- PER ALS CLIENTS ESPECIALS (EnemyVariants) ----------
 
     public bool IsDead => dead;
+    public Color BaseTint => hasBaseColor ? baseColor : Color.white; // el color sense el flaix del cop
     public int MaxHealth => maxHealth;
 
     // empès o glaçat: no es pot moure pel seu compte

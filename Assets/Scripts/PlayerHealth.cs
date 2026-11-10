@@ -54,6 +54,7 @@ public class PlayerHealth : MonoBehaviour
         OnLivesChanged?.Invoke(lives);
         CameraFX.Shake(0.18f, 0.16f);
         if (lives > 0) HitStop.Do(0.07f); // una mica de pausa quan et toquen
+        if (lives > 0) Squash.Hit(gameObject, 0.32f); // dibuix animat: el xef s'aixafa i rebota
 
         if (lives <= 0)
         {
