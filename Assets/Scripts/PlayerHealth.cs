@@ -45,7 +45,7 @@ public class PlayerHealth : MonoBehaviour
         if (GodMode) return;
         if (Time.time < nextDamageTime) return; // encara és invulnerable
         if (invulnerableWhileDashing && movement != null && movement.IsDashing) return;
-        if (dodgeChance > 0f && Random.value < dodgeChance) // Carquinyolis: esquiva el cop
+        if (dodgeChance > 0f && UnityEngine.Random.value < dodgeChance) // Carquinyolis: esquiva el cop
         {
             nextDamageTime = Time.time + 0.4f;
             HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.4f, "ESQUIVAT!", new Color(0.9f, 0.8f, 0.5f), 0.8f);
