@@ -6,7 +6,8 @@ using UnityEngine.UI;
 
 public class PlayerHealth : MonoBehaviour
 {
-    public const int MaxLivesCap = 5;        // topall de cors (boons i botiga el comparteixen)
+    public const int MaxLivesCap = 5;
+    [HideInInspector] public float dodgeChance = 0f; // Carquinyolis        // topall de cors (boons i botiga el comparteixen)
     public int maxLives = 3;                 // total de cors (vida) del jugador
     public bool invulnerableWhileDashing = true; // el dash esquiva els cops (es pot desactivar a l'Inspector)
     public float invulnerabilityTime = 1.2f; // temps invulnerable després de rebre un cop
@@ -44,6 +45,13 @@ public class PlayerHealth : MonoBehaviour
         if (GodMode) return;
         if (Time.time < nextDamageTime) return; // encara és invulnerable
         if (invulnerableWhileDashing && movement != null && movement.IsDashing) return;
+        if (dodgeChance > 0f && Random.value < dodgeChance) // Carquinyolis: esquiva el cop
+        {
+            nextDamageTime = Time.time + 0.4f;
+            HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.4f, "ESQUIVAT!", new Color(0.9f, 0.8f, 0.5f), 0.8f);
+            Squash.Kick(gameObject, -0.2f, 0.25f);
+            return;
+        }
 
         lives--;
         if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa

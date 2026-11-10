@@ -40,13 +40,16 @@ public class OrbitingOlives : MonoBehaviour
     void Update()
     {
         if (olives.Count == 0) return;
-        angle += degreesPerSecond * Time.deltaTime;
+        bool evo = Evo.Has(EvoId.OlivesAnxova); // plat estrella: triple de mal, més de pressa i més lluny
+        angle += degreesPerSecond * (evo ? 1.5f : 1f) * Time.deltaTime;
         int dmg = SetBonuses.Has(SetId.SpicyOlives) ? damage * 2 : damage; // Aperitiu picant
+        if (evo) dmg *= 3;
+        float r = (radius + (evo ? 0.6f : 0f)) * DishArea.Mul;
 
         for (int i = 0; i < olives.Count; i++)
         {
             float a = (angle + i * 360f / olives.Count) * Mathf.Deg2Rad;
-            Vector3 world = transform.position + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * radius;
+            Vector3 world = transform.position + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * r;
             olives[i].position = world;
             olives[i].rotation = Quaternion.identity;
 
@@ -88,13 +91,28 @@ public class RomescoWave : MonoBehaviour
 
     void OnDisable() { if (health != null) health.OnLivesChanged -= Changed; }
 
+    private float nextAuto;
+
+    // Romesco de Tarragona (plat estrella): l'ona surt sola cada 5 s
+    void Update()
+    {
+        if (!Evo.Has(EvoId.RomescoTarragona) || PlayerHealth.IsDying || Time.timeScale == 0f) return;
+        if (Time.time < nextAuto) return;
+        nextAuto = Time.time + 5f;
+        Wave();
+    }
+
     void Changed(int lives)
     {
         bool hit = lastLives >= 0 && lives < lastLives;
         lastLives = lives;
         if (!hit || lives <= 0) return;
+        Wave();
+    }
 
-        float r = SetBonuses.Has(SetId.Revenge) ? radius * 2f : radius; // Salsa de revenja
+    void Wave()
+    {
+        float r = (SetBonuses.Has(SetId.Revenge) ? radius * 2f : radius) * DishArea.Mul; // Salsa de revenja
         Vector2 pos = transform.position;
         Fx.Shockwave(pos, r * 0.5f, new Color(0.95f, 0.45f, 0.2f));
         AudioManager.Play("explosion", 0.6f);
@@ -116,6 +134,7 @@ public class PanelletsRing : MonoBehaviour
     private PlayerMovement movement;
     private PlayerShooting shooting;
     private bool wasDashing;
+    private float nextAuto;
 
     void Awake()
     {
@@ -129,6 +148,8 @@ public class PanelletsRing : MonoBehaviour
         bool dashing = movement.IsDashing;
         if (dashing && !wasDashing) Throw();
         wasDashing = dashing;
+        // Castanyada eterna (plat estrella): també sense dash, cada 2,5 s
+        if (Evo.Has(EvoId.CastanyadaEterna) && Time.timeScale > 0f && Time.time >= nextAuto) { nextAuto = Time.time + 2.5f; Throw(); }
     }
 
     void Throw()
@@ -165,9 +186,11 @@ public class KillBurst : MonoBehaviour
     void Killed(Enemy dead)
     {
         if (dead == null || depth >= 3) return;
-        bool always = SetBonuses.Has(SetId.Revetlla); // Revetlla
+        bool evo = Evo.Has(EvoId.CocaSantJoan); // plat estrella: tots esclaten, i més fort
+        bool always = SetBonuses.Has(SetId.Revetlla) || evo; // Revetlla
         if (!always && Random.value > chance) return;
 
+        float radius = this.radius * DishArea.Mul * (evo ? 1.5f : 1f);
         Vector2 pos = dead.transform.position;
         int dmg = shooting != null ? Mathf.Max(1, shooting.damage) : 1;
         Fx.Explosion(pos, radius, 0.6f);

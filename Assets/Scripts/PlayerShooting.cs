@@ -27,6 +27,11 @@ public class PlayerShooting : MonoBehaviour
     [Range(0.2f, 1f)] public float sideShotDamage = 0.7f; // els projectils del ventall (no el central) fan aquesta part del dany
     public int pierce = 0;
     [HideInInspector] public bool boomerangShots = false; // el Pizzer: pizzes que travessen i tornen
+    [HideInInspector] public int backShots = 0;          // Pernil tallat a ganivet: trets cap enrere
+    [HideInInspector] public float projectileScale = 1f; // Allioli: projectils més grans
+    [HideInInspector] public float knockback = 0f;       // Tomàquet de penjar: els trets empenyen
+    [HideInInspector] public Vector2 LastAim = Vector2.right; // cap a on s'ha disparat l'últim cop (l'Escalivada hi apunta)
+    private int shotCount;
     static Sprite pizzaSprite;
     public int bounces = 0;           // rebots a les parets (Mandonguilles)
     public float explosionRadius = 0f;
@@ -151,10 +156,30 @@ public class PlayerShooting : MonoBehaviour
         if (reticle != null) Destroy(reticle.gameObject);
     }
 
+    // un tret extra (ganivets, cercle de la paella): com un tret normal, sense crític
+    void FireExtra(float angle)
+    {
+        Vector2 dir = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
+        GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
+        Projectile proj = Projectile.Get(prefab, (Vector2)transform.position + dir * spawnOffset, Quaternion.Euler(0f, 0f, angle));
+        if (proj == null) return;
+        proj.damage += damage - 1;
+        proj.pierce = pierce;
+        proj.bounces = bounces;
+        proj.explosionRadius = explosionRadius;
+        proj.slowFactor = slowFactor;
+        proj.slowDuration = slowDuration;
+        proj.knockback = knockback;
+        if (projectileScale != 1f) proj.transform.localScale *= projectileScale;
+        proj.Launch(dir * projectileSpeed);
+    }
+
     void Shoot(Vector2 baseDir)
     {
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
         ShotsFired++;
+        shotCount++;
+        LastAim = baseDir;
         AudioManager.Play("shoot");
         Squash.Kick(gameObject, -0.04f, 0.06f); // dibuix animat: una petita sacsejada en llançar
 
@@ -197,6 +222,8 @@ public class PlayerShooting : MonoBehaviour
             proj.explosionRadius = explosionRadius;
             proj.slowFactor = slowFactor;
             proj.slowDuration = slowDuration;
+            proj.knockback = knockback;
+            if (projectileScale != 1f) proj.transform.localScale *= projectileScale;
             if (boomerangShots)
             {
                 if (pizzaSprite == null) pizzaSprite = Resources.Load<Sprite>("Projectiles/Pizza");
@@ -206,6 +233,20 @@ public class PlayerShooting : MonoBehaviour
 
             proj.Launch(dir * projectileSpeed);
         }
+
+        // Pernil tallat a ganivet: ganivets cap enrere (i, amb el Pernil de gla, també cap als costats)
+        if (backShots > 0)
+        {
+            for (int k = 0; k < backShots; k++)
+            {
+                float off = (k - (backShots - 1) / 2f) * 14f;
+                FireExtra(baseAngle + 180f + off);
+                if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off); FireExtra(baseAngle - 90f + off); }
+            }
+        }
+        // Paella gegant: cada 3 trets, un cercle sencer
+        if (Evo.Has(EvoId.PaellaGegant) && shotCount % 3 == 0)
+            for (int k = 0; k < 10; k++) FireExtra(baseAngle + 18f + k * 36f);
 
         // Cigaló: un crític et deixa tornar a disparar de seguida
         if (anyCrit && SetBonuses.Has(SetId.Carajillo))

@@ -15,6 +15,8 @@ public class Projectile : MonoBehaviour
     [HideInInspector] public float slowDuration = 0f;
     [HideInInspector] public bool isCrit = false;        // tret crític: més gran i daurat
     [HideInInspector] public bool boomerang = false;     // pizza del Pizzer: travessa els clients i torna a la mà
+    [HideInInspector] public float knockback = 0f;       // Tomàquet de penjar: empeny el client que toca
+    static bool chaining;                                // Calçotada: una explosió en cadena no en fa més
 
     // ---------- PIZZA BUMERANG ----------
     const float BoomerangOut = 0.38f;   // segons que va endavant abans de tornar
@@ -109,6 +111,7 @@ public class Projectile : MonoBehaviour
         slowDuration = 0f;
         isCrit = false;
         boomerang = false;
+        knockback = 0f;
         returning = false;
         flicker = false;
         alreadyHit.Clear();
@@ -341,6 +344,8 @@ public class Projectile : MonoBehaviour
         Fx.Hit(e.transform.position, rb != null ? rb.linearVelocity : Vector2.zero, isCrit);
         if (slowDuration > 0f && explosionRadius <= 0f) Fx.Snowflake(e.transform.position); // el gel s'hi queda enganxat
         if (damage > 0) e.TakeDamage(damage, isCrit);
+        if (knockback > 0f && damage > 0 && e != null && !e.IsDead) e.Knockback(rb != null ? rb.linearVelocity : Vector2.zero, knockback, 0.1f);
+        if (slowDuration > 0f && Evo.Has(EvoId.Granissat) && e != null && !e.IsDead) e.Freeze(0.8f); // Granissat: el glaça del tot
         else e.Knockback(rb != null ? rb.linearVelocity : Vector2.zero, 3f, 0.06f); // un tret lateral sense mal: només empeny una mica
         if (slowDuration > 0f) e.Slow(slowFactor, slowDuration);
         if (e != null)
@@ -352,7 +357,7 @@ public class Projectile : MonoBehaviour
     void Explode(Enemy center)
     {
         // plats de conjunt: una explosió crítica és més gran (Calçotada crítica)
-        float radius = explosionRadius;
+        float radius = explosionRadius * DishArea.Mul; // Vermut: explosions més grans
         if (isCrit && SetBonuses.Has(SetId.CritBlast)) radius *= 1.6f;
 
         bool push = SetBonuses.Has(SetId.Shockwave); // Traca: l'explosió empeny els clients
@@ -372,6 +377,21 @@ public class Projectile : MonoBehaviour
             if (push) Push(e, origin, forward);
         }
         SpawnExplosionFx(radius);
+
+        // Calçotada (plat estrella): la meitat de les vegades, l'explosió en fa esclatar una altra en un client tocat
+        if (Evo.Has(EvoId.Calcotada) && !chaining && alreadyHit.Count > 0 && Random.value < 0.5f)
+        {
+            Enemy next = null;
+            foreach (Enemy e in alreadyHit) if (e != null && e != center) { next = e; break; }
+            if (next != null)
+            {
+                chaining = true;
+                Vector2 p = next.transform.position;
+                Fx.Explosion(p, radius * 0.8f, 0.7f);
+                DishUtil.HitCircle(p, radius * 0.8f, damage);
+                chaining = false;
+            }
+        }
 
         // plats de conjunt: Calçots gelats deixen una zona gelada on ha explotat
         if (slowDuration > 0f && SetBonuses.Has(SetId.FrostBlast))
