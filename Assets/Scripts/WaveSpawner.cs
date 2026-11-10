@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,7 +19,9 @@ public enum BossType
     Cuiner,    // invoca clients i llança ventalls de ganivets
     Pallas,    // es teletransporta i deixa bombes al terra
     Inspector, // espiral de trets i fase enfadada
-    TvCritic   // la Crítica de la tele (només a les hores extres): focus que enlluernen i públic que aplaudeix
+    TvCritic,  // la Crítica de la tele (onada 40): focus que enlluernen i públic que aplaudeix
+    Sommelier, // el Sommelier (onada 30): ampolles que cauen on ets, tolls de vi i cercles de taps
+    Gelater    // el Gelater boig (onada 35): ventalls de gelat, cercles de gel i espiral
 }
 
 [System.Serializable]
@@ -73,10 +76,10 @@ public class WaveSpawner : MonoBehaviour
     public ActManager actManager; // el canvi d'escenari cada 5 onades
 
     [Header("Boons")]
-    public BoonManager boonManager; // les 3 opcions a triar entre onades
+    public BoonManager boonManager; // els plats (per experiència) i el cofre dels caps
 
     [Header("Final del joc")]
-    public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
+    public int finalWave = 40; // en completar aquesta onada, guanyes (0 = sense final)
 
     [Header("Avís de sortida")]
     public float spawnWarningTime = 0.6f; // segons que es veu el cercle vermell abans que surti el client (0 = sense avís)
@@ -104,6 +107,32 @@ public class WaveSpawner : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        AddNewBosses();
+    }
+
+    // els caps de l'escena són 5 (onades 5 a 25); aquí s'afegeixen els de les onades 30, 35 i 40
+    void AddNewBosses()
+    {
+        if (bosses == null || bosses.Length == 0 || bosses.Length >= 8) return;
+        BossInfo template = bosses[0];
+        GameObject shot = null;
+        foreach (BossInfo b in bosses) if (b != null && b.projectilePrefab != null) { shot = b.projectilePrefab; break; }
+
+        List<BossInfo> list = new List<BossInfo>(bosses);
+        list.Add(new BossInfo
+        {
+            name = "EL SOMMELIER", subtitle = "Té un vi per a cada plat. I un plat per a cada xef.",
+            prefab = template.prefab, type = BossType.Sommelier, health = 2200, speed = 1.7f, scale = 3f,
+            sprite = Resources.Load<Sprite>("Bosses/Sommelier"), tint = Color.white, projectilePrefab = shot,
+        });
+        list.Add(new BossInfo
+        {
+            name = "EL GELATER BOIG", subtitle = "Ve a servir-te una bola de gel. De les grosses.",
+            prefab = template.prefab, type = BossType.Gelater, health = 2800, speed = 1.8f, scale = 3f,
+            sprite = Resources.Load<Sprite>("Bosses/Gelater"), tint = Color.white, projectilePrefab = shot,
+        });
+        list.Add(TvCriticInfo(template));
+        bosses = list.ToArray();
     }
 
     void Start()
@@ -142,9 +171,7 @@ public class WaveSpawner : MonoBehaviour
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
-                // a les hores extres, cada 15 onades surt la Crítica de la tele; els altres tornen enfurismats
-                if (endless && finalWave > 0 && (currentWave - finalWave) % 15 == 0) info = TvCriticInfo(info);
-                else if (endless) info = info.Furious();
+                if (endless) info = info.Furious(); // fent hores extres tornen enfurismats
 
                 // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
                 Sprite portrait = info.sprite;
@@ -221,11 +248,15 @@ public class WaveSpawner : MonoBehaviour
                 if (actManager != null) actManager.StartOvertime(currentWave + 1); // comencen les hores extres
             }
 
+            // el cap deixa un cofre: dos plats de regal (abans de canviar de sala)
+            if (isBossWave && boonManager != null && boonManager.xpMode)
+                yield return StartCoroutine(boonManager.OpenChest());
+
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
             if (isBossWave && actManager != null)
                 yield return StartCoroutine(actManager.TransitionToNextAct());
 
-            // boons: 3 opcions a triar entre onades (amb els serveis de la botiga a sota)
+            // (si els plats no van per experiència: 3 opcions a triar entre onades, com abans)
             if (boonManager != null && boonManager.ShouldOffer(currentWave))
                 yield return StartCoroutine(boonManager.OfferBoons());
 
@@ -530,6 +561,18 @@ public class WaveSpawner : MonoBehaviour
                 if (attack != null) attack.enabled = false;
                 b.AddComponent<BossTvCritic>().spawner = this;
                 break;
+
+            case BossType.Sommelier:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                b.AddComponent<BossSommelier>().projectilePrefab = info.projectilePrefab;
+                break;
+
+            case BossType.Gelater:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                b.AddComponent<BossGelater>().projectilePrefab = info.projectilePrefab;
+                break;
         }
     }
 
@@ -588,7 +631,7 @@ public class WaveSpawner : MonoBehaviour
             subtitle = "En directe des del teu restaurant... i en directe del teu final.",
             prefab = template.prefab,
             type = BossType.TvCritic,
-            health = 1200,
+            health = 3400, // és el cap final de la partida
             speed = 1.8f,
             scale = 3f,
             sprite = Resources.Load<Sprite>("Bosses/CriticaTV"),

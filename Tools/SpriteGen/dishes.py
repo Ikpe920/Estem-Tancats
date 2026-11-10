@@ -239,7 +239,23 @@ def truita_projectile():
     return [t, brown]
 
 
+def coca_llardons():
+    ps = plate()
+    c = Part((230, 175, 90), (190, 135, 60), hi=(250, 215, 140))
+    c.ellipse(32, 36, 22, 8)
+    c.rect(10, 36, 54, 40)
+    c.ellipse(32, 40, 22, 4)
+    sugar = Part((250, 250, 240), None, outline=False)
+    for (x, y) in ((18, 34), (24, 32), (30, 35), (36, 33), (42, 35), (46, 33), (28, 37), (40, 37)):
+        sugar.put(x, y)
+    nuts = Part((200, 150, 80), None, outline=False)
+    for (x, y) in ((22, 35), (34, 36), (44, 34)):
+        nuts.rect(x, y, x + 1, y)
+    return ps + [c, sugar, nuts]
+
+
 DISHES = {
+    'coca_de_llardons': coca_llardons,
     'pebrots_de_padro': padro,
     'mel_i_mato': mel_mato,
     'carquinyolis': carquinyolis,

@@ -91,7 +91,7 @@ public static class WaveEvents
         {
             WaveEventKind f = ForcedNext;
             ForcedNext = WaveEventKind.None;
-            if (!(f == WaveEventKind.TallDeLlum && act == 4)) { last = f; return f; }
+            if (!(f == WaveEventKind.TallDeLlum && (act == 4 || act == 5))) { last = f; return f; }
         }
 
         if (bossWave || wave < FirstWave || last != WaveEventKind.None || Random.value >= Chance)
@@ -102,7 +102,7 @@ public static class WaveEvents
 
         WaveEventKind k;
         do { k = (WaveEventKind)Random.Range(1, 6); }
-        while (k == WaveEventKind.TallDeLlum && act == 4); // a la Teulada ja és fosc
+        while (k == WaveEventKind.TallDeLlum && (act == 4 || act == 5)); // a la Teulada i al Celler ja és fosc
 
         last = k;
         return k;

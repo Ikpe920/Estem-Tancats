@@ -50,6 +50,8 @@ public static class Codex
             if (e.GetComponent<BossTeleporter>() != null) return "ClientVIP";
             if (e.GetComponent<BossPhases>() != null) return "Inspectora";
             if (e.GetComponent<BossTvCritic>() != null) return "CriticaTV";
+            if (e.GetComponent<BossSommelier>() != null) return "Sommelier";
+            if (e.GetComponent<BossGelater>() != null) return "Gelater";
             return "Critic";
         }
         if (e.GetComponent<Golafre>() != null) return "Golafre";
@@ -94,6 +96,8 @@ public static class Codex
         list.Add(Boss("XefRenegat", "EL XEF RENEGAT", BossType.Cuiner, 15));
         list.Add(Boss("ClientVIP", "EL CLIENT VIP", BossType.Pallas, 20));
         list.Add(Boss("Inspectora", "LA INSPECTORA", BossType.Inspector, 25));
+        list.Add(Boss("Sommelier", "EL SOMMELIER", BossType.Sommelier, 30));
+        list.Add(Boss("Gelater", "EL GELATER BOIG", BossType.Gelater, 35));
         list.Add(Boss("CriticaTV", "LA CRÍTICA DE LA TELE", BossType.TvCritic, 40));
         return list;
     }
@@ -288,7 +292,7 @@ public class CodexScreen : MonoBehaviour
             Sprite sp = Resources.Load<Sprite>(c.sprite);
             string text = seen
                 ? c.desc + "\n\n<color=#FFCC4D>Despatxats: " + kills + "</color>" + (c.boss ? "" : "\nSurt a partir de l'onada " + c.firstWave)
-                : (c.boss ? "Un cap que encara no has vençut." : "Encara no n'has despatxat cap.") + "\nSurt a partir de l'onada " + c.firstWave + (c.key == "CriticaTV" ? " (hores extres)" : "") + ".";
+                : (c.boss ? "Un cap que encara no has vençut." : "Encara no n'has despatxat cap.") + "\nSurt a partir de l'onada " + c.firstWave + ".";
             Button cell = Cell(i, cols, Mathf.CeilToInt(clients.Count / (float)cols), sp, seen, () => ShowDetail(sp, seen, seen ? c.name : "???", text));
             if (c.boss) cell.GetComponent<Image>().color = new Color(0.32f, 0.14f, 0.14f);
             if (first == null) first = cell;
@@ -386,6 +390,7 @@ public class CodexScreen : MonoBehaviour
             case BoonType.ProjectileSize: return "projectils grans";
             case BoonType.Knockback: return "empenta";
             case BoonType.Rerolls: return "canvis de cartes";
+            case BoonType.Magnet: return "imant";
             case BoonType.BackKnives: return "ganivets";
             case BoonType.Soup: return "tolls";
             case BoonType.PieRain: return "pluja de pastissos";

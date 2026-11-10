@@ -29,6 +29,8 @@ public static class PowerUps
         D("invul", "Pell de gallina", "+0,15 s d'invulnerabilitat quan et toquen", 2, 150, 300),
         D("propines", "Pot de propines", "+10% de propines en acabar la partida", 5, 150, 300, 450, 600, 750),
         D("canvis", "Segona opinió", "+1 canvi de cartes a cada oferta", 2, 250, 500),
+        D("experiencia", "Llibre de receptes", "+10% d'experiència", 5, 150, 300, 450, 600, 750),
+        D("imant", "Davantal amb butxaques", "Recolleixes les monedes un 15% més lluny", 3, 100, 200, 300),
         D("cartes", "Carta llarga", "+1 carta a cada oferta", 1, 900),
         D("esmorzar", "Esmorzar de forquilla", "Comences la partida amb un complement a l'atzar", 1, 500),
         D("compl", "Taula de complements", "+1 espai per a complements", 1, 1200),

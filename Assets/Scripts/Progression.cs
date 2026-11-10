@@ -117,9 +117,9 @@ public static class Progression
         new Challenge { id = "sets3",      name = "Menú complet",       desc = "Completa 3 conjunts en una partida",         reward = 100 },
         new Challenge { id = "vip3",       name = "Relacions públiques",desc = "Atrapa 3 clients VIP",                       reward = 100, goal = 3, progress = () => PlayerPrefs.GetInt(VipKey, 0) },
         new Challenge { id = "kills1000",  name = "Mil cobraments",     desc = "Despatxa 1000 clients (entre totes les partides)", reward = 150, goal = 1000, progress = () => PlayerPrefs.GetInt(KillsKey, 0) },
-        new Challenge { id = "win",        name = "Servei acabat",      desc = "Supera les 25 onades",                       reward = 200 },
-        new Challenge { id = "win_hard",   name = "Estrella Michelin",  desc = "Supera les 25 onades en DIFÍCIL",            reward = 400 },
-        new Challenge { id = "endless35",  name = "Hores extres",       desc = "Arriba a l'onada 35 en mode infinit",        reward = 250 },
+        new Challenge { id = "win",        name = "Servei acabat",      desc = "Supera les 40 onades",                       reward = 300 },
+        new Challenge { id = "win_hard",   name = "Estrella Michelin",  desc = "Supera les 40 onades en DIFÍCIL",            reward = 600 },
+        new Challenge { id = "endless35",  name = "Hores extres",       desc = "Arriba a l'onada 50 fent hores extres",       reward = 300 },
     };
 
     public static bool IsDone(Challenge c) { return PlayerPrefs.GetInt("challenge_" + c.id, 0) == 1; }
@@ -220,7 +220,7 @@ public static class Progression
             Complete("win");
             if (Difficulty == Difficulty.Dificil) Complete("win_hard");
         }
-        if (endless && wave >= 35) Complete("endless35");
+        if (endless && wave >= 50) Complete("endless35");
         PlayerPrefs.Save();
     }
 

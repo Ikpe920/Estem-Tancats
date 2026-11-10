@@ -540,7 +540,24 @@ if __name__ == '__main__':
         # la teulada: swing menor, ràpid i tens
         ('act4', 188, 52, HMINOR, [(0, 'm6'), (8, '7'), (2, 'm7b5'), (7, '7'), (0, 'm6'), (5, 'm6'), (2, 'm7b5'), (7, '7')],
          dict(bars=32, seed=55, lead='trumpet', answer='clarinet', density=0.8, **HOT)),
+        # el celler: blues menor fosc i misteriós, amb la trompeta amb sordina
+        ('act5', 150, 50, HMINOR, [(0, 'm7'), (0, 'm7'), (5, 'm7'), (5, 'm7'), (0, 'm7'), (8, '7'), (7, '7'), (7, '7')],
+         dict(bars=32, seed=77, lead='trumpet', answer='clarinet', density=0.7, **HOT)),
+        # la cambra frigorífica: ragtime ràpid i "gelat", amb banjo
+        ('act6', 200, 64, MAJOR, [(I, '6'), (vi, '7'), (ii, '7'), (V, '7'), (iii, '7'), (vi, '7'), (ii, '7'), (V, '7')],
+         dict(bars=32, seed=88, lead='banjo', answer='open', density=0.85, form='AB', **HOT)),
+        # el plató: big band de gala, per a l'últim tram
+        ('act7', 184, 58, MAJOR, [(I, 'maj7'), (vi, '7'), (ii, 'm7'), (V, '7'), (I, '6'), (IV, '7'), (iii, 'm7'), (vi, '7')],
+         dict(bars=32, seed=99, lead='open', answer='clarinet', density=0.85, **HOT)),
     ]
+    # python3 swing.py <carpeta> new -> només les sales noves (act5-7 i les seves versions de nit)
+    if len(sys.argv) > 2 and sys.argv[2] == 'new':
+        for (name, bpm, key, scale, prog, kw) in ACTS[5:]:
+            compose(name, bpm, key, scale, prog, **kw)
+            kwn = dict(kw, drums='night', answer='trumpet' if kw['lead'] != 'trumpet' else 'open')
+            compose('night' + name[-1], int(bpm * 1.1), key, HMINOR, night_prog(prog), **kwn)
+        print('fet')
+        sys.exit(0)
     only_night = len(sys.argv) > 2 and sys.argv[2] == 'night'
     if not only_night:
         # menú: swing tranquil amb piano stride i clarinet

@@ -55,7 +55,7 @@ public class HazardManager : MonoBehaviour
 
     void Apply(int act)
     {
-        act = ((act % 5) + 5) % 5;
+        act = ((act % 8) + 8) % 8;
         if (act == applied) return;
         applied = act;
 
@@ -68,14 +68,18 @@ public class HazardManager : MonoBehaviour
             case 2: Add<FireHazard>(); break;
             case 3: Add<WindHazard>(); break;
             case 4: Add<LightningHazard>(); Add<DarknessHazard>(); break;
+            case 5: Add<SlipperyHazard>(); Add<DarknessHazard>(); break;   // el celler: vi vessat i poca llum
+            case 6: Add<WindHazard>(); Add<SlipperyHazard>(); break;       // la cambra: corrent d'aire fred i terra relliscós
+            case 7: Add<LightningHazard>(); Add<TableHazard>(); break;     // el plató: focus que cauen i decorats
         }
 
         // les caixes destructibles surten a tots els actes
-        Add<PropsHazard>().act = act;
+        int look = ActManager.LookOf(act);
+        Add<PropsHazard>().act = look;
 
         // l'aspecte de l'acte: parets i portes
-        if (ArenaWalls.Instance != null) ArenaWalls.Instance.SetSkin(WallSkin.Get(act), Color.white);
-        if (DoorManager.Instance != null) DoorManager.Instance.SetAct(act);
+        if (ArenaWalls.Instance != null) ArenaWalls.Instance.SetSkin(WallSkin.Get(look), Color.white);
+        if (DoorManager.Instance != null) DoorManager.Instance.SetAct(look);
     }
 
     T Add<T>() where T : Component
