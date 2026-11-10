@@ -82,6 +82,23 @@ public static class EndScreenUI
     }
 
     // troba un text de l'escena pel nom del GameObject
+    // el canvas de l'escena oberta (no els que duren entre escenes, com el del filtre de pel·lícula o
+    // el del cercle de les transicions, que no reben clics)
+    public static Canvas SceneCanvas()
+    {
+        Canvas found = null;
+        foreach (GameObject root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+        {
+            Canvas c = root.GetComponentInChildren<Canvas>(true);
+            if (c == null) continue;
+            if (c.GetComponent<GraphicRaycaster>() != null) return c;
+            if (found == null) found = c;
+        }
+        // perquè els botons funcionin, el canvas ha de poder rebre clics
+        if (found != null && found.GetComponent<GraphicRaycaster>() == null) found.gameObject.AddComponent<GraphicRaycaster>();
+        return found;
+    }
+
     public static TextMeshProUGUI FindText(string name)
     {
         foreach (TextMeshProUGUI t in UnityEngine.Object.FindObjectsByType<TextMeshProUGUI>())
