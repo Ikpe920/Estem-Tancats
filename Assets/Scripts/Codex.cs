@@ -45,13 +45,13 @@ public static class Codex
     {
         if (e.isBoss)
         {
-            if (e.GetComponent<BossCharger>() != null) return "Borratxo";
-            if (e.GetComponent<BossSummoner>() != null) return "XefRenegat";
-            if (e.GetComponent<BossTeleporter>() != null) return "ClientVIP";
-            if (e.GetComponent<BossPhases>() != null) return "Inspectora";
-            if (e.GetComponent<BossTvCritic>() != null) return "CriticaTV";
-            if (e.GetComponent<BossSommelier>() != null) return "Sommelier";
-            if (e.GetComponent<BossGelater>() != null) return "Gelater";
+            if (e.GetComponent<BossDrunkBrain>() != null) return "Borratxo";
+            if (e.GetComponent<BossChefBrain>() != null) return "XefRenegat";
+            if (e.GetComponent<BossVipBrain>() != null) return "ClientVIP";
+            if (e.GetComponent<BossInspectorBrain>() != null) return "Inspectora";
+            if (e.GetComponent<BossTvBrain>() != null) return "CriticaTV";
+            if (e.GetComponent<BossSommelierBrain>() != null) return "Sommelier";
+            if (e.GetComponent<BossGelaterBrain>() != null) return "Gelater";
             return "Critic";
         }
         if (e.GetComponent<Golafre>() != null) return "Golafre";
@@ -104,7 +104,7 @@ public static class Codex
 
     static ClientInfo Boss(string key, string name, BossType t, int wave)
     {
-        return new ClientInfo { key = key, name = name, desc = BossIntroScreen.HintFor(t) + ".", sprite = "Walk/" + key + "_1", firstWave = wave, boss = true };
+        return new ClientInfo { key = key, name = name, desc = BossIntroScreen.HintFor(t) + ".\n<color=#FF9A40>Punt feble: " + DamageKind.Name(DamageKind.WeaknessOf(t)).ToLower() + " (" + DamageKind.Source(DamageKind.WeaknessOf(t)) + ")</color>", sprite = "Walk/" + key + "_1", firstWave = wave, boss = true };
     }
 }
 

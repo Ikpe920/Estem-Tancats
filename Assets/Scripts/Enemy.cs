@@ -31,6 +31,7 @@ public class Enemy : MonoBehaviour
     public float damageCooldown = 1f;
     public int points = 10;
     public float damageMultiplier = 1f;
+    [HideInInspector] public DmgKind weakness = DmgKind.None; // el posa el WaveSpawner als caps
 
     [Header("Tirador (opcional)")]
     public bool isShooter = false;
@@ -396,6 +397,12 @@ public class Enemy : MonoBehaviour
     {
         if (dead) return;
         int dealt = Mathf.RoundToInt(amount * damageMultiplier);
+        // punt feble dels caps: el tipus de mal que no suporten fa el doble
+        if (weakness != DmgKind.None && (DamageKind.Current == weakness || (weakness == DmgKind.Crit && crit)))
+        {
+            dealt *= 2;
+            DamageKind.ShowWeak(this);
+        }
         health -= dealt;
         ForceHitFlash();
         if (health > 0) AudioManager.Play(crit ? "crit" : "hit"); // si mor, ja sona la mort

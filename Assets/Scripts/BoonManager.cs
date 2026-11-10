@@ -211,7 +211,7 @@ public class BoonManager : MonoBehaviour
             if (Evo.Has(EvoId.BotifarraFestaMajor)) // plat estrella: una traca al voltant
             {
                 Fx.Explosion(health.transform.position, 3f * DishArea.Mul, 1f);
-                DishUtil.HitCircle(health.transform.position, 3f * DishArea.Mul, 6 + DishUtil.Bonus, 8f);
+                DishUtil.HitCircle(health.transform.position, 3f * DishArea.Mul, 6 + DishUtil.Bonus, 8f, DmgKind.Explosion);
             }
             HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.6f, "BOTIFARRA! +1 cor", new Color(0.85f, 0.6f, 0.45f), 1.2f);
 

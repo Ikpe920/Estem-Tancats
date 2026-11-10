@@ -92,14 +92,14 @@ static class DishUtil
     public static int Bonus { get { PlayerShooting s = PlayerRef.Shooting; return s != null ? Mathf.Max(0, s.damage - 1) : 0; } }
 
     // fa mal a tots els clients d'un cercle; torna quants n'ha tocat
-    public static int HitCircle(Vector2 pos, float radius, int damage, float push = 0f)
+    public static int HitCircle(Vector2 pos, float radius, int damage, float push = 0f, DmgKind kind = DmgKind.None)
     {
         int n = 0;
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, radius))
         {
             Enemy e = c.GetComponentInParent<Enemy>();
             if (e == null || e.IsDead) continue;
-            e.TakeDamage(damage);
+            DamageKind.Hit(e, damage, kind);
             if (push > 0f && !e.IsDead) e.Knockback((Vector2)e.transform.position - pos, push, 0.15f);
             n++;
         }
@@ -151,7 +151,7 @@ public class DashFireTrail : MonoBehaviour
         for (float t = 0f; t < 1.5f; t += 0.3f)
         {
             Fx.Flames(pos, radius * 0.6f, 0.4f);
-            DishUtil.HitCircle(pos, radius, 2 + DishUtil.Bonus);
+            DishUtil.HitCircle(pos, radius, 2 + DishUtil.Bonus, 0f, DmgKind.Fire);
             if (sr != null) sr.color = new Color(1f, 0.55f, 0.15f, 0.4f * (1f - t / 1.5f));
             yield return new WaitForSeconds(0.3f);
         }
@@ -201,7 +201,7 @@ public class SoupTrail : MonoBehaviour
         bool slow = SetBonuses.Has(SetId.SopaPedra); // conjunt Sopa de pedra: els tolls frenen
         for (float t = 0f; t < life; t += 0.5f)
         {
-            DishUtil.HitCircle(pos, radius, dmg);
+            DishUtil.HitCircle(pos, radius, dmg, 0f, DmgKind.Fire);
             if (slow)
                 foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, radius))
                 {
@@ -272,7 +272,7 @@ public class CavaPop : MonoBehaviour
         AudioManager.Play("pickup", 0.5f, 0.8f);
         int dmg = 2 + level + DishUtil.Bonus;
         if (SetBonuses.Has(SetId.Brindis)) dmg *= 2; // conjunt Brindis: les bombolles fan el doble de mal
-        DishUtil.HitCircle(pos, radius, dmg, 9f);
+        DishUtil.HitCircle(pos, radius, dmg, 9f, DmgKind.Explosion);
     }
 }
 
@@ -303,7 +303,7 @@ public class Flamethrower : MonoBehaviour
             if (e == null || e.IsDead) continue;
             Vector2 to = (Vector2)e.transform.position - pos;
             if (Vector2.Angle(aim, to) > half) continue;
-            e.TakeDamage(dmg);
+            DamageKind.Hit(e, dmg, DmgKind.Fire);
         }
     }
 }
@@ -341,7 +341,7 @@ public class BombDropper : MonoBehaviour
         if (sr != null) Destroy(sr.gameObject);
         Fx.Explosion(pos, radius, 1.2f);
         AudioManager.Play("explosion", 0.5f);
-        DishUtil.HitCircle(pos, radius, 5 + 2 * level + DishUtil.Bonus, 6f);
+        DishUtil.HitCircle(pos, radius, 5 + 2 * level + DishUtil.Bonus, 6f, DmgKind.Explosion);
     }
 }
 
