@@ -100,7 +100,9 @@ public class BoonManager : MonoBehaviour
     private Button healButton;                 // l'opció de curar (en lloc d'un plat)
     private TextMeshProUGUI healLabel;
     private TextMeshProUGUI titleText;
-    private RectTransform takenStrip;          // la fila d'icones dels plats que ja tens (dalt a l'esquerra)
+    private RectTransform takenStrip;          // la graella d'icones dels plats que ja tens (dins la làmina)
+    private GameObject collectionRoot;         // la làmina "ELS TEUS PLATS" (surt mentre mantens Tab / Select)
+    private TextMeshProUGUI collectionCounter; // el comptador petit sota els cors
     private readonly Dictionary<string, Sprite> iconCache = new Dictionary<string, Sprite>();
     public int healAmount = 1;     // cors que cura l'opció de curar
     public int rerollsPerOffer = 1; // quantes vegades pots canviar les cartes a cada oferta (0 = desactivat)
@@ -1524,24 +1526,84 @@ public class BoonManager : MonoBehaviour
         Debug.Log("Has triat curar-te en lloc d'agafar un plat");
     }
 
-    // ---------- ELS PLATS ACTIUS (sota els cors, a dalt a l'esquerra) ----------
+    // ---------- ELS PLATS QUE TENS ----------
+    // Mentre jugues només es veu un comptador petit sota els cors ("34 plats · 13 conjunts · Tab").
+    // Mantenint premut Tab (o Select / Share al comandament) surt la làmina sencera al mig de la pantalla,
+    // amb tots els plats i els conjunts (nom i què fan). També funciona amb el menú de pausa obert.
 
     void BuildTakenText()
     {
+        // el comptador
         Canvas canvas = UiCanvas();
+        float fs = Mathf.Max(15f, Screen.height * 0.021f);
+        RectTransform cr = MakeFixed(canvas.transform, "ComptadorPlats", new Vector2(0f, 1f), new Vector2(0f, 1f),
+            new Vector2(16f, -Mathf.Max(52f, Screen.height * 0.058f)), new Vector2(fs * 26f, fs * 1.5f));
+        collectionCounter = Label(cr, "", fs, TextAlignmentOptions.Left, Gold, true, false);
+        collectionCounter.textWrappingMode = TextWrappingModes.NoWrap;
+        UIStyle.Outline(collectionCounter);
 
-        GameObject go = new GameObject("BoonsActius", typeof(RectTransform));
-        go.transform.SetParent(canvas.transform, false);
-        go.transform.SetAsLastSibling();
+        // la làmina: un canvas propi per sobre de tot (també de la pausa)
+        GameObject cgo = new GameObject("ColleccioPlats", typeof(Canvas));
+        collectionRoot = cgo;
+        Canvas c = cgo.GetComponent<Canvas>();
+        c.renderMode = RenderMode.ScreenSpaceOverlay;
+        c.sortingOrder = 650;
+        Box(cgo.transform, "Fosc", new Color(0f, 0f, 0f, 0.62f), Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
 
-        RectTransform rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = new Vector2(0f, 1f);
-        rt.anchorMax = new Vector2(0f, 1f);
-        rt.pivot = new Vector2(0f, 1f);
-        rt.sizeDelta = new Vector2(Mathf.Max(240f, Screen.width * 0.32f), Mathf.Max(90f, Screen.height * 0.2f));
-        rt.anchoredPosition = new Vector2(12f, -60f);
+        float u = PixelUnit();
+        Vector2 size = new Vector2(Mathf.Max(480f, Screen.width * 0.74f), Mathf.Max(320f, Screen.height * 0.82f));
+        Vector2 mid = new Vector2(0.5f, 0.5f);
+        RectTransform sheet = MakeFixed(cgo.transform, "Lamina", mid, mid, Vector2.zero, size);
+        Image fr = sheet.gameObject.AddComponent<Image>();
+        fr.color = Frame;
+        fr.raycastTarget = false;
+        Box(sheet, "Fons", new Color(0.24f, 0.16f, 0.11f, 1f), Vector2.zero, Vector2.one, new Vector2(u * 1.5f, u * 1.5f), new Vector2(-u * 1.5f, -u * 1.5f));
+        Box(sheet, "Vora", Gold, new Vector2(0f, 1f), Vector2.one, new Vector2(u * 4f, -u * 4f - u), new Vector2(-u * 4f, -u * 4f));
 
-        takenStrip = rt;
+        float titleH = Mathf.Max(28f, Screen.height * 0.05f);
+        RectTransform title = MakeFixed(sheet, "Titol", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -u * 6f), new Vector2(size.x, titleH));
+        Label(title, "ELS TEUS PLATS", titleH * 0.75f, TextAlignmentOptions.Center, Gold, true, false);
+
+        float hintH = Mathf.Max(18f, Screen.height * 0.025f);
+        RectTransform hint = MakeFixed(sheet, "Ajuda", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, u * 4f), new Vector2(size.x, hintH));
+        Label(hint, "Deixa anar per tornar al joc", hintH * 0.8f, TextAlignmentOptions.Center, new Color(1f, 0.92f, 0.8f, 0.7f), false, false);
+
+        float top = u * 6f + titleH + u * 6f;
+        takenStrip = MakeFixed(sheet, "Graella", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(u * 10f, -top),
+            new Vector2(size.x - u * 20f, size.y - top - hintH - u * 8f));
+
+        cgo.SetActive(false);
+        RefreshCounter();
+    }
+
+    void RefreshCounter()
+    {
+        if (collectionCounter == null) return;
+        int dishes = 0;
+        foreach (KeyValuePair<Boon, int> kv in taken) dishes += kv.Value;
+        int sets = 0;
+        foreach (SetBonus set in SetBonuses.All) if (SetBonuses.Has(set.id)) sets++;
+        string key = GamepadInput.UsingGamepad ? GamepadInput.SelectButton() : "Tab";
+        collectionCounter.text = dishes == 0 ? "" :
+            dishes + (dishes == 1 ? " plat" : " plats") + (sets > 0 ? "  ·  " + sets + (sets == 1 ? " conjunt" : " conjunts") : "")
+            + "   <color=#FFFFFFAA><size=80%>[" + key + "]</size></color>";
+    }
+
+    // mantenint premut Tab / Select es veu la làmina sencera
+    private bool lastUsingPad;
+    void Update()
+    {
+        if (collectionRoot == null) return;
+        bool held = (Keyboard.current != null && Keyboard.current.tabKey.isPressed)
+                 || (GamepadInput.ActivePad != null && GamepadInput.ActivePad.selectButton.isPressed);
+        if (taken.Count == 0) held = false;
+        if (collectionRoot.activeSelf != held) collectionRoot.SetActive(held);
+        if (GamepadInput.UsingGamepad != lastUsingPad) { lastUsingPad = GamepadInput.UsingGamepad; RefreshCounter(); }
+    }
+
+    void OnDisable()
+    {
+        if (collectionRoot != null) collectionRoot.SetActive(false);
     }
 
     // una icona petita per cada plat que has agafat, amb el número si en tens més d'un
@@ -1594,24 +1656,28 @@ public class BoonManager : MonoBehaviour
             n++;
         }
 
-        // sota les icones, els conjunts activats
+        // sota les icones, els conjunts activats (a dues columnes, amb el nom i què fan)
         int rows = (n + perRow - 1) / perRow;
-        float y = -rows * (s + gap) - u;
-        float lh = s * 0.46f;
+        float y = -rows * (s + gap) - u * 4f;
+        float lh = Mathf.Round(s * 0.62f);
+        float colW = (takenStrip.sizeDelta.x - u * 2f) / 2f;
+        int k = 0;
         foreach (SetBonus set in SetBonuses.All)
         {
             if (!SetBonuses.Has(set.id)) continue;
-
-            string line = set.name;
-            float lw = line.Length * lh * 0.5f + u * 4f;
-            RectTransform chip = MakeFixed(takenStrip, "Conjunt_" + set.id, tl, tl, new Vector2(0f, y), new Vector2(lw, lh));
+            int col = k % 2;
+            float yy = y - (k / 2) * (lh + u);
+            RectTransform chip = MakeFixed(takenStrip, "Conjunt_" + set.id, tl, tl, new Vector2(col * (colW + u * 2f), yy), new Vector2(colW, lh));
             Image fr = chip.gameObject.AddComponent<Image>();
             fr.color = Frame;
             fr.raycastTarget = false;
             Image face = Box(chip, "Fons", new Color(0.30f, 0.20f, 0.12f, 1f), Vector2.zero, Vector2.one,
                 new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
-            Label(face.rectTransform, line, lh * 0.55f, TextAlignmentOptions.Center, Gold, true, false);
-            y -= lh + u;
+            TextMeshProUGUI t = Label(face.rectTransform, "<color=#FFCC4D><b>" + set.name + "</b></color>  " + set.effect,
+                lh * 0.42f, TextAlignmentOptions.Left, new Color(1f, 0.94f, 0.84f), false, true);
+            t.margin = new Vector4(u * 3f, 0f, u * 2f, 0f);
+            k++;
         }
+        RefreshCounter();
     }
 }
