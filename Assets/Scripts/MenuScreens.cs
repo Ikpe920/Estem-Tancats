@@ -162,8 +162,18 @@ public class MainMenuDecor : MonoBehaviour
             TextMeshProUGUI ot = options.GetComponentInChildren<TextMeshProUGUI>();
             if (ot != null) ot.text = "Opcions";
             RectTransform prt = (RectTransform)play.transform;
-            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -100f);
-            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -200f);
+            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -88f);
+
+            // i el del Receptari (plats, conjunts i clients descoberts)
+            Button codex = Instantiate(play, play.transform.parent);
+            codex.name = "CodexButton";
+            codex.onClick = new Button.ButtonClickedEvent();
+            codex.onClick.AddListener(() => { AudioManager.Play("ui_click"); CodexScreen.Open(); });
+            TextMeshProUGUI ct = codex.GetComponentInChildren<TextMeshProUGUI>();
+            if (ct != null) ct.text = "Receptari";
+            ((RectTransform)codex.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -176f);
+
+            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -264f);
         }
 
         // rècord, onada, propines i reptes
@@ -179,7 +189,7 @@ public class MainMenuDecor : MonoBehaviour
     {
         parade = MenuScreens.Rect(c, "Desfilada", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
         parade.SetSiblingIndex(2); // per sota dels botons
-        parade.anchoredPosition = new Vector2(0f, -330f);
+        parade.anchoredPosition = new Vector2(0f, -395f);
 
         string chef = ChefRoster.All[Progression.IsChefUnlocked(ChefRoster.Selected) ? ChefRoster.Selected : 0].sprites;
         string[] names = { chef + "_Right", "Enemy_Front", "EnemyFast_Front", "EnemyTank_Front" };
@@ -227,7 +237,7 @@ public class MainMenuDecor : MonoBehaviour
             float width = ((RectTransform)transform).rect.width;
             paradeX += Time.unscaledDeltaTime * 260f;
             if (paradeX > width + 800f) paradeX = -200f; // tornen a sortir per l'esquerra
-            parade.anchoredPosition = new Vector2(paradeX, -330f);
+            parade.anchoredPosition = new Vector2(paradeX, -395f);
             int f = Mathf.FloorToInt(Time.unscaledTime * 8f) % 2;
             for (int i = 0; i < walkers.Length; i++)
             {

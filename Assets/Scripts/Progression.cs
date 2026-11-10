@@ -36,10 +36,10 @@ public static class Progression
     {
         switch (index)
         {
-            case 1: return 150; // Carnisser
-            case 2: return 250; // Pastisser
-            case 3: return 400; // Sushiman
-            case 4: return 550; // Pizzer
+            case 1: return 200; // Carnisser
+            case 2: return 350; // Pastisser
+            case 3: return 550; // Sushiman
+            case 4: return 800; // Pizzer
         }
         return 0;               // el Xef, sempre obert
     }

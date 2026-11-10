@@ -10,7 +10,7 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 ### Propines, dificultat i reptes
 
 - En acabar cada partida guanyes **propines**: punts / 25 + onada × 4, multiplicat segons la dificultat.
-- Amb les propines **desbloqueges xefs**. El Xef està obert des del principi; la resta costen: Carnisser 150, Pastisser 250, Sushiman 400 i Pizzer 550.
+- Amb les propines **desbloqueges xefs**. El Xef està obert des del principi; la resta costen: Carnisser 200, Pastisser 350, Sushiman 550 i Pizzer 800.
 - La **dificultat** es tria a la pantalla de triar xef:
   - Fàcil: +1 cor i clients més fluixos (×0,75 propines).
   - Normal: com sempre.
@@ -28,6 +28,14 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 | El Pizzer | pizzes que travessen tots els clients i tornen a la mà (+1 de dany) | llança més a poc a poc |
+
+### Plats: la taula de 6
+
+Com a Vampire Survivors o Brotato, no pots tenir-ho tot:
+- a la taula hi caben **6 plats diferents**; tornar a triar-ne un el **puja de nivell** (cada plat té de 2 a 4 nivells);
+- amb la taula plena només surten millores dels que tens; els de curar i de punts no ocupen espai;
+- a les primeres onades surten més els plats que canvien com es juga (ventall, explosions, olives...);
+- dos plats de tipus que combinen completen un **conjunt** (mira el **Receptari** al menú per veure'ls).
 
 ### Mode infinit: hores extres
 
@@ -52,6 +60,8 @@ A partir de l'onada 3, un 30% de les onades (mai la d'un cap ni dues seguides) t
 | Racions gegants | la meitat de clients, però enormes i resistents (×3 punts) |
 
 ### Clients especials
+
+Com a molt un 35% dels clients d'una onada són especials (es reparteixen entre els que toquen).
 
 A partir de certes onades, alguns clients surten amb un comportament propi:
 

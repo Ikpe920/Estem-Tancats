@@ -177,7 +177,15 @@ public class PlayerShooting : MonoBehaviour
             if (proj == null) continue; // prefab mal configurat
             proj.damage += damage - 1; // dany del prefab + millores
             bool isCenter = total % 2 == 1 && i == total / 2;
-            if (total > 1 && !isCenter) proj.damage = Mathf.Max(1, Mathf.RoundToInt(proj.damage * sideDamage));
+            if (total > 1 && !isCenter && sideDamage < 1f)
+            {
+                // la part del dany que toca, en mitjana: amb 1 de dany i la meitat, un tret de cada dos fa mal
+                float exact = proj.damage * sideDamage;
+                int whole = Mathf.FloorToInt(exact);
+                if (Random.value < exact - whole) whole++;
+                proj.damage = whole;
+                proj.transform.localScale *= 0.8f; // i es veuen més petits
+            }
             if (critChance > 0f && Random.value < critChance)
             {
                 proj.damage = Mathf.RoundToInt(proj.damage * critMultiplier);

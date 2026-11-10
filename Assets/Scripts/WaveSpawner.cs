@@ -588,7 +588,7 @@ public class WaveSpawner : MonoBehaviour
             subtitle = "En directe des del teu restaurant... i en directe del teu final.",
             prefab = template.prefab,
             type = BossType.TvCritic,
-            health = 1600,
+            health = 1200,
             speed = 1.8f,
             scale = 3f,
             sprite = Resources.Load<Sprite>("Bosses/CriticaTV"),
