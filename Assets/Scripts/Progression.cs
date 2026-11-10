@@ -28,6 +28,14 @@ public static class Progression
 
     public static void AddTips(int n) { if (n > 0) Tips = Tips + n; }
 
+    // gasta propines (el Rebost); torna false si no n'hi ha prou
+    public static bool SpendTips(int n)
+    {
+        if (n <= 0 || Tips < n) return false;
+        Tips = Tips - n;
+        return true;
+    }
+
     public static int LastRunTips { get; private set; } // les de l'última partida (per a la pantalla final)
 
     // ---------- XEFS ----------
@@ -219,7 +227,7 @@ public static class Progression
     // la partida s'acaba (mort o victòria): les propines guanyades
     public static int EndRun(int points, int wave)
     {
-        int tips = Mathf.RoundToInt((points / 25f + wave * 4f) * TipsMul);
+        int tips = Mathf.RoundToInt((points / 25f + wave * 4f) * TipsMul * (1f + 0.1f * PowerUps.Level("propines")));
         LastRunTips = tips;
         AddTips(tips);
         return tips;

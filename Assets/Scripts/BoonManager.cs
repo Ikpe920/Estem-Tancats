@@ -155,6 +155,11 @@ public class BoonManager : MonoBehaviour
         Evo.ResetAll();             // ni els plats estrella
         DishArea.Mul = 1f;
         if (panel != null) panel.SetActive(false);
+        // les millores del Rebost
+        maxSpecialties += PowerUps.Level("esp");
+        maxSides += PowerUps.Level("compl");
+        rerollsPerOffer += PowerUps.Level("canvis");
+        optionsPerOffer = Mathf.Min(5, optionsPerOffer + PowerUps.Level("cartes"));
         if (takenText == null) BuildTakenText();
         Enemy.OnKilled += HandleKill;
         ScoreManager.OnWaveEnded += HandleWaveEnded;
@@ -645,6 +650,27 @@ public class BoonManager : MonoBehaviour
             else result.Insert(0, star);
         }
         return result.ToArray();
+    }
+
+    // després que s'hagi posat el xef triat (es fa en carregar l'escena, després de l'Awake)
+    void Start()
+    {
+        if (PowerUps.Level("esmorzar") > 0) GiveStartingSide();
+    }
+
+    // Esmorzar de forquilla (Rebost): comences amb un complement a l'atzar
+    void GiveStartingSide()
+    {
+        List<Boon> options = new List<Boon>();
+        foreach (Boon b in boons) if (b != null && !IsSpecialty(b) && !IsConsumable(b) && b.type2 == BoonType.None && CanPick(b)) options.Add(b);
+        if (options.Count == 0) return;
+        Boon pick = options[Random.Range(0, options.Count)];
+        taken[pick] = 1;
+        Codex.DiscoverDish(pick);
+        Apply(pick);
+        RefreshTakenText();
+        if (health != null)
+            HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2f, "ESMORZAR: " + pick.name, new Color(1f, 0.85f, 0.5f), 2f);
     }
 
     // ---------- PLATS ESTRELLA ----------

@@ -147,7 +147,7 @@ public class MainMenuDecor : MonoBehaviour
         foreach (Button b in GetComponentsInChildren<Button>(true))
         {
             RectTransform rt = (RectTransform)b.transform;
-            rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, 420f), Mathf.Max(rt.sizeDelta.y, 76f));
+            rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, 420f), 66f);
             if (b.name.Contains("Play")) play = b;
             if (b.name.Contains("Quit")) quit = b;
         }
@@ -162,7 +162,7 @@ public class MainMenuDecor : MonoBehaviour
             TextMeshProUGUI ot = options.GetComponentInChildren<TextMeshProUGUI>();
             if (ot != null) ot.text = "Opcions";
             RectTransform prt = (RectTransform)play.transform;
-            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -88f);
+            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -76f);
 
             // i el del Receptari (plats, conjunts i clients descoberts)
             Button codex = Instantiate(play, play.transform.parent);
@@ -171,9 +171,18 @@ public class MainMenuDecor : MonoBehaviour
             codex.onClick.AddListener(() => { AudioManager.Play("ui_click"); CodexScreen.Open(); });
             TextMeshProUGUI ct = codex.GetComponentInChildren<TextMeshProUGUI>();
             if (ct != null) ct.text = "Receptari";
-            ((RectTransform)codex.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -176f);
+            ((RectTransform)codex.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -152f);
 
-            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -264f);
+            // i el del Rebost (millores permanents amb propines)
+            Button rebost = Instantiate(play, play.transform.parent);
+            rebost.name = "RebostButton";
+            rebost.onClick = new Button.ButtonClickedEvent();
+            rebost.onClick.AddListener(() => { AudioManager.Play("ui_click"); RebostScreen.Open(); });
+            TextMeshProUGUI rt2 = rebost.GetComponentInChildren<TextMeshProUGUI>();
+            if (rt2 != null) rt2.text = "Rebost";
+            ((RectTransform)rebost.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -228f);
+
+            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -304f);
         }
 
         // rècord, onada, propines i reptes
@@ -189,7 +198,7 @@ public class MainMenuDecor : MonoBehaviour
     {
         parade = MenuScreens.Rect(c, "Desfilada", new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
         parade.SetSiblingIndex(2); // per sota dels botons
-        parade.anchoredPosition = new Vector2(0f, -395f);
+        parade.anchoredPosition = new Vector2(0f, -412f);
 
         string chef = ChefRoster.All[Progression.IsChefUnlocked(ChefRoster.Selected) ? ChefRoster.Selected : 0].sprites;
         string[] names = { chef + "_Right", "Enemy_Front", "EnemyFast_Front", "EnemyTank_Front" };
@@ -199,8 +208,8 @@ public class MainMenuDecor : MonoBehaviour
         {
             frames[i] = new[] { Resources.Load<Sprite>("Walk/" + names[i] + "_1"), Resources.Load<Sprite>("Walk/" + names[i] + "_2") };
             RectTransform rt = MenuScreens.Rect(parade, names[i], new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), Vector2.zero, Vector2.zero);
-            rt.sizeDelta = new Vector2(150f, 150f);
-            rt.anchoredPosition = new Vector2(i == 0 ? 0f : -150f - i * 150f, 0f);
+            rt.sizeDelta = new Vector2(120f, 120f);
+            rt.anchoredPosition = new Vector2(i == 0 ? 0f : -130f - i * 125f, 0f);
             walkers[i] = rt.gameObject.AddComponent<Image>();
             walkers[i].sprite = frames[i][0];
             walkers[i].preserveAspect = true;
@@ -237,7 +246,7 @@ public class MainMenuDecor : MonoBehaviour
             float width = ((RectTransform)transform).rect.width;
             paradeX += Time.unscaledDeltaTime * 260f;
             if (paradeX > width + 800f) paradeX = -200f; // tornen a sortir per l'esquerra
-            parade.anchoredPosition = new Vector2(paradeX, -395f);
+            parade.anchoredPosition = new Vector2(paradeX, -412f);
             int f = Mathf.FloorToInt(Time.unscaledTime * 8f) % 2;
             for (int i = 0; i < walkers.Length; i++)
             {

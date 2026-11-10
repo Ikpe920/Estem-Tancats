@@ -227,7 +227,7 @@ public class CodexScreen : MonoBehaviour
             Sprite icon = BoonManager.DishIcon(baseDish);
             string recipe = (baseDish != null ? baseDish.name : "?") + " al màxim + " + (partner != null ? partner.name : "?");
             Button cell = Cell(dishes.Length + k, cols, Mathf.CeilToInt(total / (float)cols), icon, seen, () =>
-                ShowDetail(icon, seen, seen ? "★ " + d.name : "★ ???", (seen ? d.desc + "\n\n" : "Un plat estrella secret.\n\n") + "<color=#FFCC4D>" + recipe + "</color>"));
+                ShowDetail(icon, seen, seen ? "ESTRELLA: " + d.name : "ESTRELLA: ???", (seen ? d.desc + "\n\n" : "Un plat estrella secret.\n\n") + "<color=#FFCC4D>" + recipe + "</color>"));
             cell.GetComponent<Image>().color = new Color(0.45f, 0.32f, 0.10f);
         }
 

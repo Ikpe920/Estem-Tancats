@@ -29,13 +29,18 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 | El Pizzer | pizzes que travessen tots els clients i tornen a la mà (+1 de dany) | llança més a poc a poc |
 
-### Plats: la taula de 6
+### Plats: especialitats, complements i plats estrella
 
 Com a Vampire Survivors o Brotato, no pots tenir-ho tot:
-- a la taula hi caben **6 plats diferents**; tornar a triar-ne un el **puja de nivell** (cada plat té de 2 a 4 nivells);
-- amb la taula plena només surten millores dels que tens; els de curar i de punts no ocupen espai;
-- a les primeres onades surten més els plats que canvien com es juga (ventall, explosions, olives...);
-- dos plats de tipus que combinen completen un **conjunt** (mira el **Receptari** al menú per veure'ls).
+- **Especialitats** (com les armes): plats que canvien com es juga (ventall, explosions, olives, sopa, fuet, truites...). En caben **6**.
+- **Complements** (com els objectes passius): millores simples (mal, velocitat, crítics, àrea...). En caben **6**.
+- Tornar a triar un plat el **puja de nivell**. Amb una taula plena només surten millores dels que tens. Els de curar i de punts no ocupen espai.
+- **Plats estrella**: una especialitat al nivell màxim + el seu complement fan sortir una carta daurada que la transforma (per exemple, Paella mixta + Cafè sol → Paella gegant). N'hi ha 17; al Receptari es veu la recepta de cada un.
+- Dos plats de tipus que combinen completen un **conjunt**.
+
+### El Rebost
+
+Al menú principal, el **Rebost** ven millores permanents amb propines: +1 cor, més crítics, llançar i caminar més ràpid, dash, invulnerabilitat, més propines, més canvis de cartes, una carta més, començar amb un complement, i +1 espai a cada taula.
 
 ### Mode infinit: hores extres
 
