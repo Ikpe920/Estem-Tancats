@@ -135,6 +135,9 @@ public class ActManager : MonoBehaviour
         bool wasPaused = Time.timeScale == 0f;
         if (pauseForTitle) Time.timeScale = 0f;
 
+        // el cartell de pel·lícula muda del principi
+        yield return Intertitle.Show(Intertitle.Opening(), false, 2.6f);
+
         // el terra apareix des de la foscor
         ActData act = Current;
         Color tint = act != null ? act.tint : Color.white;
@@ -273,15 +276,23 @@ public class ActManager : MonoBehaviour
 
         yield return StartCoroutine(FadeTo(0f, Color.black));
 
-        if (NightShift && acts.Length > 1)
+        // quina sala ve ara (al torn de nit, una a l'atzar i mai la mateixa)
+        int next = currentAct + 1;
+        bool night = NightShift && acts.Length > 1;
+        bool firstNight = night && NightRooms == 0;
+        if (night)
         {
-            // torn de nit: una sala a l'atzar, mai la mateixa
-            NightRooms++;
-            int next = Random.Range(0, acts.Length - 1);
+            next = Random.Range(0, acts.Length - 1);
             if (next >= currentAct) next++;
-            ApplyAct(next);
         }
-        else ApplyAct(currentAct + 1);
+        int nextIndex = ((next % acts.Length) + acts.Length) % acts.Length;
+
+        // el cartell de pel·lícula muda: "Mentrestant, a la cuina..."
+        ActData upcoming = acts[nextIndex];
+        yield return Intertitle.Show(Intertitle.ActIntro(nextIndex, upcoming != null ? upcoming.name : "", night, firstNight));
+
+        if (night) NightRooms++;
+        ApplyAct(next);
 
         ActData act = Current;
         Color tint = TintOf(act);

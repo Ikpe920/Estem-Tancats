@@ -14,6 +14,9 @@ public class Win : MonoBehaviour
         // títol, retrat del xef, estadístiques que compten cap amunt i confeti
         EndScreenFx.Build(canvas, true);
 
+        // el cartell de pel·lícula muda del final
+        Intertitle.ShowAsync(Intertitle.WinText(), true, 2.4f);
+
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
             new Vector2(320f, 72f), new Color(0.20f, 0.45f, 0.25f), Restart);
