@@ -274,6 +274,7 @@ public class GamepadInput : MonoBehaviour
     public static string RightShoulder() { switch (Kind()) { case PadKind.PlayStation: return "R1"; case PadKind.Switch: return "R"; } return "RB"; }
     public static string LeftShoulder() { switch (Kind()) { case PadKind.PlayStation: return "L1"; case PadKind.Switch: return "L"; } return "LB"; }
     public static string RightTrigger() { switch (Kind()) { case PadKind.PlayStation: return "R2"; case PadKind.Switch: return "ZR"; } return "RT"; }
+    public static string SelectButton() { switch (Kind()) { case PadKind.PlayStation: return "Share"; case PadKind.Switch: return "-"; } return "Select"; }
     public static string StartButton() { switch (Kind()) { case PadKind.PlayStation: return "Options"; case PadKind.Switch: return "+"; } return "Start"; }
 
     // ---------- VIBRACIÓ ----------

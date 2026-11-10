@@ -51,8 +51,11 @@ public class HUD : MonoBehaviour
         if (comboText != null)
         {
             RectTransform rt = comboText.rectTransform;
-            rt.sizeDelta = new Vector2(380f, 50f);
-            rt.anchoredPosition = new Vector2(-24f, -76f);
+            rt.sizeDelta = new Vector2(380f, 44f);
+            rt.anchoredPosition = new Vector2(-24f, -72f);
+            comboText.enableAutoSizing = true;
+            comboText.fontSizeMax = 32f;
+            comboText.fontSizeMin = 18f;
             UIStyle.Outline(comboText);
             // barra del temps de ratxa, sota el text
             comboBarBg = MakeBar(rt.parent, new Color(0f, 0f, 0f, 0.55f));
@@ -123,7 +126,12 @@ public class HUD : MonoBehaviour
             scoreText.transform.localScale = Vector3.one * (1f + 0.15f * scorePop);
         }
         if (scorePanel != null && scoreText != null)
-            scorePanel.rectTransform.sizeDelta = new Vector2(scoreText.preferredWidth + 40f, 68f);
+        {
+            // amb ratxa, el panell s'allarga per tenir-la a dins
+            bool combo = comboText != null && comboText.text.Length > 0;
+            float w = Mathf.Max(scoreText.preferredWidth, combo ? comboText.preferredWidth : 0f) + 40f;
+            scorePanel.rectTransform.sizeDelta = new Vector2(w, combo ? 132f : 68f);
+        }
 
         // l'onada fa un salt (i brilla) quan canvia
         if (spawner != null && waveText != null)
@@ -197,7 +205,7 @@ public class HUD : MonoBehaviour
             {
                 // hores extres: el rellotge al costat de la sala
                 string clock = spawner.actManager != null
-                    ? "HORES EXTRES " + ActManager.Clock(spawner.actManager.Hour) + " · " + ActManager.PartOfDay(spawner.actManager.Hour)
+                    ? ActManager.Clock(spawner.actManager.Hour) + " " + ActManager.PartOfDay(spawner.actManager.Hour)
                     : "HORES EXTRES";
                 act = act.Length > 0 ? act + "  ·  " + clock : clock;
             }

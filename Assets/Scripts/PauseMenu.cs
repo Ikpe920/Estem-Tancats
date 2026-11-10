@@ -171,6 +171,8 @@ public class PauseMenu : MonoBehaviour
             helpText.text = GamepadInput.UsingGamepad
                 ? GamepadInput.StartButton() + " o " + GamepadInput.East() + " per continuar"
                 : "Esc per continuar";
+        if (helpText != null)
+            helpText.text += "   ·   Mantén " + (GamepadInput.UsingGamepad ? GamepadInput.SelectButton() : "Tab") + " per veure els teus plats";
     }
 
     void ToggleFilm()

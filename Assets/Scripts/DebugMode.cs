@@ -181,7 +181,7 @@ public class DebugMode : MonoBehaviour
 
         if (!open)
         {
-            GUI.Label(new Rect(vw - 96f, 4f, 92f, 20f), "F1: mode de prova");
+            GUI.Label(new Rect(vw - 96f, vh - 22f, 92f, 20f), "F1: mode de prova"); // a baix, que no tapi els punts
             return;
         }
 
