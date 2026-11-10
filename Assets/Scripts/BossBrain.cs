@@ -82,7 +82,7 @@ public static class DamageKind
 public class BossShotFx : MonoBehaviour
 {
     public float spin;            // graus per segon
-    public int bounces;           // rebots a les parets que li queden
+    public int bounces;           // rebots a les parets (0: els trets dels caps no reboten, es trenquen a la paret)
     public float fuse;            // >0: esclata al cap d'aquests segons
     public int burstShots;        // quan esclata: quants trets fa sortir (0 = cap)
     public float burstRadius;     // quan esclata: radi de l'explosió que et fa mal (0 = cap)
@@ -596,7 +596,6 @@ public class BossCriticBrain : BossBrain
             foreach (BossShotFx f in Fan(star, ToPlayer, phase2 ? 7 : 5, 13f, 7f))
             {
                 f.spin = 540f; f.trail = "brillo"; f.trailColor = new Color(1f, 0.85f, 0.3f);
-                if (phase2) f.bounces = 1;
             }
             AudioManager.Play("pickup", 0.5f, 1.3f);
             yield return Wait(0.45f);
@@ -997,7 +996,7 @@ public class BossSommelierBrain : BossBrain
         // TAST: taps de suro que reboten per les parets (com les mandonguilles)
         Say("TAST!", Wine);
         Squash.Kick(gameObject, 0.15f, -0.15f);
-        foreach (BossShotFx f in Ring(cork, phase2 ? 12 : 9, 6.5f)) { f.bounces = phase2 ? 2 : 1; f.spin = 500f; }
+        foreach (BossShotFx f in Ring(cork, phase2 ? 12 : 9, 6.5f)) { f.spin = 500f; }
         AudioManager.Play("pickup", 0.6f, 0.7f);
         yield return Wait(1.4f);
 
