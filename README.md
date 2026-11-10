@@ -29,6 +29,10 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 | El Pizzer | pizzes que travessen tots els clients i tornen a la mà (+1 de dany) | llança més a poc a poc |
 
+### Experiència
+
+Com a Vampire Survivors: cada client despatxat deixa **monedes de propina** a terra (els grossos i els especials, més; els caps, un munt). Passa-hi a prop i l'imant les atrau. Quan s'omple la barra de baix, **puges de nivell** i el joc s'atura per triar un plat. En acabar cada onada, les monedes que queden venen soles. Entre onades ja no hi ha plats, però **cada cap deixa un cofre** amb dos plats de regal.
+
 ### Plats: especialitats, complements i plats estrella
 
 Com a Vampire Survivors o Brotato, no pots tenir-ho tot:
@@ -141,7 +145,7 @@ Scripts principals:
 
 - `WaveSpawner`: les onades, els caps i el final de la partida.
 - `ActManager`: el canvi d'acte (fons, dificultat i clients de cada sala).
-- `BoonManager`: els plats que tries entre onades, la botiga i la seva interfície.
+- `BoonManager`: els plats (tries un plat cada cop que puges de nivell; els caps deixen un cofre amb dos plats), la botiga i la seva interfície. `XpCoin`: les monedes d'experiència que deixen els clients.
 - `SetBonuses`: els conjunts de plats.
 - `PlayerMovement`, `PlayerShooting` i `PlayerHealth`: el xef. `PlayerRef` dona accés ràpid al jugador des de qualsevol script.
 - `Enemy`: els clients. `EnemyVariants` en fa els clients especials. Els caps hi afegeixen `BossMelee`, `BossCharger`, `BossSummoner`, `BossTeleporter` o `BossPhases`.

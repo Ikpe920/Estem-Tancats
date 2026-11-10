@@ -44,6 +44,7 @@ public enum BoonType
     ProjectileSize,  // projectils més grans
     Knockback,       // els trets empenyen
     Rerolls,         // +1 canvi de cartes
+    Magnet,          // recull les monedes d'experiència des de més lluny
 
     // ---- especialitats noves (canvien com es juga) ----
     BackKnives,      // ganivets cap enrere a cada tret
@@ -82,6 +83,8 @@ public class BoonManager : MonoBehaviour
     [Tooltip("Si està activat, la llista de plats es regenera des del codi cada cop que comença l'escena (ignora la còpia guardada a l'escena). Desactiva'l si vols editar els plats a mà a l'Inspector.")]
     public bool useCodeDishes = true;
     public int optionsPerOffer = 3;   // quantes opcions s'ofereixen
+    [Tooltip("Plats per experiència (com Vampire Survivors): els clients deixen monedes i, en pujar de nivell, tries un plat. Si està desactivat, s'ofereixen entre onades com abans.")]
+    public bool xpMode = true;
     [Tooltip("Quantes especialitats diferents (plats que canvien com es juga) pots tenir alhora, com les armes de Vampire Survivors.")]
     public int maxSpecialties = 6;
     [Tooltip("Quants complements diferents (millores simples) pots tenir alhora, com els objectes passius de Vampire Survivors.")]
@@ -148,8 +151,11 @@ public class BoonManager : MonoBehaviour
     private Button rerollButton;
     private TextMeshProUGUI rerollLabel;
 
+    public static BoonManager Instance { get; private set; }
+
     void Awake()
     {
+        Instance = this;
         if (shooting == null) shooting = PlayerRef.Shooting;
         if (movement == null) movement = PlayerRef.Movement;
         if (health == null) health = PlayerRef.Health;
@@ -174,6 +180,7 @@ public class BoonManager : MonoBehaviour
 
         void OnDestroy()
     {
+        if (Instance == this) Instance = null;
         Enemy.OnKilled -= HandleKill;
         ScoreManager.OnWaveEnded -= HandleWaveEnded;
     }
@@ -278,6 +285,7 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Allioli", "Els teus projectils són un 20% més grans", BoonType.ProjectileSize, 0.2f, new Color(0.98f, 0.95f, 0.8f), 7, 3),
             MakeBoon("Tomàquet de penjar", "Els teus trets empenyen els clients", BoonType.Knockback, 2.5f, new Color(0.9f, 0.3f, 0.25f), 7, 3),
             MakeBoon("Cireres", "+1 canvi de cartes a cada oferta", BoonType.Rerolls, 1f, new Color(0.8f, 0.1f, 0.2f), 5, 2),
+            MakeBoon("Coca de llardons", "Recolleixes les monedes d'experiència des d'un 40% més lluny", BoonType.Magnet, 0.4f, new Color(0.9f, 0.7f, 0.4f), 8, 3),
 
             // ---- especialitats noves ----
             MakeBoon("Pernil tallat a ganivet", "A cada tret, un ganivet surt cap enrere (i 1 més a cada nivell)", BoonType.BackKnives, 1f, new Color(0.8f, 0.35f, 0.35f), 6, 4),
@@ -319,6 +327,7 @@ public class BoonManager : MonoBehaviour
 
     public bool ShouldOffer(int wave)
     {
+        if (xpMode) return false; // els plats ara surten en pujar de nivell (experiència)
         if (boons == null || boons.Length == 0) return false;
         if (everyNWaves <= 0) return false;
         return wave % everyNWaves == 0;
@@ -343,6 +352,7 @@ public class BoonManager : MonoBehaviour
 
         BuildCards(picked);
         BuildTitle();
+        if (titleText != null) titleText.text = offerTitle ?? "Tria un plat";
         BuildHealButton();
         RefreshHealButton();
         rerollsLeft = rerollsPerOffer;
@@ -457,6 +467,61 @@ public class BoonManager : MonoBehaviour
     {
         if (waveSpawner == null) waveSpawner = FindAnyObjectByType<WaveSpawner>();
         return waveSpawner != null ? waveSpawner.currentWave : 1;
+    }
+
+    // ---------- EXPERIÈNCIA I NIVELLS DEL XEF ----------
+    // Cada nivell demana una mica més: 5, 7, 9, 11... (uns 40 nivells en una partida de 40 onades)
+    public int ChefLevel { get; private set; }
+    public float Xp { get; private set; }
+    public float XpToNext => 5f + 2f * ChefLevel;
+    private int pendingLevels;
+    private bool offering;
+    private string offerTitle;
+
+    public void AddXp(float v)
+    {
+        Xp += v * (1f + 0.1f * PowerUps.Level("experiencia"));
+        while (Xp >= XpToNext)
+        {
+            Xp -= XpToNext;
+            ChefLevel++;
+            pendingLevels++;
+            if (health != null)
+                HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.8f, "NIVELL " + (ChefLevel + 1) + "!", new Color(1f, 0.85f, 0.35f), 1.2f);
+            AudioManager.Play("boon", 0.6f, 1.2f);
+        }
+    }
+
+    // es pot obrir la pantalla de triar plat ara mateix? (no amb la pausa, ni mentre mors, ni enmig d'una altra pantalla)
+    bool CanOfferNow()
+    {
+        return Time.timeScale > 0.95f && !PlayerHealth.IsDying && !PauseMenu.IsOpen && GamepadInput.CustomScreens == 0
+               && (panel == null || !panel.activeSelf);
+    }
+
+    IEnumerator LevelUpRoutine()
+    {
+        offering = true;
+        pendingLevels--;
+        offerTitle = "NIVELL " + (ChefLevel + 1 - pendingLevels) + "!  Tria un plat";
+        yield return OfferBoons();
+        offerTitle = null;
+        offering = false;
+    }
+
+    // el cofre dels caps: dos plats de regal
+    public IEnumerator OpenChest()
+    {
+        while (offering) yield return null;
+        offering = true;
+        AudioManager.Play("coin_big");
+        for (int i = 0; i < 2; i++)
+        {
+            offerTitle = "COFRE DEL CAP!  Plat " + (i + 1) + " de 2";
+            yield return OfferBoons();
+        }
+        offerTitle = null;
+        offering = false;
     }
 
     // ---------- ESPAIS I NIVELLS (com Vampire Survivors / Brotato) ----------
@@ -1007,6 +1072,9 @@ public class BoonManager : MonoBehaviour
             case BoonType.Rerolls:
                 rerollsPerOffer += Mathf.RoundToInt(amount);
                 break;
+            case BoonType.Magnet:
+                XpCoin.MagnetMul += amount;
+                break;
 
             case BoonType.BackKnives:
                 if (shooting != null) shooting.backShots += 1;
@@ -1355,6 +1423,8 @@ public class BoonManager : MonoBehaviour
                 return "Empenta dels trets " + F(shooting.knockback, 1) + " → " + F(shooting.knockback + amount, 1);
             case BoonType.Rerolls:
                 return "Canvis de cartes per oferta " + rerollsPerOffer + " → " + (rerollsPerOffer + r);
+            case BoonType.Magnet:
+                return "Abast per recollir monedes ×" + F(XpCoin.MagnetMul, 1) + " → ×" + F(XpCoin.MagnetMul + amount, 1);
 
             // ---- especialitats noves (què fa el nivell que agafaràs) ----
             case BoonType.BackKnives:
@@ -1880,6 +1950,7 @@ public class BoonManager : MonoBehaviour
         collectionCounter = Label(cr, "", fs, TextAlignmentOptions.Left, Gold, true, false);
         collectionCounter.textWrappingMode = TextWrappingModes.NoWrap;
         UIStyle.Outline(collectionCounter);
+        BuildXpBar(canvas);
 
         // la làmina: un canvas propi per sobre de tot (també de la pausa)
         GameObject cgo = new GameObject("ColleccioPlats", typeof(Canvas));
@@ -1915,6 +1986,31 @@ public class BoonManager : MonoBehaviour
         RefreshCounter();
     }
 
+    private RectTransform xpFill;
+    private TextMeshProUGUI xpLabel;
+
+    void BuildXpBar(Canvas canvas)
+    {
+        float h = Mathf.Max(12f, Screen.height * 0.016f);
+        Image bg = Box(canvas.transform, "BarraExperiencia", new Color(0.08f, 0.05f, 0.04f, 0.85f), Vector2.zero, new Vector2(1f, 0f), Vector2.zero, new Vector2(0f, h));
+        Image fill = Box(bg.rectTransform, "Ple", Gold, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 2f), new Vector2(0f, -2f));
+        xpFill = fill.rectTransform;
+        RectTransform lr = MakeFixed(canvas.transform, "NivellXef", new Vector2(0f, 0f), new Vector2(0f, 0f), new Vector2(12f, h + 2f), new Vector2(200f, h * 1.8f));
+        xpLabel = Label(lr, "", h * 1.3f, TextAlignmentOptions.BottomLeft, Gold, true, false);
+        xpLabel.textWrappingMode = TextWrappingModes.NoWrap;
+        UIStyle.Outline(xpLabel);
+        bg.gameObject.SetActive(xpMode);
+        lr.gameObject.SetActive(xpMode);
+    }
+
+    void UpdateXpBar()
+    {
+        if (xpFill == null) return;
+        float k = Mathf.Clamp01(Xp / XpToNext);
+        xpFill.anchorMax = new Vector2(Mathf.MoveTowards(xpFill.anchorMax.x, k, Time.unscaledDeltaTime * 2f), 1f);
+        if (xpLabel != null) xpLabel.text = "NIVELL " + (ChefLevel + 1);
+    }
+
     void RefreshCounter()
     {
         if (collectionCounter == null) return;
@@ -1932,6 +2028,10 @@ public class BoonManager : MonoBehaviour
     private bool lastUsingPad;
     void Update()
     {
+        // pujar de nivell: la pantalla de triar plat surt enmig de l'onada (com Vampire Survivors)
+        if (xpMode && pendingLevels > 0 && !offering && CanOfferNow()) StartCoroutine(LevelUpRoutine());
+        UpdateXpBar();
+
         if (collectionRoot == null) return;
         bool held = (Keyboard.current != null && Keyboard.current.tabKey.isPressed)
                  || (GamepadInput.ActivePad != null && GamepadInput.ActivePad.selectButton.isPressed);

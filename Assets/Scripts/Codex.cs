@@ -386,6 +386,7 @@ public class CodexScreen : MonoBehaviour
             case BoonType.ProjectileSize: return "projectils grans";
             case BoonType.Knockback: return "empenta";
             case BoonType.Rerolls: return "canvis de cartes";
+            case BoonType.Magnet: return "imant";
             case BoonType.BackKnives: return "ganivets";
             case BoonType.Soup: return "tolls";
             case BoonType.PieRain: return "pluja de pastissos";

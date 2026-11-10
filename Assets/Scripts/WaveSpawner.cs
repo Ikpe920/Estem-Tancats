@@ -73,7 +73,7 @@ public class WaveSpawner : MonoBehaviour
     public ActManager actManager; // el canvi d'escenari cada 5 onades
 
     [Header("Boons")]
-    public BoonManager boonManager; // les 3 opcions a triar entre onades
+    public BoonManager boonManager; // els plats (per experiència) i el cofre dels caps
 
     [Header("Final del joc")]
     public int finalWave = 25; // en completar aquesta onada, guanyes (0 = sense final)
@@ -221,11 +221,15 @@ public class WaveSpawner : MonoBehaviour
                 if (actManager != null) actManager.StartOvertime(currentWave + 1); // comencen les hores extres
             }
 
+            // el cap deixa un cofre: dos plats de regal (abans de canviar de sala)
+            if (isBossWave && boonManager != null && boonManager.xpMode)
+                yield return StartCoroutine(boonManager.OpenChest());
+
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent
             if (isBossWave && actManager != null)
                 yield return StartCoroutine(actManager.TransitionToNextAct());
 
-            // boons: 3 opcions a triar entre onades (amb els serveis de la botiga a sota)
+            // (si els plats no van per experiència: 3 opcions a triar entre onades, com abans)
             if (boonManager != null && boonManager.ShouldOffer(currentWave))
                 yield return StartCoroutine(boonManager.OfferBoons());
 
