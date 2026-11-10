@@ -235,11 +235,12 @@ public class PlayerShooting : MonoBehaviour
         }
 
         // Pernil tallat a ganivet: ganivets cap enrere (i, amb el Pernil de gla, també cap als costats)
-        if (backShots > 0)
+        int backs = backShots + (backShots > 0 && SetBonuses.Has(SetId.PicaPica) ? 1 : 0); // conjunt Pica-pica
+        if (backs > 0)
         {
-            for (int k = 0; k < backShots; k++)
+            for (int k = 0; k < backs; k++)
             {
-                float off = (k - (backShots - 1) / 2f) * 14f;
+                float off = (k - (backs - 1) / 2f) * 14f;
                 FireExtra(baseAngle + 180f + off);
                 if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off); FireExtra(baseAngle - 90f + off); }
             }

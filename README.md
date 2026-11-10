@@ -35,7 +35,7 @@ Com a Vampire Survivors o Brotato, no pots tenir-ho tot:
 - **Especialitats** (com les armes): plats que canvien com es juga (ventall, explosions, olives, sopa, fuet, truites...). En caben **6**.
 - **Complements** (com els objectes passius): millores simples (mal, velocitat, crítics, àrea...). En caben **6**.
 - Tornar a triar un plat el **puja de nivell**. Amb una taula plena només surten millores dels que tens. Els de curar i de punts no ocupen espai.
-- **Plats estrella**: una especialitat al nivell màxim + el seu complement fan sortir una carta daurada que la transforma (per exemple, Paella mixta + Cafè sol → Paella gegant). N'hi ha 17; al Receptari es veu la recepta de cada un.
+- **Plats estrella**: una especialitat al nivell màxim + el seu complement fan sortir una carta daurada que la transforma (per exemple, Paella mixta + Cafè sol → Paella gegant). N'hi ha 19 (cada especialitat en té un, i cada complement en fa evolucionar algun); al Receptari es veu la recepta de cada un.
 - Dos plats de tipus que combinen completen un **conjunt**.
 
 ### El Rebost

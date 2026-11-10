@@ -26,7 +26,8 @@ public enum EvoId
     None,
     PaellaGegant, Calcotada, OlivesAnxova, Granissat, BunyolsEmporda, MandonguillesGegants,
     CastanyadaEterna, CocaSantJoan, RomescoTarragona, PernilDeGla, EscudellaNadal, PastisCasament,
-    CavaCapDAny, EscalivadaCaliu, TracaBombes, FuetVic, TruitaIaia
+    CavaCapDAny, EscalivadaCaliu, TracaBombes, FuetVic, TruitaIaia,
+    PollastreSafra, BotifarraFestaMajor
 }
 
 public static class Evo
@@ -57,6 +58,8 @@ public static class Evo
         D(EvoId.TracaBombes, "Traca de bombes", "Deixes tres bombes cada vegada", BoonType.Bombs, BoonType.Dodge),
         D(EvoId.FuetVic, "Fuet de Vic", "El fuet pica als dos costats alhora i arriba més lluny", BoonType.Whip, BoonType.MaxLives),
         D(EvoId.TruitaIaia, "Truita de la iaia", "Llences tres truites gegants alhora", BoonType.Tortilla, BoonType.MoreChoices),
+        D(EvoId.PollastreSafra, "Pollastre al safrà", "El dash deixa un rastre de foc que crema els clients", BoonType.DashDamage, BoonType.ScoreBoost),
+        D(EvoId.BotifarraFestaMajor, "Botifarra de festa major", "Cada cop que la Botifarra et cura, una traca fa mal al voltant (i cura 1 cor més per onada)", BoonType.HealOnKills, BoonType.FlawlessHeal),
     };
 
     static Def D(EvoId id, string n, string d, BoonType b, BoonType p) { return new Def { id = id, name = n, desc = d, baseType = b, partner = p }; }
@@ -126,6 +129,36 @@ static class DishUtil
     public static bool Active => !PlayerHealth.IsDying && Time.timeScale > 0f;
 }
 
+// ---------- POLLASTRE AL SAFRÀ (plat estrella): el dash deixa un rastre de foc ----------
+public class DashFireTrail : MonoBehaviour
+{
+    private PlayerMovement movement;
+    private float nextDrop;
+
+    void Awake() { movement = GetComponent<PlayerMovement>(); }
+
+    void Update()
+    {
+        if (movement == null || !movement.IsDashing || Time.time < nextDrop) return;
+        nextDrop = Time.time + 0.06f;
+        StartCoroutine(Fire(transform.position));
+    }
+
+    IEnumerator Fire(Vector2 pos)
+    {
+        float radius = 0.7f * DishArea.Mul;
+        SpriteRenderer sr = HazardFx.MakeCircle(pos, radius, new Color(1f, 0.55f, 0.15f, 0.4f), -2);
+        for (float t = 0f; t < 1.5f; t += 0.3f)
+        {
+            Fx.Flames(pos, radius * 0.6f, 0.4f);
+            DishUtil.HitCircle(pos, radius, 2 + DishUtil.Bonus);
+            if (sr != null) sr.color = new Color(1f, 0.55f, 0.15f, 0.4f * (1f - t / 1.5f));
+            yield return new WaitForSeconds(0.3f);
+        }
+        if (sr != null) Destroy(sr.gameObject);
+    }
+}
+
 // ---------- MEL I MATÓ: cures 1 cor cada tants segons ----------
 public class RegenHeal : MonoBehaviour
 {
@@ -165,9 +198,16 @@ public class SoupTrail : MonoBehaviour
     {
         SpriteRenderer sr = HazardFx.MakeCircle(pos, radius, new Color(0.95f, 0.7f, 0.3f, 0.35f), -2);
         int dmg = 1 + (level >= 3 ? 1 : 0) + DishUtil.Bonus / 2;
+        bool slow = SetBonuses.Has(SetId.SopaPedra); // conjunt Sopa de pedra: els tolls frenen
         for (float t = 0f; t < life; t += 0.5f)
         {
             DishUtil.HitCircle(pos, radius, dmg);
+            if (slow)
+                foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, radius))
+                {
+                    Enemy e = c.GetComponentInParent<Enemy>();
+                    if (e != null && !e.IsDead) e.Slow(0.5f, 0.6f);
+                }
             if (sr != null) sr.color = new Color(0.95f, 0.7f, 0.3f, 0.35f * (1f - t / life) + 0.1f);
             if (Random.value < 0.6f) Fx.Sparkle(pos + Random.insideUnitCircle * radius * 0.8f, new Color(1f, 0.9f, 0.6f));
             yield return new WaitForSeconds(0.5f);
@@ -208,7 +248,9 @@ public class PieRain : MonoBehaviour
         Fx.Shockwave(pos, radius * 0.6f, new Color(1f, 0.97f, 0.9f));
         Fx.Sparkles(pos, new Color(1f, 0.95f, 0.9f), 8, radius);
         AudioManager.Play("table", 0.6f, 1.3f);
-        DishUtil.HitCircle(pos, radius, 3 + level + DishUtil.Bonus);
+        int dmg = 3 + level + DishUtil.Bonus;
+        if (SetBonuses.Has(SetId.Berenar)) dmg *= 2; // conjunt Berenar: els pastissos fan el doble de mal
+        DishUtil.HitCircle(pos, radius, dmg);
     }
 }
 
@@ -228,7 +270,9 @@ public class CavaPop : MonoBehaviour
         Fx.Shockwave(pos, radius * 0.55f, new Color(1f, 0.95f, 0.7f));
         for (int i = 0; i < 10; i++) Fx.Sparkle(pos + Random.insideUnitCircle * radius, new Color(1f, 0.97f, 0.8f));
         AudioManager.Play("pickup", 0.5f, 0.8f);
-        DishUtil.HitCircle(pos, radius, 2 + level + DishUtil.Bonus, 9f);
+        int dmg = 2 + level + DishUtil.Bonus;
+        if (SetBonuses.Has(SetId.Brindis)) dmg *= 2; // conjunt Brindis: les bombolles fan el doble de mal
+        DishUtil.HitCircle(pos, radius, dmg, 9f);
     }
 }
 
@@ -252,6 +296,7 @@ public class Flamethrower : MonoBehaviour
         Vector2 pos = transform.position;
         Fx.Flames(pos + aim * range * 0.55f, range * 0.35f, 0.6f);
         int dmg = 1 + (level - 1) / 2 + DishUtil.Bonus / 2;
+        if (SetBonuses.Has(SetId.Barbacoa)) dmg *= 2; // conjunt Barbacoa: les flames fan el doble de mal
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, range))
         {
             Enemy e = c.GetComponentInParent<Enemy>();
@@ -327,7 +372,9 @@ public class FuetWhip : MonoBehaviour
         {
             Enemy e = c.GetComponentInParent<Enemy>();
             if (e == null || e.IsDead) continue;
-            e.TakeDamage(2 + level + DishUtil.Bonus);
+            bool embotits = SetBonuses.Has(SetId.Embotits); // conjunt Embotits: el fuet fa el doble de mal i empeny
+            e.TakeDamage((2 + level + DishUtil.Bonus) * (embotits ? 2 : 1));
+            if (embotits && !e.IsDead) e.Knockback(new Vector2(dir, 0f), 7f, 0.12f);
         }
         AudioManager.Play("dash", 0.35f, 1.6f);
     }
