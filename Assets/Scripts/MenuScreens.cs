@@ -143,10 +143,27 @@ public class MainMenuDecor : MonoBehaviour
         }
 
         // els botons, una mica més grans
+        Button play = null, quit = null;
         foreach (Button b in GetComponentsInChildren<Button>(true))
         {
             RectTransform rt = (RectTransform)b.transform;
             rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, 420f), Mathf.Max(rt.sizeDelta.y, 76f));
+            if (b.name.Contains("Play")) play = b;
+            if (b.name.Contains("Quit")) quit = b;
+        }
+
+        // el botó d'Opcions, entre Jugar i Sortir (una còpia del de Jugar, amb el mateix aspecte)
+        if (play != null)
+        {
+            Button options = Instantiate(play, play.transform.parent);
+            options.name = "OptionsButton";
+            options.onClick = new Button.ButtonClickedEvent(); // sense el "Jugar" de l'escena
+            options.onClick.AddListener(() => { AudioManager.Play("ui_click"); OptionsScreen.Open(); });
+            TextMeshProUGUI ot = options.GetComponentInChildren<TextMeshProUGUI>();
+            if (ot != null) ot.text = "Opcions";
+            RectTransform prt = (RectTransform)play.transform;
+            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -100f);
+            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -200f);
         }
 
         // rècord, onada, propines i reptes
