@@ -57,7 +57,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.Pallas: return "Es teletransporta deixant bombes i fa ploure bitllets: mira on trepitges";
             case BossType.Inspector: return "Espirals de paperassa i segells; a la 2a fase et tanca trossos de la sala";
             case BossType.TvCritic: return "Surt dels focus, aparta't del flaix de la càmera i compte amb el públic";
-            case BossType.Sommelier: return "Ampolles que cauen on ets, vi que frena i taps que reboten per les parets";
+            case BossType.Sommelier: return "Ampolles que cauen on ets, vi que frena i taps de suro disparats";
             case BossType.Gelater: return "Els gelats et frenen i els cercles et glacen: fes el dash per sortir-ne";
         }
         return "";
