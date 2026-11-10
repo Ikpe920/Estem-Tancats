@@ -14,6 +14,13 @@ public class Projectile : MonoBehaviour
     [HideInInspector] public float slowFactor = 1f;       // 1 = no frena
     [HideInInspector] public float slowDuration = 0f;
     [HideInInspector] public bool isCrit = false;        // tret crític: més gran i daurat
+    [HideInInspector] public bool boomerang = false;     // pizza del Pizzer: travessa els clients i torna a la mà
+
+    // ---------- PIZZA BUMERANG ----------
+    const float BoomerangOut = 0.38f;   // segons que va endavant abans de tornar
+    private float launchedAt;
+    private bool returning;
+    private float boomerangSpeed;
 
     private readonly HashSet<Enemy> alreadyHit = new HashSet<Enemy>();
 
@@ -38,6 +45,7 @@ public class Projectile : MonoBehaviour
     private Vector3 defaultScale;
     private SpriteRenderer[] renderers;
     private Color[] defaultColors;
+    private Sprite[] defaultSprites;
 
     // agafa un projectil de la reserva (o en crea un) a la posició donada, a punt per configurar
     public static Projectile Get(GameObject prefab, Vector2 position, Quaternion rotation)
@@ -85,7 +93,8 @@ public class Projectile : MonoBehaviour
         defaultScale = transform.localScale;
         renderers = GetComponentsInChildren<SpriteRenderer>(true);
         defaultColors = new Color[renderers.Length];
-        for (int i = 0; i < renderers.Length; i++) defaultColors[i] = renderers[i].color;
+        defaultSprites = new Sprite[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++) { defaultColors[i] = renderers[i].color; defaultSprites[i] = renderers[i].sprite; }
     }
 
     // deixa el projectil com el prefab: sense plats, sense crític, sense estela
@@ -99,11 +108,13 @@ public class Projectile : MonoBehaviour
         slowFactor = 1f;
         slowDuration = 0f;
         isCrit = false;
+        boomerang = false;
+        returning = false;
         flicker = false;
         alreadyHit.Clear();
         transform.localScale = defaultScale;
         for (int i = 0; i < renderers.Length; i++)
-            if (renderers[i] != null) renderers[i].color = defaultColors[i];
+            if (renderers[i] != null) { renderers[i].color = defaultColors[i]; renderers[i].sprite = defaultSprites[i]; }
         if (trailRenderer != null)
         {
             trailRenderer.Clear();
@@ -115,11 +126,22 @@ public class Projectile : MonoBehaviour
     }
 
     // es crida quan ja s'han posat el dany i els efectes: aplica l'aspecte i el llança
+    // canvia el dibuix del projectil (la pizza del Pizzer); es torna a l'original en reaprofitar-lo
+    public void SetSprite(Sprite s)
+    {
+        if (s == null) return;
+        SaveDefaults();
+        foreach (SpriteRenderer sr in renderers) if (sr != null) sr.sprite = s;
+    }
+
     public void Launch(Vector2 velocity)
     {
         launched = true;
         alive = true;
         dieAt = Time.time + lifetime;
+        launchedAt = Time.time;
+        boomerangSpeed = velocity.magnitude;
+        if (boomerang) dieAt = Time.time + 4f; // torna sola: aquest temps és només per si de cas
         ApplyDishLook();
         if (trailRenderer != null && trailRenderer.enabled) trailRenderer.Clear(); // que no surti una ratlla des de l'última posició
         if (rb != null) rb.linearVelocity = velocity;
@@ -221,6 +243,7 @@ public class Projectile : MonoBehaviour
     void Update()
     {
         if (alive && Time.time >= dieAt) { Despawn(); return; }
+        if (alive && boomerang) UpdateBoomerang();
 
         transform.Rotate(0f, 0f, spinSpeed * Time.deltaTime);
         if (flicker)
@@ -230,9 +253,31 @@ public class Projectile : MonoBehaviour
         }
     }
 
+    // la pizza va endavant, frena, i torna cap al xef (que la recull)
+    void UpdateBoomerang()
+    {
+        Transform owner = PlayerRef.Transform;
+        if (rb == null || owner == null) return;
+        if (!returning && Time.time - launchedAt >= BoomerangOut) StartReturn();
+        if (!returning) return;
+
+        Vector2 to = (Vector2)owner.position - (Vector2)transform.position;
+        if (to.magnitude < 0.6f) { Despawn(); return; } // l'ha recollida
+        Vector2 want = to.normalized * boomerangSpeed * 1.15f;
+        rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, want, boomerangSpeed * 6f * Time.deltaTime);
+    }
+
+    void StartReturn()
+    {
+        if (returning) return;
+        returning = true;
+        alreadyHit.Clear(); // de tornada pot tocar els mateixos clients
+    }
+
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!alive) return; // ja ha tocat alguna cosa en aquest mateix pas de física
+        if (boomerang && other.GetComponentInParent<ArenaWalls>() != null) { StartReturn(); return; } // la paret la fa tornar
         if (other.GetComponentInParent<ArenaWalls>() != null)
         {
             if (bounces > 0 && rb != null) { Bounce(); return; }
@@ -243,6 +288,7 @@ public class Projectile : MonoBehaviour
         if (prop != null)
         {
             prop.Hit(damage);
+            if (boomerang) { StartReturn(); return; }
             if (pierce > 0) pierce--;
             else Despawn();
             return;
@@ -266,6 +312,7 @@ public class Projectile : MonoBehaviour
 
         if (explosionRadius > 0f) Explode(enemy);
 
+        if (boomerang) return; // la pizza travessa tots els clients
         if (pierce > 0) pierce--;
         else Despawn();
     }

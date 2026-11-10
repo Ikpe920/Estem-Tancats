@@ -17,7 +17,8 @@ public enum BossType
     Borratxo,  // càrregues en línia recta i atordiment
     Cuiner,    // invoca clients i llança ventalls de ganivets
     Pallas,    // es teletransporta i deixa bombes al terra
-    Inspector  // espiral de trets i fase enfadada
+    Inspector, // espiral de trets i fase enfadada
+    TvCritic   // la Crítica de la tele (només a les hores extres): focus que enlluernen i públic que aplaudeix
 }
 
 [System.Serializable]
@@ -141,7 +142,9 @@ public class WaveSpawner : MonoBehaviour
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
-                if (endless) info = info.Furious(); // fent hores extres tornen enfurismats
+                // a les hores extres, cada 15 onades surt la Crítica de la tele; els altres tornen enfurismats
+                if (endless && finalWave > 0 && (currentWave - finalWave) % 15 == 0) info = TvCriticInfo(info);
+                else if (endless) info = info.Furious();
 
                 // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
                 Sprite portrait = info.sprite;
@@ -521,6 +524,12 @@ public class WaveSpawner : MonoBehaviour
                 BossPhases phases = b.AddComponent<BossPhases>();
                 phases.projectilePrefab = info.projectilePrefab;
                 break;
+
+            case BossType.TvCritic:
+                if (melee != null) melee.enabled = false;
+                if (attack != null) attack.enabled = false;
+                b.AddComponent<BossTvCritic>().spawner = this;
+                break;
         }
     }
 
@@ -568,6 +577,24 @@ public class WaveSpawner : MonoBehaviour
             EnemyVariants.Force(e, prefab, (EnemyVariants.Kind)kinds.GetValue(i));
         }
         return true;
+    }
+
+    // la Crítica de la tele: es fa amb el prefab d'un altre cap, amb el seu dibuix i el seu comportament
+    BossInfo TvCriticInfo(BossInfo template)
+    {
+        return new BossInfo
+        {
+            name = "LA CRÍTICA DE LA TELE",
+            subtitle = "En directe des del teu restaurant... i en directe del teu final.",
+            prefab = template.prefab,
+            type = BossType.TvCritic,
+            health = 1600,
+            speed = 1.8f,
+            scale = 3f,
+            sprite = Resources.Load<Sprite>("Bosses/CriticaTV"),
+            tint = Color.white,
+            projectilePrefab = template.projectilePrefab,
+        };
     }
 
     // els caps poden fer sortir clients normals (el Xef i la Inspectora)

@@ -259,7 +259,15 @@ public class ChefSelectScreen : MonoBehaviour
 
         int n = ChefRoster.All.Length;
         for (int i = 0; i < n; i++)
-            cards.Add(BuildCard(bg, i, new Vector2(Mathf.Lerp(0.14f, 0.86f, n > 1 ? (float)i / (n - 1) : 0.5f), 0.53f)));
+        {
+            // amb 5 xefs o més, les cartes s'estiren per tota l'amplada i es fan una mica més petites
+            float x0 = n >= 5 ? 0.1f : 0.14f, x1 = n >= 5 ? 0.9f : 0.86f;
+            Card card = BuildCard(bg, i, new Vector2(Mathf.Lerp(x0, x1, n > 1 ? (float)i / (n - 1) : 0.5f), 0.53f));
+            cards.Add(card);
+        }
+        if (n >= 5)
+            foreach (Transform t in bg)
+                if (t.name.StartsWith("Carta ")) t.localScale = Vector3.one * Mathf.Clamp(4.6f / n, 0.7f, 1f);
 
         // dificultat
         string[] names = { "Fàcil", "Normal", "Difícil" };

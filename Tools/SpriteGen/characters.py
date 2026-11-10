@@ -172,6 +172,49 @@ def item_parts(kind, hx, hy, d):
             c.rect(hx - 3, yy, hx + 1 - i, yy, (210, 50, 50) if i == 1 else (120, 120, 130))
         c.rect(hx - 1.5, hy - 13, hx + 0.5, hy - 12, (200, 200, 210))
         ps.append(c)
+    elif kind == 'pizza':  # pizza sencera, de pla
+        pz = Part((236, 186, 100), (200, 140, 70))
+        pz.ellipse(hx, hy - 6, 6, 5)
+        sauce = Part((210, 50, 40), None, outline=False).ellipse(hx, hy - 6, 4.6, 3.8)
+        for (x, y, c) in ((-2, -7, (250, 230, 120)), (2, -5, (250, 230, 120)), (1, -8, (60, 140, 60)), (-2, -4, (170, 40, 40)), (2.5, -7.5, (170, 40, 40))):
+            sauce.put(hx + x, hy + y, c)
+        ps += [pz, sauce]
+    elif kind == 'lollipop':  # piruleta
+        ps.append(Part((240, 240, 240)).rect(hx - 0.5, hy - 6, hx + 0.5, hy))
+        l = Part((240, 80, 160), None, hi=WHITE)
+        l.ellipse(hx, hy - 9, 3.2, 3.2)
+        for a in range(0, 360, 60):
+            l.put(hx + math.cos(math.radians(a)) * 1.8, hy - 9 + math.sin(math.radians(a)) * 1.8, (250, 220, 90))
+        ps.append(l)
+    elif kind == 'camera':  # càmera de fotos amb flaix
+        c = Part((50, 50, 60), (30, 30, 36), hi=(110, 110, 130))
+        c.rect(hx - 4, hy - 6, hx + 4, hy - 1)
+        c.ellipse(hx, hy - 3.5, 2, 2, (140, 180, 230))
+        c.rect(hx - 3, hy - 8, hx - 1, hy - 7, (250, 250, 200))
+        ps.append(c)
+    elif kind == 'phone':  # mòbil al pal de selfies
+        ps.append(Part((60, 60, 70)).line(hx, hy, hx + d * 4, hy - 12))
+        ph = Part((30, 30, 40), None)
+        ph.rect(hx + d * 4 - 2, hy - 17, hx + d * 4 + 2, hy - 11)
+        ph.rect(hx + d * 4 - 1, hy - 16, hx + d * 4 + 1, hy - 12, (120, 200, 250))
+        ps.append(ph)
+    elif kind == 'handbag':  # bolso de la iaia
+        ps.append(Part((120, 60, 40)).tube([(hx - 3, hy - 5), (hx, hy - 10), (hx + 3, hy - 5)], 0.5))
+        b = Part((160, 60, 90), (120, 40, 60), hi=(210, 120, 150))
+        b.rect(hx - 4, hy - 6, hx + 4, hy + 1)
+        b.rect(hx - 0.5, hy - 5, hx + 0.5, hy - 4, (240, 200, 60))
+        ps.append(b)
+    elif kind == 'mic':  # micròfon de la tele
+        ps.append(Part((40, 40, 46)).rect(hx - 0.7, hy - 6, hx + 0.7, hy))
+        m = Part((170, 170, 180), (120, 120, 130), hi=WHITE)
+        m.ellipse(hx, hy - 8, 2.4, 2.6)
+        ps.append(m)
+        ps.append(Part((220, 40, 40), None).rect(hx - 1.5, hy - 5, hx + 1.5, hy - 4))
+    elif kind == 'foodbox':  # caixa de repartiment
+        b = Part((240, 170, 40), (200, 130, 20), hi=(255, 220, 120))
+        b.rect(hx - 5, hy - 9, hx + 5, hy)
+        b.rect(hx - 3, hy - 6, hx + 3, hy - 4, (60, 160, 90))
+        ps.append(b)
     return ps
 
 
@@ -305,11 +348,90 @@ def hat_parts(ch, cx, hy, r, view, d):
     elif k == 'bun':  # monyo (inspectora)
         hc = ch.get('hair_c', (110, 70, 44))
         hair = Part(hc, darker(hc), hi=lighter(hc, 0.25))
-        hair.ellipse(cx - sx, top + 4, r, 6)
-        hair.remove(lambda x, y: y > top + 4 + (4 if abs(x - cx) > r * 0.75 else 0))
+        if view == 'back':  # d'esquena, tot el cap és cabell
+            hair.ellipse(cx, hy - 1, r, r * 0.93)
+            hair.remove(lambda x, y: y > hy + r * 0.45)
+        else:
+            hair.ellipse(cx - sx, top + 4, r, 6)
+            hair.remove(lambda x, y: y > top + 4 + (4 if abs(x - cx) > r * 0.75 else 0))
         hair.ellipse(cx - sx * 2, top - 3, 4, 3.5)
         for yy in (top - 4, top - 2):
             hair.rect(cx - 3 - sx * 2, yy, cx + 3 - sx * 2, yy, darker(hc, 0.85))
+        ps.append(hair)
+    elif k == 'pizzacap':  # gorra de pizzer (blanca, baixa) amb la cinta tricolor
+        h = Part((250, 250, 245), (210, 210, 214), hi=WHITE)
+        h.ellipse(cx - sx, top - 1, r * 0.85, 5)
+        h.remove(lambda x, y: y > top + 1.5)
+        h.rect(cx - r * 0.8 - sx, top - 1, cx + r * 0.8 - sx, top + 1.5)
+        ps.append(h)
+        band = Part((60, 160, 70), None, outline=False)
+        w3 = r * 1.6 / 3
+        x0 = cx - r * 0.8 - sx
+        band.rect(x0, top, x0 + w3, top + 1, (60, 160, 70))
+        band.rect(x0 + w3, top, x0 + 2 * w3, top + 1, WHITE)
+        band.rect(x0 + 2 * w3, top, x0 + 3 * w3, top + 1, (220, 50, 50))
+        ps.append(band)
+    elif k == 'cap':  # gorra de beisbol (nen, repartidor)
+        c = ch.get('cap_c', (220, 60, 60))
+        h = Part(c, darker(c), hi=lighter(c, 0.3))
+        h.ellipse(cx - sx, top + 2, r * 0.95, 5.5)
+        h.remove(lambda x, y: y > top + 3)
+        if view != 'back':
+            v = Part(darker(c, 0.85), None)
+            if view == 'side':
+                v.rect(cx + r * 0.3, top + 2, cx + r + 4, top + 3.5)
+            else:
+                v.ellipse(cx + d * 2, top + 3.5, r * 0.75, 1.5)
+            ps.append(v)
+        if view == 'back':
+            h.rect(cx - 2, top + 2, cx + 2, top + 3, darker(c, 0.6))
+        ps.append(h)
+        hc = ch.get('hair_c')
+        if hc and view != 'front':
+            hair = Part(hc, darker(hc))
+            hair.ellipse(cx, top + 6, r * 0.9, 3)
+            hair.remove(lambda x, y: y < top + 4)
+            ps.insert(0, hair)
+    elif k == 'sunhat':  # barret de sol de turista
+        c = ch.get('hat_c', (240, 220, 160))
+        crown = Part(c, darker(c, 0.85))
+        crown.ellipse(cx - sx, top - 1.5, r * 0.6, 4)
+        crown.remove(lambda x, y: y > top + 0.5)
+        crown.rect(cx - r * 0.6 - sx, top - 2, cx + r * 0.6 - sx, top - 1, (60, 140, 200))
+        brim = Part(c, darker(c, 0.85), hi=lighter(c, 0.4))
+        brim.ellipse(cx - sx, top + 0.5, r + 5 if view != 'side' else r + 3, 2.4)
+        ps += [brim, crown]
+    elif k == 'helmet':  # casc de moto (repartidor)
+        c = ch.get('hat_c', (40, 160, 90))
+        h = Part(c, darker(c), hi=lighter(c, 0.4))
+        h.ellipse(cx - sx, top + 3, r * 1.02, 7.5)
+        h.remove(lambda x, y: y > top + 4.5)
+        h.rect(cx - 1 - sx, top - 4, cx + 1 - sx, top + 4, WHITE)
+        ps.append(h)
+    elif k == 'beret':  # boina negra (mim)
+        h = Part((30, 28, 34), None, hi=(80, 80, 90))
+        h.ellipse(cx - sx + 2, top + 0.5, r * 0.9, 3.4)
+        h.put(cx - sx + 2, top - 3.5)
+        ps.append(h)
+    elif k == 'quiff':  # tupè d'influencer
+        hc = ch.get('hair_c', (240, 200, 90))
+        hair = Part(hc, darker(hc), hi=lighter(hc, 0.4))
+        hair.ellipse(cx - sx, top + 3.5, r * 0.98, 5.5)
+        hair.remove(lambda x, y: y > top + 4 + (2 if abs(x - cx) > r * 0.7 else 0))
+        hair.tube([(cx - 4 - sx, top), (cx - sx + 1, top - 6), (cx + 6 - sx, top - 3)], 2.4)
+        ps.append(hair)
+    elif k == 'bob':  # mitja melena rossa (crítica de la tele)
+        hc = ch.get('hair_c', (250, 210, 100))
+        hair = Part(hc, darker(hc, 0.85), hi=lighter(hc, 0.4))
+        hair.ellipse(cx - sx, top + 5, r * 1.05, 7)
+        hair.remove(lambda x, y: y > top + 5 and abs(x - cx) < r * 0.7)
+        if view != 'side':
+            for side in (-1, 1):
+                hair.ellipse(cx + side * (r - 0.5), hy + 3, 3, 6)
+        else:
+            hair.ellipse(cx - r * 0.6, hy + 3, 3.5, 6)
+        if view == 'back':
+            hair.ellipse(cx, hy, r, r * 0.95)
         ps.append(hair)
     return ps
 
@@ -544,6 +666,26 @@ def body_pattern(ch, body, cx, by0, by1, view, belly):
         if view != 'back':
             body.rect(bx - 1, y, bx + 1, y + 1, (240, 200, 60))
             for k in range(3): body.put(bx, by0 + 3 + k * 3, (240, 200, 60))
+    elif pat == 'hawaiian':  # camisa de flors de turista
+        for (x, y), c in list(body.px.items()):
+            if c != body.color: continue
+            h = (x * 7 + y * 13) % 11
+            if h == 0: body.px[(x, y)] = (250, 240, 90)
+            elif h == 5: body.px[(x, y)] = (240, 90, 140)
+            elif h == 8: body.px[(x, y)] = WHITE
+    elif pat == 'mime':  # ratlles horitzontals blanques i negres
+        for (x, y), c in list(body.px.items()):
+            if c == body.color and (y // 2) % 2 == 0: body.px[(x, y)] = (30, 30, 36)
+    elif pat == 'cardigan' and view != 'back':  # jaqueta de punt oberta (iaia)
+        bx = cx + (2 if view == 'side' else 0)
+        body.rect(bx - 1, by0 + 1, bx + 1, by1 - 2, (240, 230, 220))
+        for k in range(3): body.put(bx - 2, by0 + 4 + k * 3, (200, 160, 60))
+    elif pat == 'suit' and view != 'back':  # jaqueta de presentadora amb solapes
+        bx = cx + (2 if view == 'side' else 0)
+        for i in range(6):
+            body.put(bx - 1 - i * 0.5, by0 + 1 + i, darker(body.color, 0.7))
+            body.put(bx + 1 + i * 0.5, by0 + 1 + i, darker(body.color, 0.7))
+        body.rect(bx - 1, by0 + 1, bx + 1, by0 + 4, (250, 250, 250))
     if ch.get('belt'):  # faixa (sushiman)
         y = by1 - 5
         for (x, yy), c in list(body.px.items()):
@@ -794,13 +936,37 @@ CHARACTERS = {
     'XefRenegat': dict(SKIN2, jacket=(140, 30, 40), pants=(40, 36, 50), shoe=(30, 26, 26), hat='toque', band=(200, 30, 30),
                        tilt=-3, pattern='apron', expr='angry', mouth='grin', stache='big', stache_c=(50, 34, 28), bushy=True,
                        items={1: 'cleaver'}, belly=11, shoulder=6, hand_x=18),
+    # ---------------- NOUS ----------------
+    'Pizzer': dict(SKIN, jacket=(250, 250, 245), jacket_s=(214, 210, 226), pants=(60, 140, 70), shoe=(110, 70, 40),
+                   hat='pizzacap', collar='scarf', scarf_c=(220, 50, 50), pattern='buttons', pattern_c=(60, 160, 70),
+                   expr='grumpy', stache='big', stache_c=(40, 30, 28), items={1: 'pizza'}),
+    'Nen': dict(SKIN3, jacket=(250, 200, 60), pants=(60, 90, 160), shoe=(240, 80, 80), hat='cap', cap_c=(60, 120, 220),
+                hair_c=(110, 70, 40), expr='angry', mouth='yell', belly=7, shoulder=4, head=12.5, items={1: 'lollipop'},
+                blush=True, nose=1.8),
+    'Turista': dict(SKIN, jacket=(70, 170, 210), pants=(230, 210, 160), shoe=(160, 110, 60), hat='sunhat',
+                    pattern='hawaiian', glasses='shades', expr='smug', items={1: 'camera'}, belly=11, nose_c=(250, 110, 100)),
+    'Influencer': dict(SKIN3, jacket=(230, 90, 170), pants=(40, 40, 60), shoe=(250, 250, 250), hat='quiff',
+                       hair_c=(250, 210, 90), glasses='shades', expr='smug', items={1: 'phone'}, belly=8, shoulder=4),
+    'Iaia': dict(SKIN3, jacket=(150, 110, 170), pants=(90, 80, 90), shoe=(70, 50, 50), hat='bun', hair_c=(220, 220, 225),
+                 pattern='cardigan', glasses='round', expr='grumpy', items={1: 'handbag'}, belly=12, shoulder=6,
+                 nose_c=(240, 150, 130), nose=2.0, lashes=True),
+    'Repartidor': dict(SKIN2, jacket=(240, 170, 40), pants=(50, 50, 60), shoe=(30, 30, 34), hat='helmet', hat_c=(40, 160, 90),
+                       expr='determined', items={1: 'foodbox'}, belly=8, leg_bow=4),
+    'Mim': dict(skin=(246, 246, 248), skin_s=(214, 214, 222), jacket=(250, 250, 250), pants=(30, 30, 36), shoe=(30, 30, 36),
+                hat='beret', pattern='mime', expr='worried', mouth='flat', nose_c=(230, 60, 60), collar='scarf',
+                scarf_c=(220, 40, 40), belly=8, shoulder=4),
+    'CriticaTV': dict(SKIN3, jacket=(210, 40, 60), pants=(40, 30, 40), shoe=(30, 20, 24), hat='bob', hair_c=(250, 210, 100),
+                      pattern='suit', lashes=True, expr='smug', mouth='smirk', nose_c=(240, 150, 130), nose=1.8,
+                      items={1: 'mic'}, belly=10, blush=True),
 }
 
 # on va cada sprite (relatiu a Assets/)
-CHEF_NAMES = ['Chef', 'Carnisser', 'Pastisser', 'Sushiman']
+CHEF_NAMES = ['Chef', 'Carnisser', 'Pastisser', 'Sushiman', 'Pizzer']
 ENEMY_DIRS = {'Enemy': 'Sprites/Enemies', 'EnemyFast': 'Sprites/Enemies', 'EnemyShooter': 'Sprites/Enemies',
               'EnemyTank': 'Sprites/Enemies', 'Cambrer': 'Resources/Enemies', 'Golafre': 'Resources/Enemies',
-              'Olla': 'Resources/Enemies', 'Safata': 'Resources/Enemies'}
+              'Olla': 'Resources/Enemies', 'Safata': 'Resources/Enemies',
+              'Nen': 'Resources/Enemies', 'Turista': 'Resources/Enemies', 'Influencer': 'Resources/Enemies',
+              'Iaia': 'Resources/Enemies', 'Repartidor': 'Resources/Enemies', 'Mim': 'Resources/Enemies'}
 BOSSES = ['Borratxo', 'ClientVIP', 'Critic', 'Inspectora', 'XefRenegat']
 
 
@@ -818,6 +984,8 @@ def sprites():
     for n in BOSSES:
         ch = CHARACTERS[n]
         out.append(('Sprites/Boss', n, lambda s, ch=ch: to_image(character(ch, 'front', s))))
+    # caps que es carreguen des de Resources (els que no són a l'escena)
+    out.append(('Resources/Bosses', 'CriticaTV', lambda s: to_image(character(CHARACTERS['CriticaTV'], 'front', s))))
     return out
 
 
@@ -827,9 +995,11 @@ def main():
     sheet_rows = []
     for folder, name, draw in sprites():
         frames = [draw(0), draw(1), draw(2)]
+        os.makedirs(os.path.join(assets, folder), exist_ok=True)
         frames[0].save(os.path.join(assets, folder, name + '.png'))
         walk = os.path.join(assets, 'Resources', 'Walk')
-        if os.path.exists(os.path.join(walk, name + '_1.png')):
+        # les passes: sempre per als que es carreguen des de Resources (així els nous també en tenen)
+        if folder.startswith('Resources') or os.path.exists(os.path.join(walk, name + '_1.png')):
             frames[1].save(os.path.join(walk, name + '_1.png'))
             frames[2].save(os.path.join(walk, name + '_2.png'))
         sheet_rows.append((name, frames))

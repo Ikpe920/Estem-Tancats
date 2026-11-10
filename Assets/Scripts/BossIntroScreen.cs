@@ -40,6 +40,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.Cuiner: return new Color(0.70f, 0.14f, 0.18f);
             case BossType.Pallas: return new Color(0.42f, 0.22f, 0.55f);
             case BossType.Inspector: return new Color(0.16f, 0.45f, 0.36f);
+            case BossType.TvCritic: return new Color(0.72f, 0.14f, 0.26f);
         }
         return new Color(0.5f, 0.2f, 0.2f);
     }
@@ -53,6 +54,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.Cuiner: return "Fa sortir clients i llença ganivets en ventall: no et quedis quiet";
             case BossType.Pallas: return "Es teletransporta i deixa bombes al terra: mira on trepitges";
             case BossType.Inspector: return "Dispara en espiral i s'enfada quan està tocada";
+            case BossType.TvCritic: return "Surt dels focus abans que s'encenguin i compte amb el públic";
         }
         return "";
     }
@@ -67,6 +69,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.Cuiner: return "CUINA SALVATGE";
             case BossType.Pallas: return "RESERVAT PER A TU";
             case BossType.Inspector: return "TANCAT PER INSPECCIÓ";
+            case BossType.TvCritic: return "EN DIRECTE";
         }
         return "EL SERVEI DE LA NIT";
     }
