@@ -510,14 +510,14 @@ public class BoonManager : MonoBehaviour
     }
 
     // el cofre dels caps: dos plats de regal
-    public IEnumerator OpenChest()
+    public IEnumerator OpenChest(string title = null)
     {
         while (offering) yield return null;
         offering = true;
         AudioManager.Play("coin_big");
         for (int i = 0; i < 2; i++)
         {
-            offerTitle = "COFRE DEL CAP!  Plat " + (i + 1) + " de 2";
+            offerTitle = (title ?? "COFRE DEL CAP!") + "  Plat " + (i + 1) + " de 2";
             yield return OfferBoons();
         }
         offerTitle = null;

@@ -14,9 +14,11 @@ public class GameOver : MonoBehaviour
         if (resultText == null) resultText = EndScreenUI.FindText("resultText");
 
         TextMeshProUGUI title = EndScreenUI.FindText("TitleText");
-        if (title != null) title.text = RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC";
+        if (title != null) title.text = BossRush.Active ? "FI DELS CAPS SEGUITS" : RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC";
 
-        if (resultText != null)
+        if (resultText != null && BossRush.Active)
+            resultText.text = BossRush.ResultLines(false);
+        else if (resultText != null)
             resultText.text = (RunStats.endless ? "Mode infinit: has arribat a l'onada " : "Has arribat a l'onada ") + RunStats.wave
                 + "\nPunts: " + RunStats.points + RunStats.ExtraLines();
 
@@ -27,7 +29,7 @@ public class GameOver : MonoBehaviour
         EndScreenFx.Build(canvas, false);
 
         // el cartell de pel·lícula muda: "...i així, el xef va acabar al menú del dia. FI"
-        Intertitle.ShowAsync(Intertitle.GameOverText(RunStats.endless), true, 2.2f);
+        Intertitle.ShowAsync(BossRush.Active ? "I el xef no va poder\namb tots els caps." : Intertitle.GameOverText(RunStats.endless), true, 2.2f);
 
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
@@ -39,6 +41,7 @@ public class GameOver : MonoBehaviour
     public void Restart()
     {
         RunStats.Reset();
+        if (BossRush.Active) BossRush.Begin(); // torna a començar els caps seguits
         Iris.LoadScene(SceneNames.Game);
     }
 

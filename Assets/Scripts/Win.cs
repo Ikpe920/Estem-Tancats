@@ -15,7 +15,7 @@ public class Win : MonoBehaviour
         EndScreenFx.Build(canvas, true);
 
         // el cartell de pel·lícula muda del final
-        Intertitle.ShowAsync(Intertitle.WinText(), true, 2.4f);
+        Intertitle.ShowAsync(BossRush.Active ? "I el xef els va vèncer a tots.\nUn darrere l'altre." : Intertitle.WinText(), true, 2.4f);
 
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
@@ -27,6 +27,7 @@ public class Win : MonoBehaviour
     public void Restart()
     {
         RunStats.Reset();
+        if (BossRush.Active) BossRush.Begin(); // torna a començar els caps seguits
         Iris.LoadScene(SceneNames.Game);
     }
 

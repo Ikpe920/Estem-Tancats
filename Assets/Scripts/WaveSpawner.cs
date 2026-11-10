@@ -143,11 +143,29 @@ public class WaveSpawner : MonoBehaviour
         if (actManager == null) actManager = GetComponent<ActManager>();
         if (boonManager == null) boonManager = GetComponent<BoonManager>();
 
+        // caps seguits: només els 8 caps, contra rellotge
+        if (BossRush.Active)
+        {
+            finalWave = BossRush.Bosses;
+            BossRushHud.Create();
+        }
+
         StartCoroutine(WaveLoop());
     }
 
+    // l'onada que compta per a la vida i la velocitat dels clients (als caps seguits, la del cap de debò)
+    int DifficultyWave => BossRush.Active ? currentWave * bossEveryNWaves : currentWave;
+
     IEnumerator WaveLoop()
     {
+        // caps seguits: comences amb dos cofres (4 plats) per poder plantar cara al primer cap
+        if (BossRush.Active && boonManager != null && boonManager.xpMode)
+        {
+            yield return new WaitForSeconds(0.6f);
+            yield return StartCoroutine(boonManager.OpenChest("CAPS SEGUITS!"));
+            yield return StartCoroutine(boonManager.OpenChest("CAPS SEGUITS!"));
+        }
+
         while (true)
         {
             currentWave++;
@@ -159,7 +177,7 @@ public class WaveSpawner : MonoBehaviour
             if (actManager != null) count += actManager.ExtraEnemies; // fent hores extres no torna a baixar
 
             bool isBossWave = bosses != null && bosses.Length > 0
-                              && currentWave % bossEveryNWaves == 0;
+                              && (BossRush.Active || currentWave % bossEveryNWaves == 0);
 
             // potser és una onada especial (hora punta, tall de llum, client VIP...)
             WaveEvents.Begin(WaveEvents.Roll(currentWave, isBossWave, actManager != null ? actManager.currentAct : 0), this);
@@ -169,7 +187,7 @@ public class WaveSpawner : MonoBehaviour
             if (isBossWave)
             {
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
-                int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
+                int index = BossRush.Active ? (currentWave - 1) % bosses.Length : (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
                 if (endless) info = info.Furious(); // fent hores extres tornen enfurismats
 
@@ -181,7 +199,8 @@ public class WaveSpawner : MonoBehaviour
                     if (psr != null) portrait = psr.sprite;
                 }
                 int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
-                string bossTag = endless && actManager != null ? "— HORES EXTRES · " + ActManager.Clock(actManager.Hour) + " · ONADA " + currentWave + " —" : null;
+                string bossTag = BossRush.Active ? "— CAPS SEGUITS · CAP " + currentWave + " DE " + BossRush.Bosses + " —"
+                               : endless && actManager != null ? "— HORES EXTRES · " + ActManager.Clock(actManager.Hour) + " · ONADA " + currentWave + " —" : null;
                 yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
 
                 SpawnBoss(info);
@@ -220,7 +239,12 @@ public class WaveSpawner : MonoBehaviour
                 Vector2 at = ph != null ? (Vector2)ph.transform.position + Vector2.up * 1.2f : Vector2.zero;
                 ScoreManager.Instance.EndWave(currentWave, at);
             }
-            Progression.OnWaveCleared(currentWave, finalWave, endless);
+            if (BossRush.Active)
+            {
+                BossRush.Beaten++;
+                if (PlayerRef.Health != null) PlayerRef.Health.Heal(1); // cada cap vençut, un cor
+            }
+            else Progression.OnWaveCleared(currentWave, finalWave, endless);
 
             // petit descans perquè el jugador pugui respirar abans de triar un plat
             if (actManager != null)
@@ -228,6 +252,15 @@ public class WaveSpawner : MonoBehaviour
             yield return new WaitForSeconds(0.4f);
 
             // final del joc: en acabar l'última onada, guanyes... o continues en mode infinit
+            if (BossRush.Active && currentWave >= finalWave)
+            {
+                BossRush.Finish(true);
+                int rp = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
+                int rc = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
+                RunStats.Save(currentWave, rp, rc);
+                Iris.LoadScene(SceneNames.Win);
+                yield break;
+            }
             if (finalWave > 0 && currentWave >= finalWave && !endless)
             {
                 bool keepGoing = false;
@@ -332,7 +365,7 @@ public class WaveSpawner : MonoBehaviour
         if (act != null && act.enemies != null && act.enemies.Length > 0)
         {
             pool = act.enemies;
-            wave = currentWave - actManager.currentAct * bossEveryNWaves;
+            wave = BossRush.Active ? bossEveryNWaves : currentWave - actManager.currentAct * bossEveryNWaves;
             if (wave < 1) wave = 1;
         }
 
@@ -407,7 +440,7 @@ public class WaveSpawner : MonoBehaviour
     {
         Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
         ApplyWaveDifficulty(e);
-        EnemyVariants.MaybeApply(e, prefab, currentWave);
+        EnemyVariants.MaybeApply(e, prefab, DifficultyWave);
         WaveEvents.OnEnemySpawned(e);
     }
 
@@ -440,7 +473,7 @@ public class WaveSpawner : MonoBehaviour
     {
         if (e == null) return;
 
-        int level = Mathf.Max(0, currentWave - 1);
+        int level = Mathf.Max(0, DifficultyWave - 1);
         float healthMul = 1f + healthPerWave * level;
         float speedBonus = speedPerWave * level;
 
@@ -456,7 +489,7 @@ public class WaveSpawner : MonoBehaviour
 
         // els tiradors disparen més sovint a les onades altes
         if (e.isShooter)
-            e.fireInterval = Mathf.Max(0.7f, e.fireInterval * Mathf.Max(0.55f, 1f - 0.015f * currentWave));
+            e.fireInterval = Mathf.Max(0.7f, e.fireInterval * Mathf.Max(0.55f, 1f - 0.015f * DifficultyWave));
     }
 
     void SpawnBoss(BossInfo info)
