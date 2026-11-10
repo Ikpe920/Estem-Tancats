@@ -31,6 +31,7 @@ public class HUD : MonoBehaviour
     // els punts que compten cap amunt i fan un salt, l'onada que fa un salt en canviar,
     // i una barra amb el temps que queda de ratxa
     private Image scorePanel, wavePanel, comboBarBg, comboBar;
+    private TextMeshProUGUI actText; // la sala (i el rellotge de les hores extres), sota l'onada
     private float displayedScore;
     private float scorePop, wavePop;
     private int lastWaveShown = -1;
@@ -62,13 +63,31 @@ public class HUD : MonoBehaviour
         }
         if (waveText != null)
         {
+            // dues línies al mig de dalt: "ONADA 31" gran i, a sota, la sala (i l'hora) més petita;
+            // amb una amplada màxima perquè no trepitgi mai els punts ni els cors
             RectTransform rt = waveText.rectTransform;
-            rt.sizeDelta = new Vector2(760f, 56f);
-            rt.anchoredPosition = new Vector2(0f, -14f);
+            rt.sizeDelta = new Vector2(520f, 48f);
+            rt.anchoredPosition = new Vector2(0f, -12f);
+            waveText.enableAutoSizing = true;
+            waveText.fontSizeMax = 40f;
+            waveText.fontSizeMin = 24f;
+            waveText.alignment = TextAlignmentOptions.Center;
             UIStyle.Outline(waveText);
+
+            actText = Instantiate(waveText, rt.parent);
+            actText.name = "SalaText";
+            RectTransform art = actText.rectTransform;
+            art.sizeDelta = new Vector2(560f, 30f);
+            art.anchoredPosition = new Vector2(0f, -60f);
+            actText.fontSizeMax = 24f;
+            actText.fontSizeMin = 14f;
+            actText.fontStyle = FontStyles.Bold;
+            actText.color = UIStyle.Gold;
+            actText.text = "";
+
             wavePanel = UIStyle.Panel(rt.parent, "PanellOnada", rt.anchorMin, rt.anchorMax, Vector2.zero, Vector2.zero);
             wavePanel.rectTransform.pivot = rt.pivot;
-            wavePanel.rectTransform.anchoredPosition = new Vector2(0f, -8f);
+            wavePanel.rectTransform.anchoredPosition = new Vector2(0f, -6f);
         }
     }
 
@@ -113,7 +132,12 @@ public class HUD : MonoBehaviour
             wavePop = Mathf.MoveTowards(wavePop, 0f, dt * 1.6f);
             waveText.transform.localScale = Vector3.one * (1f + 0.3f * wavePop);
             waveText.color = Color.Lerp(Color.white, UIStyle.Gold, wavePop);
-            if (wavePanel != null) wavePanel.rectTransform.sizeDelta = new Vector2(waveText.preferredWidth + 50f, 68f);
+            if (wavePanel != null)
+            {
+                float w = Mathf.Min(600f, Mathf.Max(waveText.preferredWidth, actText != null ? actText.preferredWidth : 0f) + 50f);
+                bool twoLines = actText != null && actText.text.Length > 0;
+                wavePanel.rectTransform.sizeDelta = new Vector2(w, twoLines ? 92f : 60f);
+            }
         }
 
         // la barra de la ratxa: el temps que queda per despatxar el següent client
@@ -171,14 +195,19 @@ public class HUD : MonoBehaviour
             string act = spawner.actManager != null && spawner.actManager.Current != null ? spawner.actManager.Current.name : "";
             if (spawner.endless)
             {
-                string night = "TORN DE NIT " + (spawner.actManager != null ? spawner.actManager.NightRound : 2);
-                act = act.Length > 0 ? act + " · " + night : night;
+                // hores extres: el rellotge al costat de la sala
+                string clock = spawner.actManager != null
+                    ? "HORES EXTRES " + ActManager.Clock(spawner.actManager.Hour) + " · " + ActManager.PartOfDay(spawner.actManager.Hour)
+                    : "HORES EXTRES";
+                act = act.Length > 0 ? act + "  ·  " + clock : clock;
             }
             if (spawner.currentWave != shownWave || act != shownAct)
             {
                 shownWave = spawner.currentWave;
                 shownAct = act;
-                waveText.text = "Onada: " + shownWave + (act.Length > 0 ? " · " + act : "");
+                waveText.text = "ONADA " + shownWave;
+                if (actText != null) actText.text = act;
+                else if (act.Length > 0) waveText.text += " · " + act;
             }
         }
     }

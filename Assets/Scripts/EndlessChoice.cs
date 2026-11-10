@@ -76,13 +76,13 @@ public class EndlessChoice : MonoBehaviour
         EndScreenUI.CreateText(p, "Titol", "HAS SOBREVISCUT AL SERVEI!", 86f, new Vector2(0.5f, 0.74f),
             new Vector2(1700f, 130f), new Color(1f, 0.8f, 0.3f), true);
         TextMeshProUGUI body = EndScreenUI.CreateText(p, "Text",
-            "Pots acabar aquí, o quedar-te al <b>TORN DE NIT</b> (mode infinit):\nles sales continuen canviant, les onades no s'acaben i cada cop són més difícils,\ni els caps tornen enfurismats. Els punts continuen sumant.",
+            "Pots acabar aquí, o fer <b>HORES EXTRES</b> (mode infinit):\ncada onada és una hora, passa la nit i el dia, les sales continuen canviant,\ncada cop és més difícil i els caps tornen enfurismats. Els punts continuen sumant.",
             36f, new Vector2(0.5f, 0.52f), new Vector2(1500f, 220f), Color.white);
         body.raycastTarget = false;
 
         EndScreenUI.CreateButton(p, "Acabar aquí", new Vector2(0.38f, 0.28f), new Vector2(380f, 84f),
             new Color(0.30f, 0.30f, 0.35f), () => Choose(false));
-        EndScreenUI.CreateButton(p, "Torn de nit", new Vector2(0.62f, 0.28f), new Vector2(380f, 84f),
+        EndScreenUI.CreateButton(p, "Hores extres", new Vector2(0.62f, 0.28f), new Vector2(380f, 84f),
             new Color(0.55f, 0.25f, 0.6f), () => Choose(true));
         string helpLine = GamepadInput.UsingGamepad
             ? GamepadInput.South() + " per continuar  ·  " + GamepadInput.East() + " per acabar"

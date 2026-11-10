@@ -222,7 +222,7 @@ public class BossIntroScreen : MonoBehaviour
         canvasRt = canvasGo.GetComponent<RectTransform>();
 
         Color accent = ColorFor(info.type);
-        bool furious = info.name != null && info.name.Contains("ENFURISMA"); // al torn de nit
+        bool furious = info.name != null && info.name.Contains("ENFURISMA"); // fent hores extres
         Color frame = furious ? new Color(0.95f, 0.35f, 0.25f) : Gold;
 
         dim = Box(canvasRt, "Fosc", Color.clear, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);

@@ -26,6 +26,9 @@ public class GameOver : MonoBehaviour
         // la pantalla nova: títol, retrat del xef, estadístiques que compten cap amunt (amaga els textos vells)
         EndScreenFx.Build(canvas, false);
 
+        // el cartell de pel·lícula muda: "...i així, el xef va acabar al menú del dia. FI"
+        Intertitle.ShowAsync(Intertitle.GameOverText(RunStats.endless), true, 2.2f);
+
         // els botons per continuar
         EndScreenUI.CreateButton(canvas.transform, "Tornar a jugar", new Vector2(0.38f, 0.22f),
             new Vector2(320f, 72f), new Color(0.20f, 0.45f, 0.25f), Restart);

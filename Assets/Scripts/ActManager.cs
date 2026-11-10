@@ -42,37 +42,92 @@ public class ActManager : MonoBehaviour
 
     public static event System.Action<int> OnActChanged;
 
-    // ---------- TORN DE NIT (el mode infinit) ----------
-    // Després de l'onada 25 les sales continuen canviant (a l'atzar, mai la mateixa), però la dificultat
-    // ja no torna a baixar: parteix de la de l'última sala i puja una mica a cada sala nova.
-    public bool NightShift { get; private set; }
-    public int NightRooms { get; private set; }               // sales visitades al torn de nit
-    public int NightRound => 2 + Mathf.Max(0, NightRooms - 1) / 5; // la ronda 1 és el servei normal
+    // ---------- HORES EXTRES (el mode infinit) ----------
+    // Després de l'onada 25 el xef fa hores extres: cada onada és una hora (la 26 és la una de la matinada)
+    // i passa el dia i la nit: la llum canvia (nit blava, alba rosa, dia normal, posta taronja) i de nit sonen
+    // les versions fosques de les músiques. Les sales continuen canviant (a l'atzar, mai la mateixa) i la
+    // dificultat ja no torna a baixar: parteix de la de l'última sala i puja una mica a cada sala nova.
+    public bool Overtime { get; private set; }
+    public int OvertimeRooms { get; private set; }   // sales visitades fent hores extres
+    private int overtimeStartWave;                    // la primera onada de les hores extres (la una)
+    private int waveNow;                              // l'onada que s'està jugant
+    private bool nightNow;
+    private Color skyNow = Color.white, skyTarget = Color.white;
+    private bool transitioning;
 
-    static readonly string[] NightSubtitles =
+    public void StartOvertime(int firstWave)
     {
-        "Han parat taula... i el plat principal ets tu",
-        "L'última ronda no s'acaba mai",
-        "Els fogons encara cremen",
-        "Fa fresca, però ningú no marxa",
-        "Ni la lluna no et salvarà",
-    };
-
-    public void StartNightShift()
-    {
-        NightShift = true;
-        NightRooms = 0;
+        Overtime = true;
+        OvertimeRooms = 0;
+        overtimeStartWave = firstWave;
+        nightNow = true;
     }
 
-    // la dificultat de la sala (al torn de nit, la de la sala més difícil i una mica més)
+    // l'hora (0-23) d'una onada; Hour és la de l'onada d'ara
+    public int HourForWave(int wave) { return (((wave - overtimeStartWave + 1) % 24) + 24) % 24; }
+    public int Hour => HourForWave(waveNow);
+    public static string Clock(int hour) { return hour.ToString("00") + ":00"; }
+    public static bool IsNightHour(int hour) { return hour >= 20 || hour < 6; }
+    public bool NightMusic => Overtime && IsNightHour(Hour);
+
+    public static string PartOfDay(int h)
+    {
+        if (h < 6) return "matinada";
+        if (h < 8) return "alba";
+        if (h < 12) return "matí";
+        if (h < 16) return "migdia";
+        if (h < 20) return "tarda";
+        return "vespre";
+    }
+
+    // el WaveSpawner avisa a cada onada nova: avança el rellotge
+    public void OnWaveStarted(int wave)
+    {
+        waveNow = wave;
+        if (!Overtime) return;
+        skyTarget = SkyTint(Hour);
+        bool night = IsNightHour(Hour);
+        if (night != nightNow)
+        {
+            nightNow = night;
+            AudioManager.RefreshActMusic(); // es fa de dia (o de nit): canvia la música
+        }
+    }
+
+    // el color de la llum segons l'hora
+    static readonly float[] SkyHours = { 0f, 4.5f, 6f, 7f, 9f, 17f, 19f, 20.5f, 22f, 24f };
+    static readonly Color[] SkyColors =
+    {
+        new Color(0.60f, 0.64f, 0.92f), // nit
+        new Color(0.60f, 0.64f, 0.92f),
+        new Color(0.84f, 0.70f, 0.88f), // alba (lila i rosa)
+        new Color(1.00f, 0.82f, 0.68f), // surt el sol (taronja)
+        Color.white,                    // dia
+        Color.white,
+        new Color(1.00f, 0.76f, 0.58f), // posta
+        new Color(0.80f, 0.66f, 0.86f), // capvespre
+        new Color(0.60f, 0.64f, 0.92f), // nit
+        new Color(0.60f, 0.64f, 0.92f),
+    };
+
+    public static Color SkyTint(float hour)
+    {
+        hour = Mathf.Repeat(hour, 24f);
+        for (int i = 0; i < SkyHours.Length - 1; i++)
+            if (hour <= SkyHours[i + 1])
+                return Color.Lerp(SkyColors[i], SkyColors[i + 1], Mathf.InverseLerp(SkyHours[i], SkyHours[i + 1], hour));
+        return SkyColors[0];
+    }
+
+    // la dificultat de la sala (fent hores extres, la de la sala més difícil i una mica més)
     public int ExtraEnemies
     {
         get
         {
-            if (!NightShift) return Current != null ? Current.extraEnemies : 0;
+            if (!Overtime) return Current != null ? Current.extraEnemies : 0;
             int max = 0;
             if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.extraEnemies);
-            return max + NightRooms;
+            return max + OvertimeRooms;
         }
     }
 
@@ -80,10 +135,10 @@ public class ActManager : MonoBehaviour
     {
         get
         {
-            if (!NightShift) return Current != null ? Current.enemyHealthMultiplier : 1f;
+            if (!Overtime) return Current != null ? Current.enemyHealthMultiplier : 1f;
             float max = 1f;
             if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.enemyHealthMultiplier);
-            return max * (1f + 0.12f * NightRooms);
+            return max * (1f + 0.12f * OvertimeRooms);
         }
     }
 
@@ -91,19 +146,31 @@ public class ActManager : MonoBehaviour
     {
         get
         {
-            if (!NightShift) return Current != null ? Current.enemySpeedBonus : 0f;
+            if (!Overtime) return Current != null ? Current.enemySpeedBonus : 0f;
             float max = 0f;
             if (acts != null) foreach (ActData a in acts) if (a != null) max = Mathf.Max(max, a.enemySpeedBonus);
-            return max + 0.04f * NightRooms;
+            return max + 0.04f * OvertimeRooms;
         }
     }
 
-    // de nit, tot una mica més fosc i blavós
+    // el color de la sala amb la llum de l'hora
     public Color TintOf(ActData act)
     {
         if (act == null) return Color.white;
         Color t = act.tint;
-        return NightShift ? new Color(t.r * 0.72f, t.g * 0.76f, t.b * 0.95f, t.a) : t;
+        return Overtime ? new Color(t.r * skyNow.r, t.g * skyNow.g, t.b * skyNow.b, t.a) : t;
+    }
+
+    // la llum canvia a poc a poc d'una hora a l'altra
+    void Update()
+    {
+        if (!Overtime || transitioning) return;
+        if (skyNow == skyTarget) return;
+        skyNow = Color.Lerp(skyNow, skyTarget, Time.unscaledDeltaTime * 0.8f);
+        if (Mathf.Abs(skyNow.r - skyTarget.r) + Mathf.Abs(skyNow.g - skyTarget.g) + Mathf.Abs(skyNow.b - skyTarget.b) < 0.004f) skyNow = skyTarget;
+        Color tint = TintOf(Current);
+        if (background != null) background.color = new Color(tint.r, tint.g, tint.b, background.color.a);
+        if (cam != null) cam.backgroundColor = tint * 0.4f;
     }
 
     public ActData Current
@@ -134,6 +201,9 @@ public class ActManager : MonoBehaviour
     {
         bool wasPaused = Time.timeScale == 0f;
         if (pauseForTitle) Time.timeScale = 0f;
+
+        // el cartell de pel·lícula muda del principi
+        yield return Intertitle.Show(Intertitle.Opening(), false, 2.6f);
 
         // el terra apareix des de la foscor
         ActData act = Current;
@@ -273,15 +343,27 @@ public class ActManager : MonoBehaviour
 
         yield return StartCoroutine(FadeTo(0f, Color.black));
 
-        if (NightShift && acts.Length > 1)
+        transitioning = true;
+
+        // quina sala ve ara (fent hores extres, una a l'atzar i mai la mateixa)
+        int next = currentAct + 1;
+        bool night = Overtime && acts.Length > 1;
+        bool firstNight = night && OvertimeRooms == 0;
+        if (night)
         {
-            // torn de nit: una sala a l'atzar, mai la mateixa
-            NightRooms++;
-            int next = Random.Range(0, acts.Length - 1);
+            next = Random.Range(0, acts.Length - 1);
             if (next >= currentAct) next++;
-            ApplyAct(next);
         }
-        else ApplyAct(currentAct + 1);
+        int nextIndex = ((next % acts.Length) + acts.Length) % acts.Length;
+
+        // el cartell de pel·lícula muda: "Mentrestant, a la cuina..."
+        ActData upcoming = acts[nextIndex];
+        int nextHour = Overtime ? HourForWave(waveNow + 1) : 0;
+        yield return Intertitle.Show(Intertitle.ActIntro(nextIndex, upcoming != null ? upcoming.name : "", night, firstNight, nextHour));
+
+        if (night) OvertimeRooms++;
+        if (Overtime) skyNow = skyTarget = SkyTint(nextHour); // la sala nova ja surt amb la llum de la seva hora
+        ApplyAct(next);
 
         ActData act = Current;
         Color tint = TintOf(act);
@@ -292,6 +374,7 @@ public class ActManager : MonoBehaviour
 
         yield return StartCoroutine(ShowTitle());
 
+        transitioning = false;
         if (pauseForTitle && !wasPaused) Time.timeScale = 1f;
     }
 
@@ -320,10 +403,10 @@ public class ActManager : MonoBehaviour
         ActData act = Current;
         if (act == null) yield break;
         if (actPanel != null) actPanel.SetActive(false);
-        if (NightShift)
+        if (Overtime)
         {
-            string sub = currentAct < NightSubtitles.Length ? NightSubtitles[currentAct] : act.subtitle;
-            yield return ActBanner.ActTitle("—  TORN DE NIT · RONDA " + NightRound + "  —", act.name, sub, titleDuration, TintOf(act));
+            int h = HourForWave(waveNow + 1);
+            yield return ActBanner.ActTitle("—  HORES EXTRES · " + Clock(h) + "  —", act.name, act.subtitle, titleDuration, TintOf(act));
         }
         else yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint);
     }

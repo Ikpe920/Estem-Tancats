@@ -28,13 +28,14 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 
-### Mode infinit: el torn de nit
+### Mode infinit: hores extres
 
-En acabar l'onada 25 pots acabar la partida o quedar-te al **torn de nit** (mode infinit):
-- cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "TORN DE NIT · RONDA N";
+En acabar l'onada 25 pots acabar la partida o fer **hores extres** (mode infinit):
+- cada onada és una hora (la 26 és la una de la matinada) i passen la nit i el dia: la llum canvia (nit blava, alba rosa, dia, posta taronja) i al HUD hi ha el rellotge;
+- de nit sonen les versions fosques de les músiques de cada sala, i de dia les normals;
+- cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "HORES EXTRES · 06:00" i un cartell de pel·lícula muda segons l'hora;
 - la dificultat no torna a baixar: parteix de la de la Teulada i puja una mica a cada sala nova;
-- els caps tornen **enfurismats** (més vida, més ràpids i vermells);
-- tot es veu més fosc i blavós, i cada sala té la seva música de nit (la mateixa melodia, en menor, més ràpida i amb timbales).
+- els caps tornen **enfurismats** (més vida, més ràpids i vermells).
 
 ### Onades especials
 
@@ -126,6 +127,7 @@ Scripts principals:
 - Personatges: tots els xefs, clients i caps es dibuixen amb `Tools/SpriteGen/characters.py` (i els projectils i els cors amb `items.py`) (estil dibuixos animats dels anys 30, 64x64). Per canviar-ne un, toca el seu diccionari a `CHARACTERS` i torna a executar l'script (necessita Pillow).
 - `Iris`: la transició del cercle negre entre escenes (i al voltant del xef quan mor). Per canviar d'escena, fes servir `Iris.LoadScene(...)` en lloc de `SceneManager.LoadScene`.
 - `CartoonAnim` (`Squash` i `CartoonDeath`): les animacions de dibuix animat. `Squash.Kick(objecte, x, y)` aixafa i estira amb una molla (només visualment, no toca la física); els clients surten volant girant en morir.
+- `Intertitle`: els cartells de pel·lícula muda (en començar, en canviar de sala, al torn de nit, en morir i en guanyar). Els textos són a `Intertitle.ActIntro`, `Opening`, `GameOverText` i `WinText`.
 - `FilmFilter`: el filtre de pel·lícula antiga (sepia a la càmera; gra, ratlles, pols i parpelleig per sobre de tot). S'encén i s'apaga al menú de pausa.
 - `StoryBackdrop`: el fons animat de la pantalla de la història (el restaurant de nit, el cartell "TANCAT", els llums i els clients que envolten el xef).
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).

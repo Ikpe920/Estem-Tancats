@@ -50,7 +50,7 @@ public class ActBanner : MonoBehaviour
         return ActTitle("—  ACTE " + actNumber + "  —", name, subtitle, hold, tint);
     }
 
-    // el mateix cartell amb una etiqueta qualsevol a dalt (per exemple, "TORN DE NIT · RONDA 2")
+    // el mateix cartell amb una etiqueta qualsevol a dalt (per exemple, "HORES EXTRES · 03:00")
     public static IEnumerator ActTitle(string header, string name, string subtitle, float hold, Color tint)
     {
         ActBanner b = Create(240);
