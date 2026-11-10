@@ -23,6 +23,8 @@ public static class Codex
     public static void DiscoverSet(SetId id) { PlayerPrefs.SetInt("seen_set_" + id, 1); }
     public static bool SetSeen(SetId id) { return PlayerPrefs.GetInt("seen_set_" + id, 0) == 1; }
     public static int Kills(string key) { return PlayerPrefs.GetInt("kills_" + key, 0); }
+    public static void DiscoverEvo(EvoId id) { PlayerPrefs.SetInt("seen_evo_" + id, 1); }
+    public static bool EvoSeen(EvoId id) { return PlayerPrefs.GetInt("seen_evo_" + id, 0) == 1; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
@@ -179,10 +181,11 @@ public class CodexScreen : MonoBehaviour
     void RefreshCount()
     {
         int d = 0; foreach (Boon b in dishes) if (Codex.DishSeen(b)) d++;
+        int ev = 0; foreach (Evo.Def e in Evo.All) if (Codex.EvoSeen(e.id)) ev++;
         int s = 0; foreach (SetBonus set in SetBonuses.All) if (Codex.SetSeen(set.id)) s++;
         List<Codex.ClientInfo> clients = Codex.Clients();
         int c = 0; foreach (Codex.ClientInfo ci in clients) if (Codex.Kills(ci.key) > 0) c++;
-        countText.text = "Plats " + d + "/" + dishes.Length + "   ·   Conjunts " + s + "/" + SetBonuses.All.Length + "   ·   Clients " + c + "/" + clients.Count;
+        countText.text = "Plats " + d + "/" + dishes.Length + "   ·   Estrella " + ev + "/" + Evo.All.Length + "   ·   Conjunts " + s + "/" + SetBonuses.All.Length + "   ·   Clients " + c + "/" + clients.Count;
     }
 
     void ShowTab(int t)
@@ -204,16 +207,30 @@ public class CodexScreen : MonoBehaviour
     Button BuildDishes()
     {
         Button first = null;
-        int cols = 8;
+        int cols = 10;
         for (int i = 0; i < dishes.Length; i++)
         {
             Boon b = dishes[i];
             bool seen = Codex.DishSeen(b);
             Sprite icon = BoonManager.DishIcon(b);
-            Button cell = Cell(i, cols, Mathf.CeilToInt(dishes.Length / (float)cols), icon, seen, () =>
+            Button cell = Cell(i, cols, Mathf.CeilToInt((dishes.Length + Evo.All.Length) / (float)cols), icon, seen, () =>
                 ShowDetail(icon, seen, seen ? b.name : "???", seen ? b.description + "\n\n<color=#FFCC4D>" + TypeName(b.type) + "</color>" : "Encara no l'has tastat."));
             if (first == null) first = cell;
         }
+        // els plats estrella, a continuació (amb el fons daurat)
+        int total = dishes.Length + Evo.All.Length;
+        for (int k = 0; k < Evo.All.Length; k++)
+        {
+            Evo.Def d = Evo.All[k];
+            bool seen = Codex.EvoSeen(d.id);
+            Boon baseDish = DishOfType(d.baseType), partner = DishOfType(d.partner);
+            Sprite icon = BoonManager.DishIcon(baseDish);
+            string recipe = (baseDish != null ? baseDish.name : "?") + " al màxim + " + (partner != null ? partner.name : "?");
+            Button cell = Cell(dishes.Length + k, cols, Mathf.CeilToInt(total / (float)cols), icon, seen, () =>
+                ShowDetail(icon, seen, seen ? "ESTRELLA: " + d.name : "ESTRELLA: ???", (seen ? d.desc + "\n\n" : "Un plat estrella secret.\n\n") + "<color=#FFCC4D>" + recipe + "</color>"));
+            cell.GetComponent<Image>().color = new Color(0.45f, 0.32f, 0.10f);
+        }
+
         if (dishes.Length > 0)
         {
             Boon b0 = dishes[0];
@@ -322,6 +339,12 @@ public class CodexScreen : MonoBehaviour
         detailText.text = text;
     }
 
+    Boon DishOfType(BoonType t)
+    {
+        foreach (Boon b in dishes) if (b.type == t) return b;
+        return null;
+    }
+
     Sprite IconOfType(BoonType t)
     {
         foreach (Boon b in dishes) if (b.type == t) return BoonManager.DishIcon(b);
@@ -356,6 +379,21 @@ public class CodexScreen : MonoBehaviour
             case BoonType.HitWave: return "ona";
             case BoonType.DashRing: return "panellets";
             case BoonType.KillBurst: return "esclats";
+            case BoonType.CritDamage: return "crítics forts";
+            case BoonType.Regen: return "regeneració";
+            case BoonType.Dodge: return "esquivar";
+            case BoonType.Area: return "àrea";
+            case BoonType.ProjectileSize: return "projectils grans";
+            case BoonType.Knockback: return "empenta";
+            case BoonType.Rerolls: return "canvis de cartes";
+            case BoonType.BackKnives: return "ganivets";
+            case BoonType.Soup: return "tolls";
+            case BoonType.PieRain: return "pluja de pastissos";
+            case BoonType.Cava: return "bombolles";
+            case BoonType.Flame: return "flames";
+            case BoonType.Bombs: return "bombes";
+            case BoonType.Whip: return "fuet";
+            case BoonType.Tortilla: return "truites";
         }
         return t.ToString();
     }

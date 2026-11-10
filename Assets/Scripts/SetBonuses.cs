@@ -21,7 +21,13 @@ public enum SetId
     SpicyOlives,  // Olives + Pollastre: les olives fan el doble de mal
     Castanyada,   // Panellets + Xurros: el dash llença 4 panellets més
     Revenge,      // Romesco + Croquetes: l'ona és el doble de gran
-    Revetlla      // Coca + Calçots: els clients sempre esclaten
+    Revetlla,     // Coca + Calçots: els clients sempre esclaten
+    PicaPica,     // Pernil + Paella: un ganivet més cap enrere
+    SopaPedra,    // Sopa + Bombes: els tolls frenen els clients
+    Brindis,      // Cava + Ratafia: les bombolles fan el doble de mal
+    Barbacoa,     // Escalivada + Pollastre: les flames fan el doble de mal
+    Berenar,      // Pastís + Truita: els pastissos fan el doble de mal
+    Embotits      // Fuet + Pernil: el fuet fa el doble de mal i empeny
 }
 
 public class SetBonus
@@ -59,6 +65,12 @@ public static class SetBonuses
         new SetBonus(SetId.Castanyada, "Castanyada", "El dash llença 4 panellets més", BoonType.DashRing, BoonType.DashCooldown),
         new SetBonus(SetId.Revenge, "Salsa de revenja", "L'ona de romesco és el doble de gran", BoonType.HitWave, BoonType.Invulnerability),
         new SetBonus(SetId.Revetlla, "Revetlla", "Els clients sempre esclaten en morir", BoonType.KillBurst, BoonType.Explosive),
+        new SetBonus(SetId.PicaPica, "Pica-pica", "Un ganivet més cap enrere a cada tret", BoonType.BackKnives, BoonType.MultiShot),
+        new SetBonus(SetId.SopaPedra, "Sopa de pedra", "Els tolls de sopa frenen els clients", BoonType.Soup, BoonType.Bombs),
+        new SetBonus(SetId.Brindis, "Brindis", "Les bombolles de cava fan el doble de mal", BoonType.Cava, BoonType.Crit),
+        new SetBonus(SetId.Barbacoa, "Barbacoa", "Les flames de l'escalivada fan el doble de mal", BoonType.Flame, BoonType.DashDamage),
+        new SetBonus(SetId.Berenar, "Berenar", "Els pastissos fan el doble de mal", BoonType.PieRain, BoonType.Tortilla),
+        new SetBonus(SetId.Embotits, "Embotits", "El fuet fa el doble de mal i empeny", BoonType.Whip, BoonType.BackKnives),
     };
 
     static readonly HashSet<SetId> active = new HashSet<SetId>();

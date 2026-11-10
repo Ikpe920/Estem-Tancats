@@ -122,6 +122,7 @@ public static class ChefRoster
         }
 
         c.apply?.Invoke(m, s, h);
+        PowerUps.ApplyToPlayer(m, s, h); // les millores del Rebost
 
         // en FÀCIL, un cor més
         if (h != null && Progression.ExtraHearts > 0) h.SetMaxLives(h.maxLives + Progression.ExtraHearts);

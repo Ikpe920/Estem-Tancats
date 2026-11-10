@@ -34,7 +34,28 @@ public enum BoonType
     Orbit,           // olives que giren al teu voltant i fan mal
     HitWave,         // quan et toquen, una ona empeny i fa mal als clients de prop
     DashRing,        // en fer el dash, llences projectils en cercle
-    KillBurst        // els clients de vegades esclaten en morir
+    KillBurst,       // els clients de vegades esclaten en morir
+
+    // ---- complements nous (millores simples) ----
+    CritDamage,      // els crítics fan més mal
+    Regen,           // cures 1 cor cada tants segons
+    Dodge,           // probabilitat d'esquivar un cop
+    Area,            // explosions, olives, ones... més grans
+    ProjectileSize,  // projectils més grans
+    Knockback,       // els trets empenyen
+    Rerolls,         // +1 canvi de cartes
+
+    // ---- especialitats noves (canvien com es juga) ----
+    BackKnives,      // ganivets cap enrere a cada tret
+    Soup,            // tolls de sopa que fan mal
+    PieRain,         // pastissos que cauen del cel
+    Cava,            // esclat de bombolles al teu voltant
+    Flame,           // flames davant teu
+    Bombs,           // bombes que deixes al terra
+    Whip,            // cop de fuet als costats
+    Tortilla,        // truites que van i tornen
+
+    Evolution        // plat estrella (evolució d'una especialitat)
 }
 
 [System.Serializable]
@@ -51,6 +72,8 @@ public class Boon
     public int weight = 10;                        // probabilitat que aparegui
     public int maxStacks = 0;                      // 0 = sense limit (és el nivell màxim del plat)
     public float levelAmount = 0f;                 // quantitat dels nivells 2 i següents (0 = la mateixa)
+    [System.NonSerialized] public EvoId evo;       // si és un plat estrella, quin
+    [System.NonSerialized] public Boon evolvesFrom; // i de quin plat ve
 }
 
 public class BoonManager : MonoBehaviour
@@ -59,8 +82,10 @@ public class BoonManager : MonoBehaviour
     [Tooltip("Si està activat, la llista de plats es regenera des del codi cada cop que comença l'escena (ignora la còpia guardada a l'escena). Desactiva'l si vols editar els plats a mà a l'Inspector.")]
     public bool useCodeDishes = true;
     public int optionsPerOffer = 3;   // quantes opcions s'ofereixen
-    [Tooltip("Quants plats diferents pots tenir alhora (com les armes de Vampire Survivors o Brotato). Els de curar i de punts no ocupen espai.")]
-    public int maxSlots = 6;
+    [Tooltip("Quantes especialitats diferents (plats que canvien com es juga) pots tenir alhora, com les armes de Vampire Survivors.")]
+    public int maxSpecialties = 6;
+    [Tooltip("Quants complements diferents (millores simples) pots tenir alhora, com els objectes passius de Vampire Survivors.")]
+    public int maxSides = 6;
     public int everyNWaves = 1;       // s'ofereix cada tantes onades
 
     public GameObject panel;          // el panell (si el deixes buit, es crea sol)
@@ -101,6 +126,12 @@ public class BoonManager : MonoBehaviour
         new[] { BoonType.DashRing, BoonType.DashCooldown },
         new[] { BoonType.HitWave, BoonType.Invulnerability },
         new[] { BoonType.KillBurst, BoonType.Explosive },
+        new[] { BoonType.BackKnives, BoonType.MultiShot },
+        new[] { BoonType.Soup, BoonType.Bombs },
+        new[] { BoonType.Cava, BoonType.Crit },
+        new[] { BoonType.Flame, BoonType.DashDamage },
+        new[] { BoonType.PieRain, BoonType.Tortilla },
+        new[] { BoonType.Whip, BoonType.BackKnives },
     };
     private Button healButton;                 // l'opció de curar (en lloc d'un plat)
     private TextMeshProUGUI healLabel;
@@ -127,7 +158,14 @@ public class BoonManager : MonoBehaviour
 
         Enemy.speedMultiplier = 1f; // els boons de lentitud no acumulen entre partides
         SetBonuses.ResetAll();      // els conjunts tampoc
+        Evo.ResetAll();             // ni els plats estrella
+        DishArea.Mul = 1f;
         if (panel != null) panel.SetActive(false);
+        // les millores del Rebost
+        maxSpecialties += PowerUps.Level("esp");
+        maxSides += PowerUps.Level("compl");
+        rerollsPerOffer += PowerUps.Level("canvis");
+        optionsPerOffer = Mathf.Min(5, optionsPerOffer + PowerUps.Level("cartes"));
         if (takenText == null) BuildTakenText();
         Enemy.OnKilled += HandleKill;
         ScoreManager.OnWaveEnded += HandleWaveEnded;
@@ -163,6 +201,11 @@ public class BoonManager : MonoBehaviour
             killCounter = 0;
             healedThisWave++;
             health.Heal(1);
+            if (Evo.Has(EvoId.BotifarraFestaMajor)) // plat estrella: una traca al voltant
+            {
+                Fx.Explosion(health.transform.position, 3f * DishArea.Mul, 1f);
+                DishUtil.HitCircle(health.transform.position, 3f * DishArea.Mul, 6 + DishUtil.Bonus, 8f);
+            }
             HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.6f, "BOTIFARRA! +1 cor", new Color(0.85f, 0.6f, 0.45f), 1.2f);
 
             // Sobretaula (conjunt): en curar-te per clients, uns segons de tret més ràpid
@@ -202,19 +245,19 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Oli d'oliva verge", "Els clients van un 10% més lents", BoonType.SlowEnemies, 0.1f, new Color(0.65f, 0.75f, 0.3f), 7, 3),
 
             // ---- plats que canvien com es juga (surten més a les primeres onades) ----
-            MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall (i 1 més a cada nivell)", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 3, BoonType.None, 0f, 1f),
-            MakeBoon("Bunyols de bacallà", "Els teus projectils travessen 1 client més", BoonType.Pierce, 1f, new Color(0.9f, 0.85f, 0.6f), 6, 3),
-            MakeBoon("Calçots amb salvitxada", "Els teus projectils exploten (i l'explosió creix a cada nivell)", BoonType.Explosive, 1.5f, new Color(0.95f, 0.4f, 0.2f), 5, 3, BoonType.None, 0f, 0.5f),
-            MakeBoon("Sorbet de llimona", "Els teus projectils frenen els clients", BoonType.SlowOnHit, 0.4f, new Color(0.7f, 0.95f, 0.9f), 6, 3),
-            MakeBoon("Pollastre al curri", "El dash crema els clients que travessis", BoonType.DashDamage, 2f, new Color(0.95f, 0.65f, 0.15f), 5, 3),
-            MakeBoon("Botifarra amb mongetes", "Cures 1 cor cada 20 clients, com a molt 1 per onada (millora a cada nivell)", BoonType.HealOnKills, 20f, new Color(0.75f, 0.5f, 0.4f), 5, 3),
+            MakeBoon("Paella mixta", "Cada tret en llença 2 més, en ventall (i 1 més a cada nivell)", BoonType.MultiShot, 2f, new Color(0.95f, 0.75f, 0.25f), 5, 4, BoonType.None, 0f, 1f),
+            MakeBoon("Bunyols de bacallà", "Els teus projectils travessen 1 client més", BoonType.Pierce, 1f, new Color(0.9f, 0.85f, 0.6f), 6, 4),
+            MakeBoon("Calçots amb salvitxada", "Els teus projectils exploten (i l'explosió creix a cada nivell)", BoonType.Explosive, 1.5f, new Color(0.95f, 0.4f, 0.2f), 5, 4, BoonType.None, 0f, 0.5f),
+            MakeBoon("Sorbet de llimona", "Els teus projectils frenen els clients", BoonType.SlowOnHit, 0.4f, new Color(0.7f, 0.95f, 0.9f), 6, 4),
+            MakeBoon("Pollastre al curri", "El dash crema els clients que travessis", BoonType.DashDamage, 2f, new Color(0.95f, 0.65f, 0.15f), 5, 4),
+            MakeBoon("Botifarra amb mongetes", "Cures 1 cor cada 20, 16, 12 i 8 clients (com a molt 1 per onada, 2 al nivell 3)", BoonType.HealOnKills, 20f, new Color(0.75f, 0.5f, 0.4f), 5, 4),
             MakeBoon("Crema catalana", "Cures en acabar una onada sense rebre cap cop (1 cor, 2 al nivell 2)", BoonType.FlawlessHeal, 1f, new Color(0.98f, 0.85f, 0.45f), 5, 2),
             MakeBoon("Menú de degustació", "A partir d'ara pots triar entre una carta més", BoonType.MoreChoices, 1f, new Color(0.85f, 0.7f, 0.9f), 3, 2),
-            MakeBoon("Mandonguilles", "Els trets reboten 1 cop més a les parets", BoonType.Ricochet, 1f, new Color(0.7f, 0.42f, 0.28f), 6, 3),
+            MakeBoon("Mandonguilles", "Els trets reboten 1 cop més a les parets", BoonType.Ricochet, 1f, new Color(0.7f, 0.42f, 0.28f), 6, 4),
             MakeBoon("Olives farcides", "Olives que giren al teu voltant i fan mal (2, i 1 més a cada nivell)", BoonType.Orbit, 2f, new Color(0.55f, 0.7f, 0.3f), 5, 4, BoonType.None, 0f, 1f),
-            MakeBoon("Romesco", "Quan et toquen, una ona empeny i fa mal (més gran a cada nivell)", BoonType.HitWave, 1f, new Color(0.9f, 0.45f, 0.25f), 5, 3),
-            MakeBoon("Panellets", "En fer el dash, llences panellets en cercle (6, i 3 més a cada nivell)", BoonType.DashRing, 6f, new Color(0.92f, 0.8f, 0.55f), 5, 3),
-            MakeBoon("Coca de recapte", "Els clients poden esclatar en morir (30%, 45%, 60%)", BoonType.KillBurst, 1f, new Color(0.85f, 0.6f, 0.35f), 5, 3),
+            MakeBoon("Romesco", "Quan et toquen, una ona empeny i fa mal (més gran a cada nivell)", BoonType.HitWave, 1f, new Color(0.9f, 0.45f, 0.25f), 5, 4),
+            MakeBoon("Panellets", "En fer el dash, llences panellets en cercle (6, i 3 més a cada nivell)", BoonType.DashRing, 6f, new Color(0.92f, 0.8f, 0.55f), 5, 4),
+            MakeBoon("Coca de recapte", "Els clients poden esclatar en morir (30%, 45%, 60%, 75%)", BoonType.KillBurst, 1f, new Color(0.85f, 0.6f, 0.35f), 5, 4),
 
             // ---- plats de punts ----
             MakeBoon("Safrà", "Guanyes un 25% més de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.7f, 0.2f), 6, 4),
@@ -226,6 +269,25 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Fondue de formatge", "Llances un 30% més ràpid, però camines més lent", BoonType.FireRate, 0.3f, new Color(0.98f, 0.9f, 0.5f), 6, 2, BoonType.MoveSpeed, -0.8f),
             MakeBoon("Fideuà picant", "+1 de dany, però el dash triga més a recarregar-se", BoonType.Damage, 1f, new Color(0.9f, 0.5f, 0.25f), 6, 2, BoonType.DashCooldown, -0.25f),
             MakeBoon("Calamars a la romana", "Camines més ràpid, però ets menys temps invulnerable", BoonType.MoveSpeed, 0.9f, new Color(0.95f, 0.85f, 0.5f), 5, 2, BoonType.Invulnerability, -0.3f),
+
+            // ---- complements nous ----
+            MakeBoon("Pebrots de Padró", "Uns piquen i altres no: els crítics fan +50% de mal", BoonType.CritDamage, 0.5f, new Color(0.35f, 0.65f, 0.25f), 7, 3),
+            MakeBoon("Mel i mató", "Cures 1 cor cada 50 s (40 i 30 als nivells següents)", BoonType.Regen, 50f, new Color(0.98f, 0.85f, 0.45f), 5, 3),
+            MakeBoon("Carquinyolis", "Un 8% de probabilitat d'esquivar un cop", BoonType.Dodge, 0.08f, new Color(0.9f, 0.75f, 0.5f), 7, 3),
+            MakeBoon("Vermut", "Explosions, olives, ones, tolls... un 15% més grans", BoonType.Area, 0.15f, new Color(0.7f, 0.2f, 0.25f), 7, 4),
+            MakeBoon("Allioli", "Els teus projectils són un 20% més grans", BoonType.ProjectileSize, 0.2f, new Color(0.98f, 0.95f, 0.8f), 7, 3),
+            MakeBoon("Tomàquet de penjar", "Els teus trets empenyen els clients", BoonType.Knockback, 2.5f, new Color(0.9f, 0.3f, 0.25f), 7, 3),
+            MakeBoon("Cireres", "+1 canvi de cartes a cada oferta", BoonType.Rerolls, 1f, new Color(0.8f, 0.1f, 0.2f), 5, 2),
+
+            // ---- especialitats noves ----
+            MakeBoon("Pernil tallat a ganivet", "A cada tret, un ganivet surt cap enrere (i 1 més a cada nivell)", BoonType.BackKnives, 1f, new Color(0.8f, 0.35f, 0.35f), 6, 4),
+            MakeBoon("Sopa de galets", "Deixes tolls de sopa bullint que fan mal als clients", BoonType.Soup, 1f, new Color(0.95f, 0.75f, 0.4f), 6, 4),
+            MakeBoon("Pastís de nata", "De tant en tant cau un pastís sobre un client i esquitxa els del voltant", BoonType.PieRain, 1f, new Color(0.98f, 0.9f, 0.85f), 6, 4),
+            MakeBoon("Cava", "Cada pocs segons, un esclat de bombolles al teu voltant empeny i fa mal", BoonType.Cava, 1f, new Color(0.95f, 0.9f, 0.6f), 6, 4),
+            MakeBoon("Escalivada", "Flames curtes davant teu que cremen els clients", BoonType.Flame, 1f, new Color(0.85f, 0.35f, 0.2f), 6, 4),
+            MakeBoon("Bombes de la Barceloneta", "Deixes bombes al terra que exploten quan s'hi acosta un client", BoonType.Bombs, 1f, new Color(0.6f, 0.4f, 0.3f), 6, 4),
+            MakeBoon("Fuet", "Un cop de fuet als costats que travessa tots els clients", BoonType.Whip, 1f, new Color(0.7f, 0.3f, 0.25f), 6, 4),
+            MakeBoon("Truita de patates", "Llances truites que van i tornen, travessant els clients", BoonType.Tortilla, 1f, new Color(0.98f, 0.8f, 0.35f), 6, 4),
         };
     }
 
@@ -369,7 +431,7 @@ public class BoonManager : MonoBehaviour
             subtitleText.text = GamepadInput.UsingGamepad
                 ? "Creu: triar · " + GamepadInput.South() + ": agafar · " + GamepadInput.West() + ": curar · " + GamepadInput.North() + ": canviar"
                 : "Clica un plat o prem la seva tecla";
-        if (subtitleText != null) subtitleText.text = "Taula: " + SlotsUsed + "/" + maxSlots + " plats  ·  " + subtitleText.text;
+        if (subtitleText != null) subtitleText.text = TablesText() + "  ·  " + subtitleText.text;
         RefreshHealButton();
         RefreshRerollButton();
         if (GamepadInput.UsingGamepad && padFocus < 0 && panel != null && panel.activeSelf) SetPadFocus(0);
@@ -382,7 +444,9 @@ public class BoonManager : MonoBehaviour
         {
             case BoonType.MultiShot: case BoonType.Pierce: case BoonType.Explosive: case BoonType.SlowOnHit:
             case BoonType.DashDamage: case BoonType.Ricochet: case BoonType.Orbit: case BoonType.HitWave:
-            case BoonType.DashRing: case BoonType.KillBurst: case BoonType.HealOnKills: case BoonType.Crit:
+            case BoonType.DashRing: case BoonType.KillBurst: case BoonType.HealOnKills:
+            case BoonType.BackKnives: case BoonType.Soup: case BoonType.PieRain: case BoonType.Cava:
+            case BoonType.Flame: case BoonType.Bombs: case BoonType.Whip: case BoonType.Tortilla:
                 return true;
         }
         return false;
@@ -405,15 +469,18 @@ public class BoonManager : MonoBehaviour
         return b != null && (b.type == BoonType.Heal || b.type == BoonType.Score);
     }
 
-    public int SlotsUsed
+    // especialitat (canvia com es juga) o complement (millora simple)
+    public static bool IsSpecialty(Boon b)
     {
-        get
-        {
-            int n = 0;
-            foreach (KeyValuePair<Boon, int> kv in taken) if (!IsConsumable(kv.Key)) n++;
-            return n;
-        }
+        return b != null && (b.type == BoonType.Evolution || IsMechanic(b.type));
     }
+
+    public int SpecialtiesUsed { get { int n = 0; foreach (KeyValuePair<Boon, int> kv in taken) if (IsSpecialty(kv.Key)) n++; return n; } }
+    public int SidesUsed { get { int n = 0; foreach (KeyValuePair<Boon, int> kv in taken) if (!IsSpecialty(kv.Key) && !IsConsumable(kv.Key)) n++; return n; } }
+    public int SlotsUsed => SpecialtiesUsed + SidesUsed;
+    public int MaxSlotsFor(Boon b) { return IsSpecialty(b) ? maxSpecialties : maxSides; }
+    public int UsedFor(Boon b) { return IsSpecialty(b) ? SpecialtiesUsed : SidesUsed; }
+    string TablesText() { return "Especialitats " + SpecialtiesUsed + "/" + maxSpecialties + " · Complements " + SidesUsed + "/" + maxSides; }
 
     public int LevelOf(Boon b) { return b != null && taken.ContainsKey(b) ? taken[b] : 0; }
 
@@ -466,7 +533,9 @@ public class BoonManager : MonoBehaviour
         int total = 0;
         foreach (KeyValuePair<Boon, int> kv in taken)
         {
-            if (kv.Key != null && kv.Key.type == type) total += kv.Value;
+            if (kv.Key == null) continue;
+            if (kv.Key.type == type) total += kv.Value;
+            else if (kv.Key.evolvesFrom != null && kv.Key.evolvesFrom.type == type) total += MaxLevel(kv.Key.evolvesFrom);
         }
         return total;
     }
@@ -479,12 +548,11 @@ public class BoonManager : MonoBehaviour
         int stacks = taken.ContainsKey(b) ? taken[b] : 0;
         if (b.maxStacks > 0 && stacks >= b.maxStacks) return false; // ja el té al màxim
 
-        int cap = MaxStacks(b);
-        if (cap > 0 && TypeStacks(b.type) >= cap) return false; // el tipus ja està al màxim
 
         if (!IsConsumable(b))
         {
-            if (!taken.ContainsKey(b) && SlotsUsed >= maxSlots) return false; // la taula és plena: només millores
+            foreach (KeyValuePair<Boon, int> kv in taken) if (kv.Key != null && kv.Key.evolvesFrom == b) return false; // ja l'has convertit en plat estrella
+            if (!taken.ContainsKey(b) && UsedFor(b) >= MaxSlotsFor(b)) return false; // aquesta taula és plena: només millores
             if (stacks >= MaxLevel(b)) return false;                          // ja és al nivell màxim
         }
 
@@ -539,6 +607,10 @@ public class BoonManager : MonoBehaviour
         if (previousOffer != null && System.Array.IndexOf(previousOffer, b) >= 0) w *= 0.25f;
         if (taken.ContainsKey(b) && !IsConsumable(b)) w *= 1.4f; // pujar de nivell el que ja tens
         if (IsMechanic(b.type) && CurrentWave() <= 8) w *= 1.5f;  // a les primeres onades, plats que canvien com es juga
+        // el complement que fa evolucionar una especialitat que ja tens surt una mica més (com a Vampire Survivors)
+        if (!IsSpecialty(b) && !taken.ContainsKey(b))
+            foreach (Evo.Def d in Evo.All)
+                if (d.partner == b.type && !Evo.Has(d.id) && TypeStacks(d.baseType) > 0) { w *= 1.5f; break; }
 
         float syn = 1f;
         foreach (BoonType[] pair in Synergies)
@@ -582,13 +654,103 @@ public class BoonManager : MonoBehaviour
             result.Add(pool[chosen]);
             pool.RemoveAt(chosen);
         }
+
+        // plat estrella: si una especialitat és al màxim i tens el seu complement, la carta daurada surt sempre
+        Boon star = AvailableEvolution();
+        if (star != null)
+        {
+            if (result.Count >= howMany && result.Count > 0) result[0] = star;
+            else result.Insert(0, star);
+        }
         return result.ToArray();
+    }
+
+    // després que s'hagi posat el xef triat (es fa en carregar l'escena, després de l'Awake)
+    void Start()
+    {
+        if (PowerUps.Level("esmorzar") > 0) GiveStartingSide();
+    }
+
+    // Esmorzar de forquilla (Rebost): comences amb un complement a l'atzar
+    void GiveStartingSide()
+    {
+        List<Boon> options = new List<Boon>();
+        foreach (Boon b in boons) if (b != null && !IsSpecialty(b) && !IsConsumable(b) && b.type2 == BoonType.None && CanPick(b)) options.Add(b);
+        if (options.Count == 0) return;
+        Boon pick = options[Random.Range(0, options.Count)];
+        taken[pick] = 1;
+        Codex.DiscoverDish(pick);
+        Apply(pick);
+        RefreshTakenText();
+        if (health != null)
+            HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2f, "ESMORZAR: " + pick.name, new Color(1f, 0.85f, 0.5f), 2f);
+    }
+
+    // ---------- PLATS ESTRELLA ----------
+
+    private readonly Dictionary<EvoId, Boon> starBoons = new Dictionary<EvoId, Boon>();
+
+    Boon AvailableEvolution()
+    {
+        foreach (Evo.Def d in Evo.All)
+        {
+            if (Evo.Has(d.id)) continue;
+            Boon baseDish = null;
+            foreach (KeyValuePair<Boon, int> kv in taken)
+                if (kv.Key != null && kv.Key.type == d.baseType && kv.Value >= MaxLevel(kv.Key)) { baseDish = kv.Key; break; }
+            if (baseDish == null || TypeStacks(d.partner) <= 0) continue;
+
+            if (!starBoons.TryGetValue(d.id, out Boon star))
+            {
+                star = new Boon();
+                star.name = d.name;
+                star.description = d.desc;
+                star.type = BoonType.Evolution;
+                star.color = new Color(1f, 0.78f, 0.25f);
+                star.maxStacks = 1;
+                star.weight = 0;
+                star.evo = d.id;
+                starBoons[d.id] = star;
+            }
+            star.evolvesFrom = baseDish;
+            star.icon = GetIcon(baseDish);
+            return star;
+        }
+        return null;
+    }
+
+    void ChooseEvolution(Boon star)
+    {
+        // el plat estrella ocupa el lloc del plat del qual ve (els seus efectes es queden)
+        if (star.evolvesFrom != null) taken.Remove(star.evolvesFrom);
+        taken[star] = 1;
+        Evo.Activate(star.evo);
+        Codex.DiscoverEvo(star.evo);
+        AudioManager.Play("challenge");
+
+        if (star.evo == EvoId.PollastreSafra && movement != null) Ensure<DashFireTrail>(movement.gameObject);
+        if (star.evo == EvoId.BotifarraFestaMajor) healsPerWave += 1;
+
+        // els que canvien números es posen ara; la resta els miren els seus components
+        if (star.evo == EvoId.BunyolsEmporda && shooting != null) { shooting.pierce += 50; shooting.damage += 1; }
+        if (star.evo == EvoId.MandonguillesGegants && shooting != null) { shooting.bounces += 3; shooting.projectileScale += 0.4f; }
+
+        if (health != null)
+            HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2.4f,
+                "PLAT ESTRELLA! " + star.name + "\n<size=65%>" + star.description + "</size>", new Color(1f, 0.8f, 0.25f), 2.6f);
     }
 
     void Choose(Boon boon)
     {
         if (picking) return;
         picking = true;
+        if (boon.type == BoonType.Evolution)
+        {
+            ChooseEvolution(boon);
+            CheckSets();
+            RefreshTakenText();
+            return;
+        }
         AudioManager.Play("boon");
 
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
@@ -823,6 +985,56 @@ public class BoonManager : MonoBehaviour
             case BoonType.KillBurst:
                 if (movement != null) Ensure<KillBurst>(movement.gameObject).chance = 0.3f + 0.15f * (level - 1); // 30%, 45%, 60%
                 break;
+
+            case BoonType.CritDamage:
+                if (shooting != null) shooting.critMultiplier += amount;
+                break;
+            case BoonType.Regen:
+                if (health != null) Ensure<RegenHeal>(health.gameObject).every = Mathf.Max(20f, amount - 10f * (level - 1));
+                break;
+            case BoonType.Dodge:
+                if (health != null) health.dodgeChance = Mathf.Min(0.4f, health.dodgeChance + amount);
+                break;
+            case BoonType.Area:
+                DishArea.Mul += amount;
+                break;
+            case BoonType.ProjectileSize:
+                if (shooting != null) shooting.projectileScale += amount;
+                break;
+            case BoonType.Knockback:
+                if (shooting != null) shooting.knockback += amount;
+                break;
+            case BoonType.Rerolls:
+                rerollsPerOffer += Mathf.RoundToInt(amount);
+                break;
+
+            case BoonType.BackKnives:
+                if (shooting != null) shooting.backShots += 1;
+                break;
+            case BoonType.Soup:
+                if (movement != null) Ensure<SoupTrail>(movement.gameObject).level = level;
+                break;
+            case BoonType.PieRain:
+                if (movement != null) Ensure<PieRain>(movement.gameObject).level = level;
+                break;
+            case BoonType.Cava:
+                if (movement != null) Ensure<CavaPop>(movement.gameObject).level = level;
+                break;
+            case BoonType.Flame:
+                if (movement != null) Ensure<Flamethrower>(movement.gameObject).level = level;
+                break;
+            case BoonType.Bombs:
+                if (movement != null) Ensure<BombDropper>(movement.gameObject).level = level;
+                break;
+            case BoonType.Whip:
+                if (movement != null) Ensure<FuetWhip>(movement.gameObject).level = level;
+                break;
+            case BoonType.Tortilla:
+                if (movement != null) Ensure<TortillaThrower>(movement.gameObject).level = level;
+                break;
+
+            case BoonType.Evolution:
+                break; // els plats estrella s'activen a ChooseEvolution
         }
     }
 
@@ -993,6 +1205,8 @@ public class BoonManager : MonoBehaviour
 
     string DescribeBoon(Boon b)
     {
+        if (b.type == BoonType.Evolution)
+            return b.description + "\n<color=#A8650A>Transforma: " + (b.evolvesFrom != null ? b.evolvesFrom.name : "") + "</color>";
         int next = LevelOf(b) + 1;
         string a = DescribeEffect(b.type, AmountFor(b, next), next);
         if (b.type2 == BoonType.None) return a ?? b.description;
@@ -1121,40 +1335,60 @@ public class BoonManager : MonoBehaviour
 
             case BoonType.KillBurst:
                 return Mathf.RoundToInt((0.3f + 0.15f * (level - 1)) * 100f) + "% d'esclatar en morir (fa el teu dany al voltant)";
+
+            // ---- complements nous ----
+            case BoonType.CritDamage:
+                if (shooting == null) return null;
+                return "Mal dels crítics ×" + F(shooting.critMultiplier, 1) + " → ×" + F(shooting.critMultiplier + amount, 1);
+            case BoonType.Regen:
+                return "Cures 1 cor cada " + Mathf.RoundToInt(Mathf.Max(20f, amount - 10f * (level - 1))) + " s";
+            case BoonType.Dodge:
+                if (health == null) return null;
+                return "Esquivar " + Mathf.RoundToInt(health.dodgeChance * 100f) + "% → " + Mathf.RoundToInt(Mathf.Min(0.4f, health.dodgeChance + amount) * 100f) + "%";
+            case BoonType.Area:
+                return "Mida de les àrees ×" + F(DishArea.Mul, 2) + " → ×" + F(DishArea.Mul + amount, 2);
+            case BoonType.ProjectileSize:
+                if (shooting == null) return null;
+                return "Mida dels projectils ×" + F(shooting.projectileScale, 1) + " → ×" + F(shooting.projectileScale + amount, 1);
+            case BoonType.Knockback:
+                if (shooting == null) return null;
+                return "Empenta dels trets " + F(shooting.knockback, 1) + " → " + F(shooting.knockback + amount, 1);
+            case BoonType.Rerolls:
+                return "Canvis de cartes per oferta " + rerollsPerOffer + " → " + (rerollsPerOffer + r);
+
+            // ---- especialitats noves (què fa el nivell que agafaràs) ----
+            case BoonType.BackKnives:
+                return "Ganivets cap enrere: " + level;
+            case BoonType.Soup:
+                return "Un toll cada " + F(Mathf.Max(1.8f, 4f - 0.5f * (level - 1)), 1) + " s" + (level >= 3 ? ", fa 2 de mal" : "");
+            case BoonType.PieRain:
+                return "Un pastís cada " + F(Mathf.Max(1.4f, 3.2f - 0.45f * (level - 1)), 1) + " s, fa " + (3 + level) + " de mal";
+            case BoonType.Cava:
+                return "Bombolles cada " + F(Mathf.Max(2.5f, 6f - 0.8f * (level - 1)), 1) + " s, fan " + (2 + level) + " de mal";
+            case BoonType.Flame:
+                return "Flames d'abast " + F(2.4f + 0.35f * (level - 1), 1) + ", fan " + (1 + (level - 1) / 2) + " de mal";
+            case BoonType.Bombs:
+                return "Una bomba cada " + F(Mathf.Max(2f, 5f - 0.8f * (level - 1)), 1) + " s, fa " + (5 + 2 * level) + " de mal";
+            case BoonType.Whip:
+                return "Un cop de fuet cada " + F(Mathf.Max(0.7f, 1.3f - 0.15f * (level - 1)), 2) + " s, fa " + (2 + level) + " de mal";
+            case BoonType.Tortilla:
+                return "Una truita cada " + F(Mathf.Max(1.2f, 2.6f - 0.35f * (level - 1)), 1) + " s, fa " + (2 + level) + " de mal";
         }
         return null;
     }
 
     static string TagFor(Boon boon, out Color col)
     {
+        if (boon.type == BoonType.Evolution) { col = new Color(0.80f, 0.55f, 0.08f); return "PLAT ESTRELLA"; }
         if (boon.type2 != BoonType.None && boon.amount2 < 0f) // el segon efecte és dolent
         {
             col = new Color(0.72f, 0.16f, 0.14f);
             return "AMB RISC";
         }
-
-        switch (boon.type)
-        {
-            case BoonType.MultiShot:
-            case BoonType.Pierce:
-            case BoonType.Explosive:
-            case BoonType.SlowOnHit:
-            case BoonType.DashDamage:
-            case BoonType.HealOnKills:
-            case BoonType.MoreChoices:
-            case BoonType.Crit:
-            case BoonType.FlawlessHeal:
-            case BoonType.Ricochet:
-            case BoonType.Orbit:
-            case BoonType.HitWave:
-            case BoonType.DashRing:
-            case BoonType.KillBurst:
-                col = new Color(0.42f, 0.26f, 0.64f);
-                return "ESPECIALITAT";
-        }
-
-        col = new Color(0.17f, 0.45f, 0.30f);
-        return "DEL DIA";
+        if (IsSpecialty(boon)) { col = new Color(0.42f, 0.26f, 0.64f); return "ESPECIALITAT"; }
+        if (IsConsumable(boon)) { col = new Color(0.17f, 0.45f, 0.30f); return "DEL DIA"; }
+        col = new Color(0.20f, 0.38f, 0.60f);
+        return "COMPLEMENT";
     }
 
     // tovalles de quadres amb el color del plat (textura petita, es veu amb píxels grossos)
@@ -1690,7 +1924,7 @@ public class BoonManager : MonoBehaviour
         foreach (SetBonus set in SetBonuses.All) if (SetBonuses.Has(set.id)) sets++;
         string key = GamepadInput.UsingGamepad ? GamepadInput.SelectButton() : "Tab";
         collectionCounter.text = dishes == 0 ? "" :
-            "Taula " + SlotsUsed + "/" + maxSlots + (sets > 0 ? "  ·  " + sets + (sets == 1 ? " conjunt" : " conjunts") : "")
+            "Esp. " + SpecialtiesUsed + "/" + maxSpecialties + " · Compl. " + SidesUsed + "/" + maxSides + (sets > 0 ? "  ·  " + sets + (sets == 1 ? " conjunt" : " conjunts") : "")
             + "   <color=#FFFFFFAA><size=80%>[" + key + "]</size></color>";
     }
 
@@ -1762,7 +1996,7 @@ public class BoonManager : MonoBehaviour
             n++;
         }
 
-        if (collectionTitle != null) collectionTitle.text = "ELS TEUS PLATS  ·  TAULA " + SlotsUsed + "/" + maxSlots;
+        if (collectionTitle != null) collectionTitle.text = "ELS TEUS PLATS  ·  " + TablesText().ToUpperInvariant();
 
         // sota les icones, els conjunts activats (a dues columnes, amb el nom i què fan)
         int rows = (n + perRow - 1) / perRow;
