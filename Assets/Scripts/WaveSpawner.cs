@@ -34,7 +34,7 @@ public class BossInfo
     public Color tint = Color.white;     // blanc = sense tenyir
     public GameObject projectilePrefab;  // per als caps que disparen
 
-    // la versió del torn de nit: mateix cap, però enfurismat (nom, frase i color)
+    // la versió de les hores extres: mateix cap, però enfurismat (nom, frase i color)
     public BossInfo Furious()
     {
         BossInfo b = (BossInfo)MemberwiseClone();
@@ -122,10 +122,11 @@ public class WaveSpawner : MonoBehaviour
         {
             currentWave++;
             inWave = true;
+            if (actManager != null) actManager.OnWaveStarted(currentWave); // el rellotge de les hores extres
 
 
             int count = startEnemies + (currentWave - 1) * enemiesPerWave;
-            if (actManager != null) count += actManager.ExtraEnemies; // al torn de nit no torna a baixar
+            if (actManager != null) count += actManager.ExtraEnemies; // fent hores extres no torna a baixar
 
             bool isBossWave = bosses != null && bosses.Length > 0
                               && currentWave % bossEveryNWaves == 0;
@@ -140,7 +141,7 @@ public class WaveSpawner : MonoBehaviour
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
                 int index = (currentWave / bossEveryNWaves - 1) % bosses.Length;
                 BossInfo info = bosses[index];
-                if (endless) info = info.Furious(); // al torn de nit tornen enfurismats
+                if (endless) info = info.Furious(); // fent hores extres tornen enfurismats
 
                 // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
                 Sprite portrait = info.sprite;
@@ -150,7 +151,7 @@ public class WaveSpawner : MonoBehaviour
                     if (psr != null) portrait = psr.sprite;
                 }
                 int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
-                string bossTag = endless ? "— TORN DE NIT · ONADA " + currentWave + " —" : null;
+                string bossTag = endless && actManager != null ? "— HORES EXTRES · " + ActManager.Clock(actManager.Hour) + " · ONADA " + currentWave + " —" : null;
                 yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
 
                 SpawnBoss(info);
@@ -214,7 +215,7 @@ public class WaveSpawner : MonoBehaviour
 
                 endless = true;
                 RunStats.endless = true;
-                if (actManager != null) actManager.StartNightShift(); // comença el torn de nit
+                if (actManager != null) actManager.StartOvertime(currentWave + 1); // comencen les hores extres
             }
 
             // canvi d'escenari: quan l'onada del cap acaba, passem a la sala següent

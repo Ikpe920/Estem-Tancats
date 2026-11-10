@@ -171,7 +171,9 @@ public class HUD : MonoBehaviour
             string act = spawner.actManager != null && spawner.actManager.Current != null ? spawner.actManager.Current.name : "";
             if (spawner.endless)
             {
-                string night = "TORN DE NIT " + (spawner.actManager != null ? spawner.actManager.NightRound : 2);
+                string night = spawner.actManager != null
+                    ? "HORES EXTRES " + ActManager.Clock(spawner.actManager.Hour) + " (" + ActManager.PartOfDay(spawner.actManager.Hour) + ")"
+                    : "HORES EXTRES";
                 act = act.Length > 0 ? act + " · " + night : night;
             }
             if (spawner.currentWave != shownWave || act != shownAct)

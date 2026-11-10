@@ -8,7 +8,7 @@ using TMPro;
 //  CARTELLS DE PEL·LÍCULA MUDA ("intertítols")
 // =====================================================================
 // Pantalla negra amb un marc decorat i el text en blanc trencat, com a les pel·lícules dels anys 30.
-// Surten en començar la partida, en canviar de sala, en començar el torn de nit, en morir i en guanyar.
+// Surten en començar la partida, en canviar de sala, a les hores extres, en morir i en guanyar.
 //   yield return Intertitle.Show("Mentrestant, a la cuina...");   // espera que acabi
 //   Intertitle.ShowAsync("...", fin: true);                        // no espera (pantalles finals)
 // No toca el temps del joc (qui el crida decideix si l'atura). Es pot saltar amb A / Enter / Espai / clic.
@@ -33,10 +33,19 @@ public class Intertitle : MonoBehaviour
         return "El restaurant ja havia tancat...\nperò ningú no va avisar els clients.";
     }
 
-    public static string ActIntro(int act, string actName, bool night, bool firstNight)
+    public static string ActIntro(int act, string actName, bool overtime, bool firstOvertime, int hour = 0)
     {
-        if (firstNight) return "Quan tothom es pensava que ja s'havia acabat...\nva començar el torn de nit.";
-        if (night) return "Passada la mitjanit,\na " + (actName ?? "").ToLowerInvariant() + "...";
+        if (firstOvertime) return "Quan tothom es pensava que ja s'havia acabat...\nel xef va haver de fer hores extres.";
+        if (overtime)
+        {
+            string room = "a " + (actName ?? "").ToLowerInvariant();
+            if (hour < 5) return HourWords(hour) + " de la matinada,\n" + room + "...";
+            if (hour < 8) return "Va sortir el sol... i encara no havien marxat.\n" + room + "...";
+            if (hour < 12) return "A l'hora d'esmorzar,\n" + room + "...";
+            if (hour < 16) return "A l'hora de dinar,\n" + room + "...";
+            if (hour < 20) return "A mitja tarda,\n" + room + "...";
+            return "Es va tornar a fer fosc...\n" + room + ".";
+        }
         switch (act)
         {
             case 0: return "Mentrestant, a la sala...";
@@ -48,9 +57,22 @@ public class Intertitle : MonoBehaviour
         return "Mentrestant...";
     }
 
+    // "A la una", "A les dues"... (de 0 a 4 de la matinada)
+    static string HourWords(int h)
+    {
+        switch (h)
+        {
+            case 1: return "A la una";
+            case 2: return "A les dues";
+            case 3: return "A les tres";
+            case 4: return "A les quatre";
+        }
+        return "A les dotze";
+    }
+
     public static string GameOverText(bool endless)
     {
-        return endless ? "El torn de nit es va acabar...\nper al xef." : "I així, el xef va acabar\nal menú del dia.";
+        return endless ? "Les hores extres es van acabar...\nper al xef." : "I així, el xef va acabar\nal menú del dia.";
     }
 
     public static string WinText()

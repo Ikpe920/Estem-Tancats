@@ -110,7 +110,7 @@ public static class Progression
         new Challenge { id = "kills1000",  name = "Mil cobraments",     desc = "Despatxa 1000 clients (entre totes les partides)", reward = 150, goal = 1000, progress = () => PlayerPrefs.GetInt(KillsKey, 0) },
         new Challenge { id = "win",        name = "Servei acabat",      desc = "Supera les 25 onades",                       reward = 200 },
         new Challenge { id = "win_hard",   name = "Estrella Michelin",  desc = "Supera les 25 onades en DIFÍCIL",            reward = 400 },
-        new Challenge { id = "endless35",  name = "Torn de nit",        desc = "Arriba a l'onada 35 en mode infinit",        reward = 250 },
+        new Challenge { id = "endless35",  name = "Hores extres",       desc = "Arriba a l'onada 35 en mode infinit",        reward = 250 },
     };
 
     public static bool IsDone(Challenge c) { return PlayerPrefs.GetInt("challenge_" + c.id, 0) == 1; }

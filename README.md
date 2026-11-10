@@ -28,13 +28,14 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
 
-### Mode infinit: el torn de nit
+### Mode infinit: hores extres
 
-En acabar l'onada 25 pots acabar la partida o quedar-te al **torn de nit** (mode infinit):
-- cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "TORN DE NIT · RONDA N";
+En acabar l'onada 25 pots acabar la partida o fer **hores extres** (mode infinit):
+- cada onada és una hora (la 26 és la una de la matinada) i passen la nit i el dia: la llum canvia (nit blava, alba rosa, dia, posta taronja) i al HUD hi ha el rellotge;
+- de nit sonen les versions fosques de les músiques de cada sala, i de dia les normals;
+- cada 5 onades canvies a una sala a l'atzar (mai la mateixa), amb el cartell "HORES EXTRES · 06:00" i un cartell de pel·lícula muda segons l'hora;
 - la dificultat no torna a baixar: parteix de la de la Teulada i puja una mica a cada sala nova;
-- els caps tornen **enfurismats** (més vida, més ràpids i vermells);
-- tot es veu més fosc i blavós, i cada sala té la seva música de nit (la mateixa melodia, en menor, més ràpida i amb timbales).
+- els caps tornen **enfurismats** (més vida, més ràpids i vermells).
 
 ### Onades especials
 
