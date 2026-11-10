@@ -58,6 +58,8 @@ public class BoonManager : MonoBehaviour
     [Tooltip("Si està activat, la llista de plats es regenera des del codi cada cop que comença l'escena (ignora la còpia guardada a l'escena). Desactiva'l si vols editar els plats a mà a l'Inspector.")]
     public bool useCodeDishes = true;
     public int optionsPerOffer = 3;   // quantes opcions s'ofereixen
+    [Tooltip("Quants plats diferents pots tenir alhora (com les armes de Vampire Survivors o Brotato). Els de curar i de punts no ocupen espai.")]
+    public int maxSlots = 6;
     public int everyNWaves = 1;       // s'ofereix cada tantes onades
 
     public GameObject panel;          // el panell (si el deixes buit, es crea sol)
@@ -103,6 +105,7 @@ public class BoonManager : MonoBehaviour
     private RectTransform takenStrip;          // la graella d'icones dels plats que ja tens (dins la làmina)
     private GameObject collectionRoot;         // la làmina "ELS TEUS PLATS" (surt mentre mantens Tab / Select)
     private TextMeshProUGUI collectionCounter; // el comptador petit sota els cors
+    private TextMeshProUGUI collectionTitle;
     private readonly Dictionary<string, Sprite> iconCache = new Dictionary<string, Sprite>();
     public int healAmount = 1;     // cors que cura l'opció de curar
     public int rerollsPerOffer = 1; // quantes vegades pots canviar les cartes a cada oferta (0 = desactivat)
@@ -170,7 +173,13 @@ public class BoonManager : MonoBehaviour
 
     void BuildDefaultBoons()
     {
-        boons = new Boon[]
+        boons = DefaultDishes();
+    }
+
+    // la carta de plats del codi (també la fa servir el Receptari, des del menú)
+    public static Boon[] DefaultDishes()
+    {
+        return new Boon[]
         {
             // ---- plats que donen un buff ----
             MakeBoon("Salsa brava", "+1 de dany a cada tret", BoonType.Damage, 1f, new Color(0.95f, 0.45f, 0.35f), 12),
@@ -351,9 +360,40 @@ public class BoonManager : MonoBehaviour
             subtitleText.text = GamepadInput.UsingGamepad
                 ? "Creu: triar · " + GamepadInput.South() + ": agafar · " + GamepadInput.West() + ": curar · " + GamepadInput.North() + ": canviar"
                 : "Clica un plat o prem la seva tecla";
+        if (subtitleText != null) subtitleText.text = "Taula: " + SlotsUsed + "/" + maxSlots + " plats  ·  " + subtitleText.text;
         RefreshHealButton();
         RefreshRerollButton();
         if (GamepadInput.UsingGamepad && padFocus < 0 && panel != null && panel.activeSelf) SetPadFocus(0);
+    }
+
+    // ---------- ESPAIS I NIVELLS (com Vampire Survivors / Brotato) ----------
+    // Només pots tenir 'maxSlots' plats diferents a la taula. Tornar a triar un plat que ja tens el puja
+    // de nivell, fins al seu màxim. Quan la taula és plena, només surten millores dels que ja tens
+    // (i els plats de curar o de punts, que no ocupen espai).
+
+    public static bool IsConsumable(Boon b)
+    {
+        return b != null && (b.type == BoonType.Heal || b.type == BoonType.Score);
+    }
+
+    public int SlotsUsed
+    {
+        get
+        {
+            int n = 0;
+            foreach (KeyValuePair<Boon, int> kv in taken) if (!IsConsumable(kv.Key)) n++;
+            return n;
+        }
+    }
+
+    public int LevelOf(Boon b) { return b != null && taken.ContainsKey(b) ? taken[b] : 0; }
+
+    public int MaxLevel(Boon b)
+    {
+        if (b == null) return 1;
+        if (b.maxStacks > 0) return b.maxStacks;
+        int cap = MaxStacks(b);
+        return cap > 0 ? cap : 5;
     }
 
     // ---------- TOPALLS DELS PLATS ----------
@@ -413,6 +453,12 @@ public class BoonManager : MonoBehaviour
         int cap = MaxStacks(b);
         if (cap > 0 && TypeStacks(b.type) >= cap) return false; // el tipus ja està al màxim
 
+        if (!IsConsumable(b))
+        {
+            if (!taken.ContainsKey(b) && SlotsUsed >= maxSlots) return false; // la taula és plena: només millores
+            if (stacks >= MaxLevel(b)) return false;                          // ja és al nivell màxim
+        }
+
         if (b.type == BoonType.Heal && health != null && health.CurrentLives >= health.maxLives) return false; // vida plena: carta morta
         if (b.type == BoonType.MaxLives && health != null && health.maxLives >= PlayerHealth.MaxLivesCap) return false;
         return true;
@@ -462,6 +508,7 @@ public class BoonManager : MonoBehaviour
         float w = Mathf.Max(1, b.weight);
 
         if (previousOffer != null && System.Array.IndexOf(previousOffer, b) >= 0) w *= 0.25f;
+        if (taken.ContainsKey(b) && !IsConsumable(b)) w *= 1.4f; // pujar de nivell el que ja tens
 
         float syn = 1f;
         foreach (BoonType[] pair in Synergies)
@@ -515,6 +562,7 @@ public class BoonManager : MonoBehaviour
         AudioManager.Play("boon");
 
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
+        Codex.DiscoverDish(boon);
         Apply(boon);
         CheckSets();
         RefreshTakenText();
@@ -536,6 +584,7 @@ public class BoonManager : MonoBehaviour
     void ActivateSet(SetBonus s)
     {
         SetBonuses.Activate(s.id);
+        Codex.DiscoverSet(s.id);
         AudioManager.Play("set");
         Progression.OnSetCompleted();
 
@@ -866,6 +915,15 @@ public class BoonManager : MonoBehaviour
         }
         return sb.ToString().Trim('_');
     }
+
+    // la icona d'un plat, des de qualsevol lloc (el Receptari)
+    public static Sprite DishIcon(Boon boon)
+    {
+        if (boon == null) return null;
+        return boon.icon != null ? boon.icon : Resources.Load<Sprite>("Dishes/" + Slug(boon.name));
+    }
+
+    public static string DishKey(Boon boon) { return boon != null ? Slug(boon.name) : ""; }
 
     // la icona del plat: la que tingui el boon, i si no, la de Resources/Dishes amb el seu nom
     Sprite GetIcon(Boon boon)
@@ -1211,11 +1269,12 @@ public class BoonManager : MonoBehaviour
             new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
         Label(tagFace.rectTransform, tag, tagSize, TextAlignmentOptions.Center, Paper, true, false);
 
-        // si ja en tens algun, ho diu a dalt a la dreta
+        // a dalt a la dreta: NOU, o el nivell al qual el pujaràs
         int have = taken.ContainsKey(boon) ? taken[boon] : 0;
-        if (have > 0)
+        if (!IsConsumable(boon))
         {
-            string haveText = "TENS x" + have;
+            int next = have + 1;
+            string haveText = have == 0 ? "NOU" : (next >= MaxLevel(boon) ? "NIVELL MÀX" : "NIVELL " + next);
             float haveW = haveText.Length * tagSize * 0.68f + u * 4f;
             RectTransform haveRt = MakeFixed(hdr, "Tens", new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-u * 2f, -u * 2f), new Vector2(haveW, tagH));
@@ -1562,7 +1621,7 @@ public class BoonManager : MonoBehaviour
 
         float titleH = Mathf.Max(28f, Screen.height * 0.05f);
         RectTransform title = MakeFixed(sheet, "Titol", new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0f, -u * 6f), new Vector2(size.x, titleH));
-        Label(title, "ELS TEUS PLATS", titleH * 0.75f, TextAlignmentOptions.Center, Gold, true, false);
+        collectionTitle = Label(title, "ELS TEUS PLATS", titleH * 0.75f, TextAlignmentOptions.Center, Gold, true, false);
 
         float hintH = Mathf.Max(18f, Screen.height * 0.025f);
         RectTransform hint = MakeFixed(sheet, "Ajuda", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, u * 4f), new Vector2(size.x, hintH));
@@ -1585,7 +1644,7 @@ public class BoonManager : MonoBehaviour
         foreach (SetBonus set in SetBonuses.All) if (SetBonuses.Has(set.id)) sets++;
         string key = GamepadInput.UsingGamepad ? GamepadInput.SelectButton() : "Tab";
         collectionCounter.text = dishes == 0 ? "" :
-            dishes + (dishes == 1 ? " plat" : " plats") + (sets > 0 ? "  ·  " + sets + (sets == 1 ? " conjunt" : " conjunts") : "")
+            "Taula " + SlotsUsed + "/" + maxSlots + (sets > 0 ? "  ·  " + sets + (sets == 1 ? " conjunt" : " conjunts") : "")
             + "   <color=#FFFFFFAA><size=80%>[" + key + "]</size></color>";
     }
 
@@ -1642,7 +1701,7 @@ public class BoonManager : MonoBehaviour
             ic.sprite = sp != null ? sp : SpriteFactory.Circle();
             ic.preserveAspect = true;
 
-            if (kv.Value > 1)
+            if (kv.Value > 1 || !IsConsumable(kv.Key)) // el nivell (o les vegades, si és de curar o de punts)
             {
                 Vector2 br = new Vector2(1f, 0f);
                 RectTransform badge = MakeFixed(chip, "Quantitat", br, br, new Vector2(u * 0.5f, -u * 0.5f),
@@ -1650,11 +1709,14 @@ public class BoonManager : MonoBehaviour
                 Image bf = badge.gameObject.AddComponent<Image>();
                 bf.color = Frame;
                 bf.raycastTarget = false;
-                Label(badge, "x" + kv.Value, s * 0.28f, TextAlignmentOptions.Center, Gold, true, false);
+                Label(badge, IsConsumable(kv.Key) ? "x" + kv.Value : (kv.Value >= MaxLevel(kv.Key) ? "MÀX" : "Nv" + kv.Value),
+                    s * 0.26f, TextAlignmentOptions.Center, Gold, true, true);
             }
 
             n++;
         }
+
+        if (collectionTitle != null) collectionTitle.text = "ELS TEUS PLATS  ·  TAULA " + SlotsUsed + "/" + maxSlots;
 
         // sota les icones, els conjunts activats (a dues columnes, amb el nom i què fan)
         int rows = (n + perRow - 1) / perRow;

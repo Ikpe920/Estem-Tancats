@@ -48,6 +48,12 @@ public static class EnemyVariants
 
     static readonly HashSet<Kind> announced = new HashSet<Kind>();
 
+    // per al Bestiari: el nom, la pista i des de quina onada surt cada client especial
+    public static void ForEachInfo(System.Action<Kind, string, string, int> f)
+    {
+        foreach (Def d in Defs) f(d.kind, d.name, d.hint, d.firstWave);
+    }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()
     {
