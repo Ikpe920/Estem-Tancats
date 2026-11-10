@@ -10,7 +10,7 @@ Joc d'acció 2D (*roguelite* d'onades) fet amb Unity. Ets el xef d'un restaurant
 ### Propines, dificultat i reptes
 
 - En acabar cada partida guanyes **propines**: punts / 25 + onada × 4, multiplicat segons la dificultat.
-- Amb les propines **desbloqueges xefs**. El Xef està obert des del principi; la resta costen: Carnisser 150, Pastisser 250 i Sushiman 400.
+- Amb les propines **desbloqueges xefs**. El Xef està obert des del principi; la resta costen: Carnisser 150, Pastisser 250, Sushiman 400 i Pizzer 550.
 - La **dificultat** es tria a la pantalla de triar xef:
   - Fàcil: +1 cor i clients més fluixos (×0,75 propines).
   - Normal: com sempre.
@@ -27,6 +27,7 @@ En prémer **Jugar** tries el xef. El joc recorda el que vas triar per a la prop
 | El Carnisser | 4 cors i +1 de dany | més lent i dispara més a poc a poc |
 | El Pastisser | dispara molt ràpid i el dash es recarrega abans | només 2 cors |
 | El Sushiman | 3 trets en ventall des del principi | dispara més a poc a poc, i els trets dels costats fan menys mal |
+| El Pizzer | pizzes que travessen tots els clients i tornen a la mà (+1 de dany) | llança més a poc a poc |
 
 ### Mode infinit: hores extres
 
@@ -37,6 +38,7 @@ En acabar l'onada 25 pots acabar la partida o fer **hores extres** (mode infinit
 - la dificultat no torna a baixar: parteix de la de la Teulada i puja una mica a cada sala nova;
 - els caps tornen **enfurismats** (més vida, més ràpids i vermells).
 
+- cada 15 onades surt **la Crítica de la tele** (només a les hores extres): focus que s'encenen a terra i et fan mal i t'enlluernen, i aplaudiments que fan entrar més clients.
 ### Onades especials
 
 A partir de l'onada 3, un 30% de les onades (mai la d'un cap ni dues seguides) tenen un esdeveniment:
@@ -59,6 +61,12 @@ A partir de certes onades, alguns clients surten amb un comportament propi:
 | L'Olla a pressió | onada 6 | Ràpid. A prop teu s'atura, xiula i explota. Si el mates abans, explota igual, però només fa mal als clients |
 | El de la Safata | onada 8 | La safata para els trets pel davant i gira a poc a poc. Ataca'l de costat o per darrere, o trenca-la (6 cops) |
 | El Cambrer | onada 11 | Es queda lluny i cada 3 s cura els clients del voltant. Com a molt n'hi ha 2 alhora |
+| El Nen | onada 3 | Petit i molt ràpid, fa ziga-zagues |
+| La Iaia | onada 5 | Lenta però amb molta vida; et llança el bolso, que et frena 2 s |
+| El Turista | onada 7 | S'atura i fa una foto: el flaix t'enlluerna si és a prop (el dash ho esquiva) |
+| El Repartidor | onada 9 | Apunta i surt disparat en línia recta |
+| L'Influencer | onada 12 | Es queda lluny i crida seguidors (fins a 6). Com a molt n'hi ha 2 alhora |
+| El Mim | onada 14 | De tant en tant es fa gairebé invisible |
 
 ## Controls
 
@@ -128,6 +136,7 @@ Scripts principals:
 - `Iris`: la transició del cercle negre entre escenes (i al voltant del xef quan mor). Per canviar d'escena, fes servir `Iris.LoadScene(...)` en lloc de `SceneManager.LoadScene`.
 - `CartoonAnim` (`Squash` i `CartoonDeath`): les animacions de dibuix animat. `Squash.Kick(objecte, x, y)` aixafa i estira amb una molla (només visualment, no toca la física); els clients surten volant girant en morir.
 - `Intertitle`: els cartells de pel·lícula muda (en començar, en canviar de sala, al torn de nit, en morir i en guanyar). Els textos són a `Intertitle.ActIntro`, `Opening`, `GameOverText` i `WinText`.
+- `OptionsScreen` i `GameSettings`: la pantalla d'Opcions del menú principal (volum general, música i efectes per separat, filtre, vibració, pantalla completa, dificultat i tutorial) i les pàgines de Controls i Crèdits.
 - `FilmFilter`: el filtre de pel·lícula antiga (sepia a la càmera; gra, ratlles, pols i parpelleig per sobre de tot). S'encén i s'apaga al menú de pausa.
 - `StoryBackdrop`: el fons animat de la pantalla de la història (el restaurant de nit, el cartell "TANCAT", els llums i els clients que envolten el xef).
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).

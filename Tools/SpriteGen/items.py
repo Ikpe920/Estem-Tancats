@@ -110,7 +110,43 @@ def heart(full=True):
     return [h, sh]
 
 
+def pizza():
+    base = Part((236, 186, 100), (196, 140, 70), hi=(250, 220, 150))
+    base.ellipse(32, 32, 26, 26)
+    sauce = Part((205, 45, 35), None, outline=False)
+    sauce.ellipse(32, 32, 21, 21)
+    cheese = Part((250, 225, 120), None, outline=False)
+    for (x, y, r) in ((24, 26, 5), (39, 24, 4), (36, 38, 6), (22, 39, 4), (32, 31, 3)):
+        cheese.ellipse(x, y, r, r * 0.8)
+    top = Part((150, 30, 30), (110, 20, 20))
+    for (x, y) in ((28, 20), (43, 31), (25, 33), (34, 44), (41, 42), (19, 27)):
+        top.ellipse(x, y, 2.6, 2.6)
+    leaf = Part((60, 150, 60), None, outline=False)
+    for (x, y) in ((33, 25), (29, 41), (44, 37)):
+        leaf.rect(x, y, x + 1, y + 1)
+    # els talls de la pizza
+    cuts = Part((150, 100, 50), None, outline=False)
+    for a in (0, 60, 120):
+        for t in range(-20, 21):
+            ra = math.radians(a)
+            cuts.put(32 + math.cos(ra) * t, 32 + math.sin(ra) * t)
+    shine(base, 32, 32, 26, 26, inner=0.85, outer=0.98)
+    return [base, sauce, cheese, cuts, top, leaf]
+
+
+def handbag():
+    strap = Part((110, 55, 35), None).tube([(20, 26), (32, 8), (44, 26)], 1.4)
+    bag = Part((160, 60, 90), (120, 40, 64), hi=(215, 120, 155))
+    bag.rect(14, 24, 50, 52)
+    bag.ellipse(32, 52, 18, 4)
+    clasp = Part((240, 200, 60), None).rect(29, 28, 35, 32)
+    shine(bag, 32, 38, 18, 14, inner=0.5, outer=0.9)
+    return [strap, bag, clasp]
+
+
 ITEMS = {
+    'Resources/Projectiles/Pizza': pizza,
+    'Resources/Projectiles/Bolso': handbag,
     'Sprites/Projectiles/Banana': banana,
     'Sprites/Projectiles/ChickenLeg': chicken_leg,
     'Sprites/Projectiles/EnemyPlate': enemy_plate,
@@ -127,6 +163,7 @@ def main():
     rows = []
     for path, fn in ITEMS.items():
         im = to_image(composite(fn()))
+        os.makedirs(os.path.dirname(os.path.join(assets, path)), exist_ok=True)
         im.save(os.path.join(assets, path + '.png'))
         rows.append((path.split('/')[-1], [im]))
     print('%d objectes' % len(rows))

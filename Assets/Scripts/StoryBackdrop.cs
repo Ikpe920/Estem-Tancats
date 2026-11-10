@@ -17,7 +17,7 @@ public class StoryBackdrop : MonoBehaviour
 {
     const float FloorLine = 540f; // on s'acaba la paret i comença el terra (des de baix, a 1080 d'alçada)
 
-    static readonly string[] ClientTypes = { "Enemy", "EnemyFast", "EnemyShooter", "EnemyTank", "Cambrer", "Golafre", "Olla", "Safata" };
+    static readonly string[] ClientTypes = { "Enemy", "Nen", "EnemyFast", "Iaia", "EnemyShooter", "Turista", "EnemyTank", "Cambrer", "Influencer", "Golafre", "Repartidor", "Olla", "Mim", "Safata" };
     static readonly string[] Complaints = { "TINC GANA!", "EH, XEF!", "ON ÉS EL MEU PLAT?", "UNA ALTRA RACIÓ!", "#@%&!", "!!", "NO MARXAREM!", "LA CARTA!" };
     // llocs on es queden els clients: x i l'alçada dels peus
     static readonly Vector2[] Slots =

@@ -14,11 +14,13 @@ using UnityEngine.SceneManagement;
 //   EL DE LA SAFATA   (onada 8)   la safata para els trets pel davant i gira a poc a poc: ataca'l
 //                                 de costat o per darrere (o trenca-la, aguanta 6 cops)
 //   EL CAMBRER        (onada 11)  es queda lluny i cada 3 s cura els clients del voltant. Com a molt 2 alhora
+//   I els nous (NewClients.cs): EL NEN (3), LA IAIA (5), EL TURISTA (7), EL REPARTIDOR (9),
+//   L'INFLUENCER (12, com a molt 2 alhora) i EL MIM (14).
 //
 // La primera vegada que en surt un a la partida, se n'anuncia el nom.
 public static class EnemyVariants
 {
-    public enum Kind { Golafre, Olla, Safata, Cambrer }
+    public enum Kind { Golafre, Olla, Safata, Cambrer, Nen, Iaia, Turista, Repartidor, Influencer, Mim }
 
     class Def
     {
@@ -36,6 +38,12 @@ public static class EnemyVariants
         new Def { kind = Kind.Olla,    firstWave = 6,  chance = 0.10f, name = "L'OLLA A PRESSIÓ", hint = "Explota quan és a prop teu",         color = new Color(1f, 0.6f, 0.3f) },
         new Def { kind = Kind.Safata,  firstWave = 8,  chance = 0.10f, name = "EL DE LA SAFATA",  hint = "Para els trets pel davant",          color = new Color(0.8f, 0.85f, 0.95f) },
         new Def { kind = Kind.Cambrer, firstWave = 11, chance = 0.07f, name = "EL CAMBRER",       hint = "Cura els clients del voltant",       color = new Color(0.55f, 0.95f, 0.6f) },
+        new Def { kind = Kind.Nen,        firstWave = 3,  chance = 0.06f, name = "EL NEN",        hint = "Petit, ràpid i fa ziga-zagues",        color = new Color(0.5f, 0.75f, 1f) },
+        new Def { kind = Kind.Iaia,       firstWave = 5,  chance = 0.05f, name = "LA IAIA",       hint = "Et llança el bolso i et frena",        color = new Color(0.8f, 0.65f, 0.95f) },
+        new Def { kind = Kind.Turista,    firstWave = 7,  chance = 0.05f, name = "EL TURISTA",    hint = "El flaix t'enlluerna: fes el dash!",   color = new Color(0.5f, 0.85f, 1f) },
+        new Def { kind = Kind.Repartidor, firstWave = 9,  chance = 0.05f, name = "EL REPARTIDOR", hint = "Apunta i surt disparat en línia recta", color = new Color(1f, 0.8f, 0.3f) },
+        new Def { kind = Kind.Influencer, firstWave = 12, chance = 0.04f, name = "L'INFLUENCER",  hint = "Crida seguidors: atrapa-la aviat",     color = new Color(1f, 0.5f, 0.85f) },
+        new Def { kind = Kind.Mim,        firstWave = 14, chance = 0.04f, name = "EL MIM",        hint = "De tant en tant es fa invisible",      color = new Color(0.95f, 0.95f, 0.95f) },
     };
 
     static readonly HashSet<Kind> announced = new HashSet<Kind>();
@@ -62,6 +70,7 @@ public static class EnemyVariants
             if (roll < d.chance)
             {
                 if (d.kind == Kind.Cambrer && Cambrer.Count >= 2) return;
+                if (d.kind == Kind.Influencer && ClientInfluencer.Count >= 2) return;
                 Apply(e, prefab, d);
                 return;
             }
@@ -85,6 +94,12 @@ public static class EnemyVariants
             case Kind.Olla: e.gameObject.AddComponent<OllaPressio>(); break;
             case Kind.Safata: e.gameObject.AddComponent<SafataEscut>(); break;
             case Kind.Cambrer: e.gameObject.AddComponent<Cambrer>(); break;
+            case Kind.Nen: e.gameObject.AddComponent<ClientNen>(); break;
+            case Kind.Iaia: e.gameObject.AddComponent<ClientIaia>(); break;
+            case Kind.Turista: e.gameObject.AddComponent<ClientTurista>(); break;
+            case Kind.Repartidor: e.gameObject.AddComponent<ClientRepartidor>(); break;
+            case Kind.Influencer: e.gameObject.AddComponent<ClientInfluencer>().Setup(prefab); break;
+            case Kind.Mim: e.gameObject.AddComponent<ClientMim>(); break;
         }
 
         if (announced.Add(d.kind))

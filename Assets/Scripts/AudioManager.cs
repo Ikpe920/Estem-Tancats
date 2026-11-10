@@ -140,7 +140,7 @@ public class AudioManager : MonoBehaviour
         nextVoice = (nextVoice + 1) % voices.Length;
         s.pitch = pitch > 0f ? pitch : Random.Range(0.95f, 1.05f);
         float v = Volumes.TryGetValue(name, out float vol) ? vol : 0.5f;
-        s.PlayOneShot(clip, v * volume * SfxVolume);
+        s.PlayOneShot(clip, v * volume * SfxVolume * GameSettings.SfxVolume); // volum d'efectes de les opcions
         playing.Add(new KeyValuePair<string, float>(name, now + clip.length / Mathf.Max(0.5f, s.pitch)));
     }
 
@@ -221,7 +221,7 @@ public class AudioManager : MonoBehaviour
         to.volume = 0f;
         musicNow = to;
 
-        float target = MusicVolume * (MusicGain.TryGetValue(name, out float g) ? g : 1f);
+        float target = MusicVolume * GameSettings.MusicVolume * (MusicGain.TryGetValue(name, out float g) ? g : 1f);
         fade = StartCoroutine(FadeOutThenIn(from, to, target, loop ? 0.35f : 0.15f, loop ? 0.5f : 0.1f));
     }
 
@@ -253,7 +253,7 @@ public class AudioManager : MonoBehaviour
     {
         // amb el menú de pausa obert, la música baixa una mica
         if (musicNow == null || fade != null) return;
-        float target = MusicVolume * (MusicGain.TryGetValue(musicName ?? "", out float g) ? g : 1f);
+        float target = MusicVolume * GameSettings.MusicVolume * (MusicGain.TryGetValue(musicName ?? "", out float g) ? g : 1f);
         if (PauseMenu.IsOpen) target *= 0.4f;
         musicNow.volume = Mathf.MoveTowards(musicNow.volume, target, Time.unscaledDeltaTime);
     }

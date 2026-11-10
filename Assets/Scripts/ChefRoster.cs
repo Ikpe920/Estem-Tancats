@@ -58,6 +58,15 @@ public static class ChefRoster
                 if (s != null) { s.extraShots += 2; s.sideShotDamage = 0.5f; s.fireRate *= 1.35f; }
             }
         },
+        new Chef
+        {
+            name = "EL PIZZER", sprites = "Pizzer", color = new Color(0.30f, 0.65f, 0.35f),
+            strong = "Pizzes que travessen els clients i tornen a la mà", weak = "Llança més a poc a poc",
+            apply = (m, s, h) =>
+            {
+                if (s != null) { s.boomerangShots = true; s.fireRate *= 1.7f; s.damage += 1; }
+            }
+        },
     };
 
     public static int Selected
