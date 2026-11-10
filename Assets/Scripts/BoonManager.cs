@@ -72,6 +72,8 @@ public class BoonManager : MonoBehaviour
 
     private int killsPerHeal = 0;
     private int killCounter = 0;
+    private int healsPerWave = 0;      // Botifarra: com a molt tants cors per onada
+    private int healedThisWave = 0;
     private int flawlessHeal = 0;
 
     private readonly Dictionary<Boon, int> taken = new Dictionary<Boon, int>();
@@ -141,6 +143,7 @@ public class BoonManager : MonoBehaviour
     // Crema catalana: onada acabada sense rebre cap cop → cures un cor
     void HandleWaveEnded(bool flawless)
     {
+        healedThisWave = 0; // la Botifarra torna a poder curar a l'onada següent
         if (!flawless || flawlessHeal <= 0 || health == null) return;
         if (health.CurrentLives >= health.maxLives) return;
 
@@ -151,12 +154,16 @@ public class BoonManager : MonoBehaviour
     void HandleKill(Enemy e)
     {
         if (killsPerHeal <= 0 || health == null) return;
+        if (health.CurrentLives >= health.maxLives) return; // amb la vida plena no compta (no es guarden cures per després)
+        if (healedThisWave >= healsPerWave) return;          // ja ha curat el que podia en aquesta onada
 
         killCounter++;
         if (killCounter >= killsPerHeal)
         {
             killCounter = 0;
+            healedThisWave++;
             health.Heal(1);
+            HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.6f, "BOTIFARRA! +1 cor", new Color(0.85f, 0.6f, 0.45f), 1.2f);
 
             // Sobretaula (conjunt): en curar-te per clients, uns segons de tret més ràpid
             if (SetBonuses.Has(SetId.Aftermeal) && shooting != null)
@@ -200,7 +207,7 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Calçots amb salvitxada", "Els teus projectils exploten (i l'explosió creix a cada nivell)", BoonType.Explosive, 1.5f, new Color(0.95f, 0.4f, 0.2f), 5, 3, BoonType.None, 0f, 0.5f),
             MakeBoon("Sorbet de llimona", "Els teus projectils frenen els clients", BoonType.SlowOnHit, 0.4f, new Color(0.7f, 0.95f, 0.9f), 6, 3),
             MakeBoon("Pollastre al curri", "El dash crema els clients que travessis", BoonType.DashDamage, 2f, new Color(0.95f, 0.65f, 0.15f), 5, 3),
-            MakeBoon("Botifarra amb mongetes", "Cures 1 cor cada 12 clients (9 i 6 als nivells següents)", BoonType.HealOnKills, 12f, new Color(0.75f, 0.5f, 0.4f), 5, 3),
+            MakeBoon("Botifarra amb mongetes", "Cures 1 cor cada 20 clients, com a molt 1 per onada (millora a cada nivell)", BoonType.HealOnKills, 20f, new Color(0.75f, 0.5f, 0.4f), 5, 3),
             MakeBoon("Crema catalana", "Cures en acabar una onada sense rebre cap cop (1 cor, 2 al nivell 2)", BoonType.FlawlessHeal, 1f, new Color(0.98f, 0.85f, 0.45f), 5, 2),
             MakeBoon("Menú de degustació", "A partir d'ara pots triar entre una carta més", BoonType.MoreChoices, 1f, new Color(0.85f, 0.7f, 0.9f), 3, 2),
             MakeBoon("Mandonguilles", "Els trets reboten 1 cop més a les parets", BoonType.Ricochet, 1f, new Color(0.7f, 0.42f, 0.28f), 6, 3),
@@ -768,7 +775,9 @@ public class BoonManager : MonoBehaviour
                 break;
 
             case BoonType.HealOnKills:
-                killsPerHeal = killsPerHeal == 0 ? Mathf.RoundToInt(amount) : Mathf.Max(5, killsPerHeal - 3);
+                // 20 clients, després 16 i 12; com a molt 1 cor per onada (2 al nivell màxim)
+                killsPerHeal = killsPerHeal == 0 ? Mathf.RoundToInt(amount) : Mathf.Max(8, killsPerHeal - 4);
+                healsPerWave = level >= 3 ? 2 : 1;
                 break;
 
             case BoonType.MoreChoices:
@@ -1072,8 +1081,8 @@ public class BoonManager : MonoBehaviour
 
             case BoonType.HealOnKills:
                 return killsPerHeal == 0
-                    ? "Cures 1 cor cada " + r + " clients"
-                    : "1 cor cada " + killsPerHeal + " → " + Mathf.Max(5, killsPerHeal - 3) + " clients";
+                    ? "Cures 1 cor cada " + r + " clients (com a molt 1 per onada)"
+                    : "1 cor cada " + killsPerHeal + " → " + Mathf.Max(8, killsPerHeal - 4) + " clients" + (level >= 3 ? " (fins a 2 per onada)" : "");
 
             case BoonType.ProjectileSpeed:
                 if (shooting == null) return null;
