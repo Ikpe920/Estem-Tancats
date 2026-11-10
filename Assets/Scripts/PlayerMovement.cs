@@ -141,6 +141,9 @@ public class PlayerMovement : MonoBehaviour
         if (!DashPressed()) return;
 
         dashDirection = GetDashDirection();
+        // dibuix animat: s'estira en la direcció del dash
+        if (Mathf.Abs(dashDirection.x) >= Mathf.Abs(dashDirection.y)) Squash.Kick(gameObject, 0.38f, -0.26f);
+        else Squash.Kick(gameObject, -0.26f, 0.38f);
         AudioManager.Play("dash");
         Fx.Dust(transform.position);
         GamepadInput.Rumble(0.0f, 0.25f, 0.07f);

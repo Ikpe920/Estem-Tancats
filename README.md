@@ -125,6 +125,7 @@ Scripts principals:
 - `AudioManager`: els efectes de so (`AudioManager.Play("nom")`) i la música de cada escena i cada acte. Els sons es generen amb `Tools/AudioGen`.
 - Personatges: tots els xefs, clients i caps es dibuixen amb `Tools/SpriteGen/characters.py` (i els projectils i els cors amb `items.py`) (estil dibuixos animats dels anys 30, 64x64). Per canviar-ne un, toca el seu diccionari a `CHARACTERS` i torna a executar l'script (necessita Pillow).
 - `Iris`: la transició del cercle negre entre escenes (i al voltant del xef quan mor). Per canviar d'escena, fes servir `Iris.LoadScene(...)` en lloc de `SceneManager.LoadScene`.
+- `CartoonAnim` (`Squash` i `CartoonDeath`): les animacions de dibuix animat. `Squash.Kick(objecte, x, y)` aixafa i estira amb una molla (només visualment, no toca la física); els clients surten volant girant en morir.
 - `FilmFilter`: el filtre de pel·lícula antiga (sepia a la càmera; gra, ratlles, pols i parpelleig per sobre de tot). S'encén i s'apaga al menú de pausa.
 - `StoryBackdrop`: el fons animat de la pantalla de la història (el restaurant de nit, el cartell "TANCAT", els llums i els clients que envolten el xef).
 - `WalkAnimator`: l'animació de caminar (alterna el sprite amb els fotogrames de `Resources/Walk/<sprite>_1` i `_2`).

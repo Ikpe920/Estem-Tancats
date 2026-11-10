@@ -154,6 +154,7 @@ public class PlayerShooting : MonoBehaviour
         if (projectilePrefabs == null || projectilePrefabs.Length == 0) return;
         ShotsFired++;
         AudioManager.Play("shoot");
+        Squash.Kick(gameObject, -0.04f, 0.06f); // dibuix animat: una petita sacsejada en llançar
 
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 
