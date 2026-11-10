@@ -201,7 +201,7 @@ public class KillBurst : MonoBehaviour
         {
             Enemy e = c.GetComponentInParent<Enemy>();
             if (e == null || e == dead || e.IsDead) continue;
-            e.TakeDamage(dmg);
+            DamageKind.Hit(e, dmg, DmgKind.Explosion);
         }
         depth--;
     }

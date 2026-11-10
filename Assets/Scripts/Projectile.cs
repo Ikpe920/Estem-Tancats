@@ -343,7 +343,7 @@ public class Projectile : MonoBehaviour
     {
         Fx.Hit(e.transform.position, rb != null ? rb.linearVelocity : Vector2.zero, isCrit);
         if (slowDuration > 0f && explosionRadius <= 0f) Fx.Snowflake(e.transform.position); // el gel s'hi queda enganxat
-        if (damage > 0) e.TakeDamage(damage, isCrit);
+        if (damage > 0) DamageKind.Hit(e, damage, explosionRadius > 0f ? DmgKind.Explosion : slowDuration > 0f ? DmgKind.Ice : DmgKind.None, isCrit);
         if (knockback > 0f && damage > 0 && e != null && !e.IsDead) e.Knockback(rb != null ? rb.linearVelocity : Vector2.zero, knockback, 0.1f);
         if (slowDuration > 0f && Evo.Has(EvoId.Granissat) && e != null && !e.IsDead) e.Freeze(0.8f); // Granissat: el glaça del tot
         else e.Knockback(rb != null ? rb.linearVelocity : Vector2.zero, 3f, 0.06f); // un tret lateral sense mal: només empeny una mica
@@ -388,7 +388,7 @@ public class Projectile : MonoBehaviour
                 chaining = true;
                 Vector2 p = next.transform.position;
                 Fx.Explosion(p, radius * 0.8f, 0.7f);
-                DishUtil.HitCircle(p, radius * 0.8f, damage);
+                DishUtil.HitCircle(p, radius * 0.8f, damage, 0f, DmgKind.Explosion);
                 chaining = false;
             }
         }

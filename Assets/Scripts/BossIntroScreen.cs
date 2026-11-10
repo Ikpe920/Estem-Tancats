@@ -51,14 +51,14 @@ public class BossIntroScreen : MonoBehaviour
     {
         switch (t)
         {
-            case BossType.Critic: return "Compte amb el cop de safata quan s'acosta i amb les ràfegues de plats";
-            case BossType.Borratxo: return "Carrega en línia recta: aparta't i ataca'l quan quedi estabornit";
-            case BossType.Cuiner: return "Fa sortir clients i llença ganivets en ventall: no et quedis quiet";
-            case BossType.Pallas: return "Es teletransporta i deixa bombes al terra: mira on trepitges";
-            case BossType.Inspector: return "Dispara en espiral i s'enfada quan està tocada";
-            case BossType.TvCritic: return "Surt dels focus abans que s'encenguin i compte amb el públic";
-            case BossType.Sommelier: return "Fuig dels cercles abans que caiguin les ampolles, i no trepitgis el vi";
-            case BossType.Gelater: return "Fes el dash per sortir dels cercles de gel i esquiva els ventalls";
+            case BossType.Critic: return "Llança ventalls d'estrelles i et salta a sobre: surt del cercle de la NOTA FINAL";
+            case BossType.Borratxo: return "Carrega en línia recta i deixa cervesa que rellisca: ataca'l quan queda marejat";
+            case BossType.Cuiner: return "Lanxa-flames i paelles que esclaten: no et quedis davant seu";
+            case BossType.Pallas: return "Es teletransporta deixant bombes i fa ploure bitllets: mira on trepitges";
+            case BossType.Inspector: return "Espirals de paperassa i segells; a la 2a fase et tanca trossos de la sala";
+            case BossType.TvCritic: return "Surt dels focus, aparta't del flaix de la càmera i compte amb el públic";
+            case BossType.Sommelier: return "Ampolles que cauen on ets, vi que frena i taps que reboten per les parets";
+            case BossType.Gelater: return "Els gelats et frenen i els cercles et glacen: fes el dash per sortir-ne";
         }
         return "";
     }
@@ -333,7 +333,10 @@ public class BossIntroScreen : MonoBehaviour
         quote = Text(card, "", 30f, new Vector2(0f, -262f), new Vector2(1100f, 48f), new Color(1f, 0.95f, 0.88f), false);
         quote.alignment = TextAlignmentOptions.Center;
         quote.fontStyle = FontStyles.Italic;
-        hint = Text(card, HintFor(info.type), 24f, new Vector2(0f, -310f), new Vector2(1100f, 40f), new Color(1f, 0.85f, 0.45f), false);
+        DmgKind weak = DamageKind.WeaknessOf(info.type);
+        string hintText = HintFor(info.type) + (weak != DmgKind.None
+            ? "\n<color=#FF9A40>PUNT FEBLE: " + DamageKind.Name(weak) + "</color> <size=80%>(" + DamageKind.Source(weak) + ")</size>" : "");
+        hint = Text(card, hintText, 24f, new Vector2(0f, -325f), new Vector2(1100f, 70f), new Color(1f, 0.85f, 0.45f), false);
         hint.alignment = TextAlignmentOptions.Center;
         string tagText = tagLine ?? "— CAP DE L'ACTE " + act + " · ONADA " + wave + " —";
         footer = Text(card, tagText, 22f, new Vector2(0f, -400f), new Vector2(900f, 34f), frame, true);

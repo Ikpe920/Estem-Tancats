@@ -144,7 +144,99 @@ def handbag():
     return [strap, bag, clasp]
 
 
+def star():
+    st = Part((250, 200, 50), (210, 150, 20), hi=(255, 240, 150))
+    pts = []
+    for i in range(10):
+        r = 26 if i % 2 == 0 else 11
+        a = math.radians(-90 + i * 36)
+        pts.append((32 + math.cos(a) * r, 33 + math.sin(a) * r))
+    # omplir l'estrella
+    for y in range(64):
+        for x in range(64):
+            inside = False
+            j = len(pts) - 1
+            for i in range(len(pts)):
+                xi, yi = pts[i]; xj, yj = pts[j]
+                if ((yi > y + 0.5) != (yj > y + 0.5)) and (x + 0.5 < (xj - xi) * (y + 0.5 - yi) / (yj - yi + 1e-9) + xi):
+                    inside = not inside
+                j = i
+            if inside: st.put(x, y)
+    eyes = Part(INK, None, outline=False).rect(27, 28, 28, 33).rect(36, 28, 37, 33)
+    return [st, eyes]
+
+
+def bill():
+    b = Part((120, 190, 120), (80, 150, 85), hi=(180, 230, 180))
+    b.rect(6, 18, 58, 46)
+    b.rect(10, 22, 54, 42, (150, 210, 150))
+    b.ellipse(32, 32, 8, 8, (90, 160, 95))
+    b.rect(30, 26, 34, 38, (150, 210, 150))
+    for (x, y) in ((13, 25), (51, 39)): b.ellipse(x, y, 2.4, 2.4, (90, 160, 95))
+    return [b]
+
+
+def beer():
+    b = Part((150, 100, 40), (110, 70, 25), hi=(220, 170, 90))
+    b.rect(25, 24, 39, 58)
+    b.ellipse(32, 24, 7, 5)
+    b.rect(29, 8, 35, 22)
+    cap = Part((220, 200, 60), None).rect(28, 5, 36, 9)
+    label = Part((245, 235, 205), None, outline=False).rect(26, 36, 38, 46)
+    label.rect(28, 40, 36, 41, (200, 40, 40))
+    return [b, cap, label]
+
+
+def pan_shot():
+    handle = Part((70, 50, 40), (50, 34, 28)).rect(42, 29, 62, 35)
+    body = Part((60, 60, 70), (36, 36, 44))
+    body.ellipse(24, 32, 20, 20)
+    fire = Part((250, 140, 40), None, outline=False)
+    fire.ellipse(24, 32, 14, 14)
+    fire.ellipse(24, 32, 8, 8, (255, 220, 90))
+    shine(body, 24, 32, 20, 20, inner=0.82, outer=0.98)
+    return [handle, body, fire]
+
+
+def cork():
+    c = Part((200, 150, 90), (160, 110, 60), hi=(235, 195, 140))
+    c.rect(20, 18, 44, 46)
+    c.ellipse(32, 18, 12, 4, (220, 175, 115))
+    for (x, y) in ((25, 26), (37, 30), (29, 38), (39, 41), (24, 43)): c.put(x, y, (150, 100, 55))
+    return [c]
+
+
+def iceball():
+    cone = Part((220, 160, 80), (180, 120, 50))
+    for i in range(14):
+        cone.rect(22 + i * 0.7, 36 + i, 42 - i * 0.7, 36 + i)
+    ball = Part((170, 225, 245), (120, 185, 220), hi=WHITE)
+    ball.ellipse(32, 28, 16, 14)
+    shine(ball, 32, 28, 16, 14)
+    flakes = Part(WHITE, None, outline=False)
+    for (x, y) in ((26, 24), (38, 30), (31, 34)): flakes.put(x, y)
+    return [cone, ball, flakes]
+
+
+def paper():
+    p = Part((248, 246, 238), (210, 205, 195))
+    p.rect(14, 8, 50, 56)
+    lines = Part((150, 150, 160), None, outline=False)
+    for y in (16, 22, 28, 34): lines.rect(18, y, 44, y)
+    stamp = Part((210, 40, 40), None, outline=False)
+    stamp.ellipse(36, 44, 9, 7)
+    stamp.ellipse(36, 44, 6, 4, (248, 246, 238))
+    return [p, lines, stamp]
+
+
 ITEMS = {
+    'Resources/BossShots/Star': star,
+    'Resources/BossShots/Bill': bill,
+    'Resources/BossShots/Beer': beer,
+    'Resources/BossShots/Pan': pan_shot,
+    'Resources/BossShots/Cork': cork,
+    'Resources/BossShots/IceBall': iceball,
+    'Resources/BossShots/Paper': paper,
     'Resources/Projectiles/Pizza': pizza,
     'Resources/Projectiles/Bolso': handbag,
     'Sprites/Projectiles/Banana': banana,

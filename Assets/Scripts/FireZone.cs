@@ -100,7 +100,7 @@ public class FireZone : MonoBehaviour
 
             if (!hurtEnemies) continue;
             Enemy e = h.GetComponent<Enemy>();
-            if (e != null) e.TakeDamage(1);
+            if (e != null) DamageKind.Hit(e, 1, DmgKind.Fire);
         }
     }
 }

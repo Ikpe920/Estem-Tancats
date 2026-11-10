@@ -185,7 +185,7 @@ public class WaveSpawner : MonoBehaviour
                 yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
 
                 SpawnBoss(info);
-                count /= 2; // a l'onada del boss surten menys enemics normals
+                count = 0; // a l'onada del cap només hi ha el cap (i els clients que faci sortir ell)
             }
 
             for (int i = 0; i < count; i++)
@@ -499,6 +499,9 @@ public class WaveSpawner : MonoBehaviour
         if (e != null && loop > 0)
             e.OverrideStats(Mathf.RoundToInt(e.maxHealth * (1f + 0.75f * loop)), e.speed * (1f + 0.08f * loop));
 
+        // ara els caps van sols (sense clients): són més durs
+        if (e != null) e.OverrideStats(Mathf.RoundToInt(e.maxHealth * 1.4f), e.speed);
+
         // cada cap té el seu comportament
         ConfigureBoss(b, e, info);
 
@@ -506,76 +509,47 @@ public class WaveSpawner : MonoBehaviour
             bossManager.TrackBoss(e, info.name, BossIntroScreen.ColorFor(info.type));
     }
 
-    // afegeix el comportament propi de cada cap
+    // cada cap té el seu cervell (BossBrain.cs): atacs propis, 2a fase i punt feble
     void ConfigureBoss(GameObject b, Enemy e, BossInfo info)
     {
         if (e == null) return;
 
         BossMelee melee = b.GetComponent<BossMelee>();
         BossAttack attack = b.GetComponent<BossAttack>();
+        if (melee != null) melee.enabled = false;
+        if (attack != null) attack.enabled = false;
 
+        BossBrain brain = null;
         switch (info.type)
         {
-            case BossType.Critic:
-                // el Crític fa servir el cop de safata i la ràfega del prefab, però més de pressa
-                if (attack != null)
-                {
-                    attack.fireInterval = 1.8f;
-                    attack.phase2Interval = 1.1f;
-                }
-                if (melee != null)
-                {
-                    melee.cooldown = 2.4f;
-                    melee.windupTime = 0.6f;
-                }
-                break;
-
-            case BossType.Borratxo:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                b.AddComponent<BossCharger>();
-                break;
-
-            case BossType.Cuiner:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                BossSummoner summoner = b.AddComponent<BossSummoner>();
-                summoner.projectilePrefab = info.projectilePrefab;
-                break;
-
-            case BossType.Pallas:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                b.AddComponent<BossTeleporter>();
-                break;
-
-            case BossType.Inspector:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                BossPhases phases = b.AddComponent<BossPhases>();
-                phases.projectilePrefab = info.projectilePrefab;
-                break;
-
-            case BossType.TvCritic:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                b.AddComponent<BossTvCritic>().spawner = this;
-                break;
-
-            case BossType.Sommelier:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                b.AddComponent<BossSommelier>().projectilePrefab = info.projectilePrefab;
-                break;
-
-            case BossType.Gelater:
-                if (melee != null) melee.enabled = false;
-                if (attack != null) attack.enabled = false;
-                b.AddComponent<BossGelater>().projectilePrefab = info.projectilePrefab;
-                break;
+            case BossType.Critic: brain = b.AddComponent<BossCriticBrain>(); break;
+            case BossType.Borratxo: brain = b.AddComponent<BossDrunkBrain>(); break;
+            case BossType.Cuiner: brain = b.AddComponent<BossChefBrain>(); break;
+            case BossType.Pallas: brain = b.AddComponent<BossVipBrain>(); break;
+            case BossType.Inspector: brain = b.AddComponent<BossInspectorBrain>(); break;
+            case BossType.Sommelier: brain = b.AddComponent<BossSommelierBrain>(); break;
+            case BossType.Gelater: brain = b.AddComponent<BossGelaterBrain>(); break;
+            case BossType.TvCritic: brain = b.AddComponent<BossTvBrain>(); break;
         }
+        if (brain != null)
+        {
+            brain.shotPrefab = info.projectilePrefab != null ? info.projectilePrefab : ShotPrefab();
+            brain.spawner = this;
+        }
+        e.weakness = DamageKind.WeaknessOf(info.type);
     }
 
+    // el tret dels caps (el primer que tingui algun cap de l'escena)
+    GameObject ShotPrefab()
+    {
+        if (bosses != null) foreach (BossInfo b in bosses) if (b != null && b.projectilePrefab != null) return b.projectilePrefab;
+        if (enemyTypes != null) foreach (EnemyType t in enemyTypes)
+            {
+                Enemy en = t.prefab != null ? t.prefab.GetComponent<Enemy>() : null;
+                if (en != null && en.shotPrefab != null) return en.shotPrefab;
+            }
+        return null;
+    }
     // MODE DE PROVA: salta a l'onada 'wave' (la propera que comença). Torna false si ara no es pot.
     public bool DebugJumpToWave(int wave)
     {
