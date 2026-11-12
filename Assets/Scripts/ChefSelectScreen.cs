@@ -350,7 +350,8 @@ public class ChefSelectScreen : MonoBehaviour
 
         messageText = EndScreenUI.CreateText(bg, "Missatge", "", 30f, new Vector2(0.5f, 0.27f), new Vector2(1200f, 50f), Color.white, true);
         messageText.raycastTarget = false;
-        outfitText = EndScreenUI.CreateText(bg, "Vestit", "", 28f, new Vector2(0.5f, 0.315f), new Vector2(1200f, 44f), new Color(1f, 0.92f, 0.8f));
+        // a dalt, entre les propines i les cartes (a sota trepitjava la carta triada)
+        outfitText = EndScreenUI.CreateText(bg, "Vestit", "", 26f, new Vector2(0.5f, 0.805f), new Vector2(1200f, 40f), new Color(1f, 0.92f, 0.8f));
         outfitText.raycastTarget = false;
         TextMeshProUGUI help = helpText = EndScreenUI.CreateText(bg, "Ajuda", "",
             22f, new Vector2(0.5f, 0.025f), new Vector2(1500f, 36f), new Color(0.7f, 0.64f, 0.55f));
