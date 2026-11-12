@@ -126,6 +126,7 @@ public class PauseMenu : MonoBehaviour
         IsOpen = false;
         Time.timeScale = 1f;
         RunStats.Reset();
+        if (BossRush.Active) BossRush.Begin(); // torna a començar els caps seguits
         Iris.LoadScene(SceneNames.Game);
     }
 

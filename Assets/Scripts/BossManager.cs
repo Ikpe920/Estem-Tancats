@@ -35,6 +35,12 @@ public class BossManager : MonoBehaviour
     private float trailValue = 1f, trailWait, shake;
     private float lastValue = 1f;
 
+    // la marca del 50% (on comença la 2a fase) i el punt feble
+    private Image phaseMark, weakIcon;
+    private TextMeshProUGUI weakText, phaseText;
+    private bool phase2Shown;
+    private float phasePulse;
+
     void StyleBar()
     {
         if (healthSlider == null) return;
@@ -63,6 +69,7 @@ public class BossManager : MonoBehaviour
             Image panel = UIStyle.Panel(barRt, "Marc", Vector2.zero, Vector2.one, new Vector2(-10f, -10f), new Vector2(10f, 10f));
             panel.transform.SetAsFirstSibling();
         }
+        BuildExtras();
         if (healthBarName != null)
         {
             healthBarName.color = UIStyle.Gold;
@@ -72,8 +79,78 @@ public class BossManager : MonoBehaviour
         }
     }
 
+    void BuildExtras()
+    {
+        if (healthSlider.fillRect != null)
+        {
+            // la marca del 50%: una ratlla a mitja barra
+            GameObject m = new GameObject("Marca2aFase", typeof(RectTransform), typeof(Image));
+            RectTransform mrt = m.GetComponent<RectTransform>();
+            mrt.SetParent(healthSlider.fillRect.parent, false);
+            mrt.anchorMin = new Vector2(0.5f, -0.25f);
+            mrt.anchorMax = new Vector2(0.5f, 1.25f);
+            mrt.sizeDelta = new Vector2(6f, 0f);
+            mrt.anchoredPosition = Vector2.zero;
+            phaseMark = m.GetComponent<Image>();
+            phaseMark.raycastTarget = false;
+
+            phaseText = NewText(mrt, "2a FASE", 20f, new Vector2(0.5f, 0f), new Vector2(0f, -16f), new Vector2(160f, 26f), TextAlignmentOptions.Center);
+        }
+        if (barRt != null)
+        {
+            // el punt feble, a la dreta de la barra: la icona i el nom
+            GameObject ic = new GameObject("PuntFeble", typeof(RectTransform), typeof(Image));
+            RectTransform irt = ic.GetComponent<RectTransform>();
+            irt.SetParent(barRt, false);
+            irt.anchorMin = irt.anchorMax = new Vector2(1f, 0.5f);
+            irt.pivot = new Vector2(0f, 0.5f);
+            irt.sizeDelta = new Vector2(56f, 56f);
+            irt.anchoredPosition = new Vector2(22f, 0f);
+            weakIcon = ic.GetComponent<Image>();
+            weakIcon.preserveAspect = true;
+            weakIcon.raycastTarget = false;
+            weakText = NewText(irt, "", 20f, new Vector2(1f, 0.5f), new Vector2(6f, 0f), new Vector2(220f, 56f), TextAlignmentOptions.Left);
+            weakText.rectTransform.pivot = new Vector2(0f, 0.5f);
+        }
+    }
+
+    TextMeshProUGUI NewText(RectTransform parent, string text, float size, Vector2 anchor, Vector2 pos, Vector2 box, TextAlignmentOptions align)
+    {
+        GameObject g = new GameObject("Text", typeof(RectTransform));
+        RectTransform rt = g.GetComponent<RectTransform>();
+        rt.SetParent(parent, false);
+        rt.anchorMin = rt.anchorMax = anchor;
+        rt.sizeDelta = box;
+        rt.anchoredPosition = pos;
+        TextMeshProUGUI t = g.AddComponent<TextMeshProUGUI>();
+        if (healthBarName != null) t.font = healthBarName.font;
+        else if (TMP_Settings.defaultFontAsset != null) t.font = TMP_Settings.defaultFontAsset;
+        t.text = text;
+        t.fontSize = size;
+        t.fontStyle = FontStyles.Bold;
+        t.alignment = align;
+        t.color = new Color(1f, 0.92f, 0.8f);
+        t.raycastTarget = false;
+        t.textWrappingMode = TextWrappingModes.NoWrap;
+        UIStyle.Outline(t);
+        return t;
+    }
+
+    static string WeakIcon(DmgKind k)
+    {
+        switch (k)
+        {
+            case DmgKind.Fire: return "Fire";
+            case DmgKind.Ice: return "Ice";
+            case DmgKind.Explosion: return "Explosion";
+            case DmgKind.Crit: return "Crit";
+        }
+        return null;
+    }
+
     void LateUpdate()
     {
+        UpdateExtras();
         if (healthSlider == null || currentBoss == null) return;
         float v = healthSlider.value;
         if (v < lastValue - 0.0001f) { trailWait = 0.35f; shake = 0.15f; } // cop: la franja espera i després s'encongeix
@@ -144,6 +221,45 @@ public class BossManager : MonoBehaviour
         trailValue = lastValue = 1f;
         // el farciment, del color del cap (una mica més clar perquè es vegi bé sobre el fons fosc)
         if (fillImg != null) fillImg.color = Color.Lerp(color, Color.white, 0.25f);
+
+        // la 2a fase encara no ha començat
+        phase2Shown = false;
+        phasePulse = 0f;
+        if (phaseMark != null) phaseMark.color = new Color(1f, 0.95f, 0.85f, 0.95f);
+        if (phaseText != null) phaseText.alpha = 0f;
+
+        // el punt feble
+        string icon = WeakIcon(boss.weakness);
+        Sprite sp = icon != null ? Resources.Load<Sprite>("Weak/" + icon) : null;
+        if (weakIcon != null) { weakIcon.sprite = sp; weakIcon.enabled = sp != null; }
+        if (weakText != null)
+            weakText.text = sp != null ? "<size=75%><color=#FF9A40>PUNT FEBLE</color></size>\n" + DamageKind.Name(boss.weakness) : "";
+    }
+
+    void UpdateExtras()
+    {
+        if (currentBoss == null || phaseMark == null) return;
+        if (!phase2Shown && currentBoss.CurrentHealth <= currentBoss.MaxHealth / 2)
+        {
+            // ha entrat a la 2a fase: la marca s'encén de vermell i ho diu
+            phase2Shown = true;
+            phasePulse = 1.2f;
+            shake = 0.35f;
+        }
+        if (phase2Shown)
+        {
+            phasePulse = Mathf.MoveTowards(phasePulse, 0f, Time.unscaledDeltaTime);
+            float k = Mathf.Abs(Mathf.Sin(phasePulse * 12f)) * Mathf.Clamp01(phasePulse);
+            phaseMark.color = Color.Lerp(new Color(0.85f, 0.18f, 0.15f, 0.95f), Color.white, k);
+            if (phaseText != null)
+            {
+                phaseText.alpha = 1f;
+                phaseText.color = Color.Lerp(new Color(1f, 0.45f, 0.35f), Color.white, k);
+                phaseText.rectTransform.localScale = Vector3.one * (1f + 0.4f * Mathf.Clamp01(phasePulse));
+            }
+        }
+        if (weakIcon != null && weakIcon.enabled)
+            weakIcon.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.unscaledTime * 3f) * 6f);
     }
 
     void Update()

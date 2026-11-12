@@ -62,11 +62,15 @@ public class EndScreenFx : MonoBehaviour
         stripes.raycastTarget = false;
 
         // títol i subtítol
-        string titleText = win ? "HAS SOBREVISCUT AL SERVEI!" : (RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC");
+        bool rush = BossRush.Active;
+        string titleText = rush ? (win ? "HAS VENÇUT TOTS ELS CAPS!" : "FI DELS CAPS SEGUITS")
+                                : win ? "HAS SOBREVISCUT AL SERVEI!" : (RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC");
         Color titleCol = win ? UIStyle.Gold : new Color(1f, 0.42f, 0.38f);
         title = MenuScreens.Text(root, titleText, 100f, new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(1700f, 130f), titleCol, true);
         UIStyle.Outline(title, 0.25f);
-        string sub = win ? "Has completat les " + RunStats.wave + " onades. El restaurant ja pot tancar."
+        string sub = rush ? (win ? "Els " + BossRush.Bosses + " caps, l'un darrere l'altre, en " + BossRush.Clock(BossRush.Elapsed) + "."
+                                 : "Has caigut contra el cap " + Mathf.Min(BossRush.Beaten + 1, BossRush.Bosses) + " de " + BossRush.Bosses + ".")
+                   : win ? "Has completat les " + RunStats.wave + " onades. El restaurant ja pot tancar."
                          : "T'han fet fora a l'onada " + RunStats.wave + ". Els clients guanyen... per ara.";
         MenuScreens.Text(root, sub, 34f, new Vector2(0.5f, 0.75f), Vector2.zero, new Vector2(1500f, 50f), new Color(1f, 0.92f, 0.82f), false).fontStyle = FontStyles.Italic;
 
@@ -90,13 +94,22 @@ public class EndScreenFx : MonoBehaviour
         RectTransform crt = card.rectTransform;
         crt.sizeDelta = new Vector2(860f, 400f);
         float y = 140f;
-        AddRow(crt, "Onada", RunStats.wave, "", "", null, ref y, 0.5f);
-        AddRow(crt, "Punts", RunStats.points, "", "", null, ref y, 0.75f);
-        AddRow(crt, "Millor ratxa", RunStats.maxCombo, "", " clients", null, ref y, 1.0f);
+        if (rush)
+        {
+            AddRow(crt, "Caps vençuts", BossRush.Beaten, "", " / " + BossRush.Bosses, null, ref y, 0.5f);
+            AddRow(crt, "Temps", 0, "", "", BossRush.Clock(BossRush.Elapsed), ref y, 0.75f);
+            AddRow(crt, "Rècord", 0, "", "", BossRush.BestTime > 0f ? BossRush.Clock(BossRush.BestTime) : BossRush.BestCount + " / " + BossRush.Bosses + " caps", ref y, 1.0f);
+        }
+        else
+        {
+            AddRow(crt, "Onada", RunStats.wave, "", "", null, ref y, 0.5f);
+            AddRow(crt, "Punts", RunStats.points, "", "", null, ref y, 0.75f);
+            AddRow(crt, "Millor ratxa", RunStats.maxCombo, "", " clients", null, ref y, 1.0f);
+        }
         AddRow(crt, "Propines", Progression.LastRunTips, "+", "  (en tens " + Progression.Tips + ")", null, ref y, 1.25f);
         AddRow(crt, "Xef", 0, "", "", chef.name + "  ·  " + Progression.DifficultyName(Progression.Difficulty), ref y, 1.5f);
 
-        if (RunStats.newRecord)
+        if (rush ? BossRush.NewBest : RunStats.newRecord)
         {
             record = MenuScreens.Text(crt, "NOU RÈCORD!", 46f, new Vector2(1f, 1f), new Vector2(-40f, 10f), new Vector2(420f, 70f), UIStyle.Gold, true);
             record.transform.localRotation = Quaternion.Euler(0f, 0f, -10f);

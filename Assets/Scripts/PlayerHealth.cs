@@ -72,6 +72,7 @@ public class PlayerHealth : MonoBehaviour
             int points = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
             int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
             RunStats.Save(wave, points, combo);
+            if (BossRush.Active) BossRush.Finish(false);
             StartCoroutine(DeathSequence(spawner));
         }
     }
