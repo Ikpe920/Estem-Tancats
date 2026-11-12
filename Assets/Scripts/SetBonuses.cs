@@ -51,11 +51,11 @@ public class SetBonus
 public static class SetBonuses
 {
     // ---------- CONJUNTS CONTRARIS: no es poden tenir alhora ----------
-    // El gel i el foc no conviuen: si tens els Calçots gelats (explosions que glacen), no pots tenir els
-    // conjunts de foc i d'explosions de foc, i al revés. Tampoc l'explosió que empeny (Traca) amb la que
-    // deixa una zona gelada on hi ha els clients. El primer que completes guanya.
+    // Una explosió que glaça (Calçots gelats) no té sentit amb les explosions de foc: els Calçots gelats no
+    // conviuen amb la Revetlla, la Calçotada crítica ni la Traca. El picant sí que hi pot anar (Dash picant,
+    // Aperitiu picant, Barbacoa...). El primer conjunt que completes guanya.
     static readonly SetId[] Gel = { SetId.FrostBlast };
-    static readonly SetId[] Foc = { SetId.Barbacoa, SetId.DashRefund, SetId.Revetlla, SetId.CritBlast, SetId.SpicyOlives, SetId.Shockwave };
+    static readonly SetId[] Foc = { SetId.Revetlla, SetId.CritBlast, SetId.Shockwave };
 
     public static SetId[] ConflictsOf(SetId id)
     {
