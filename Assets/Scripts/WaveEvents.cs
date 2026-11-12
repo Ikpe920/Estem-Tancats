@@ -14,7 +14,11 @@ using TMPro;
 //   CLIENT VIP       un client daurat amb corona fuig de tu: despatxa'l abans de 15 s i dona molts punts
 //   HAPPY HOUR       els clients deixen premis en morir
 //   RACIONS GEGANTS  la meitat de clients, però enormes i resistents (×3 punts)
-public enum WaveEventKind { None, HoraPunta, TallDeLlum, ClientVip, HappyHour, RacionsGegants }
+//   INSPECCIÓ        de tant en tant, 4 s sense poder llançar menjar (el dash i l'habilitat sí) (×1,5 punts)
+//   ANIVERSARI       pastissos per la sala: si els dispares esclaten i esquitxen; si els toques, monedes
+//   HORA BOJA        clients més ràpids... i tu també: corres i llances més de pressa (×1,5 punts)
+//   RESSENYA         un crític mira: si acabes l'onada sense que et toquin, propines
+public enum WaveEventKind { None, HoraPunta, TallDeLlum, ClientVip, HappyHour, RacionsGegants, Inspeccio, Aniversari, HoraBoja, Ressenya }
 
 public static class WaveEvents
 {
@@ -54,6 +58,10 @@ public static class WaveEvents
             case WaveEventKind.ClientVip: return "CLIENT VIP";
             case WaveEventKind.HappyHour: return "HAPPY HOUR";
             case WaveEventKind.RacionsGegants: return "RACIONS GEGANTS";
+            case WaveEventKind.Inspeccio: return "INSPECCIÓ SANITÀRIA";
+            case WaveEventKind.Aniversari: return "FESTA D'ANIVERSARI";
+            case WaveEventKind.HoraBoja: return "HORA BOJA";
+            case WaveEventKind.Ressenya: return "RESSENYA EN DIRECTE";
         }
         return "";
     }
@@ -67,6 +75,10 @@ public static class WaveEvents
             case WaveEventKind.ClientVip: return "Atrapa el client daurat abans que marxi!";
             case WaveEventKind.HappyHour: return "Els clients deixen premis";
             case WaveEventKind.RacionsGegants: return "Menys clients, però enormes (×3 punts)";
+            case WaveEventKind.Inspeccio: return "De tant en tant no es pot llançar menjar! (×1,5 punts)";
+            case WaveEventKind.Aniversari: return "Pastissos per tot arreu: dispara'ls o agafa'ls";
+            case WaveEventKind.HoraBoja: return "Tothom va més de pressa... tu també! (×1,5 punts)";
+            case WaveEventKind.Ressenya: return "Acaba l'onada sense que et toquin: propines!";
         }
         return "";
     }
@@ -80,6 +92,10 @@ public static class WaveEvents
             case WaveEventKind.ClientVip: return new Color(1f, 0.85f, 0.3f);
             case WaveEventKind.HappyHour: return new Color(0.55f, 1f, 0.6f);
             case WaveEventKind.RacionsGegants: return new Color(1f, 0.5f, 0.7f);
+            case WaveEventKind.Inspeccio: return new Color(0.5f, 0.9f, 0.7f);
+            case WaveEventKind.Aniversari: return new Color(1f, 0.7f, 0.85f);
+            case WaveEventKind.HoraBoja: return new Color(1f, 0.9f, 0.3f);
+            case WaveEventKind.Ressenya: return new Color(0.9f, 0.8f, 1f);
         }
         return Color.white;
     }
@@ -101,7 +117,8 @@ public static class WaveEvents
         }
 
         WaveEventKind k;
-        do { k = (WaveEventKind)Random.Range(1, 6); }
+        int kinds = System.Enum.GetValues(typeof(WaveEventKind)).Length;
+        do { k = (WaveEventKind)Random.Range(1, kinds); }
         while (k == WaveEventKind.TallDeLlum && (act == 4 || act == 5)); // a la Teulada i al Celler ja és fosc
 
         last = k;
@@ -132,7 +149,53 @@ public static class WaveEvents
             case WaveEventKind.ClientVip:
                 if (spawner != null) spawner.StartCoroutine(SpawnVipSoon(spawner));
                 break;
+            case WaveEventKind.Inspeccio:
+                if (spawner != null) spawner.StartCoroutine(Inspections());
+                break;
+            case WaveEventKind.Aniversari:
+                for (int i = 0; i < 6; i++) BirthdayCake.Spawn(HazardFx.RandomPoint(2.5f));
+                break;
+            case WaveEventKind.HoraBoja:
+                Enemy.speedMultiplier *= 1.35f;
+                crazyActive = true;
+                PlayerMovement pm = PlayerRef.Movement;
+                if (pm != null) { crazySpeed = pm.speed * 0.35f; pm.speed += crazySpeed; }
+                break;
+            case WaveEventKind.Ressenya:
+                hitThisWave = false;
+                break;
         }
+    }
+
+    // ---------- els esdeveniments nous ----------
+    public static bool NoShooting;      // inspecció: ara no es pot llançar menjar
+    static bool hitThisWave, crazyActive;
+    static float crazySpeed;
+
+    // el PlayerHealth ho crida quan et toquen
+    public static void OnPlayerHit() { hitThisWave = true; }
+
+    // l'Hora boja: també llances més de pressa (cada frame, mentre dura)
+    public static void Tick()
+    {
+        if (Current == WaveEventKind.HoraBoja && PlayerRef.Shooting != null) PlayerRef.Shooting.GrantHaste(0.2f);
+    }
+
+    static System.Collections.IEnumerator Inspections()
+    {
+        yield return new WaitForSeconds(4f);
+        while (Current == WaveEventKind.Inspeccio)
+        {
+            Transform p = PlayerRef.Transform;
+            if (p != null) HazardFx.Popup((Vector2)p.position + Vector2.up * 1.8f, "INSPECCIÓ! NO ES LLANÇA MENJAR!", new Color(0.5f, 1f, 0.7f), 1.4f);
+            AudioManager.Play("event", 0.6f, 1.3f);
+            NoShooting = true;
+            yield return new WaitForSeconds(4f);
+            NoShooting = false;
+            if (p != null) HazardFx.Popup((Vector2)p.position + Vector2.up * 1.8f, "TOT CORRECTE. A CUINAR!", new Color(0.5f, 1f, 0.7f), 1f);
+            yield return new WaitForSeconds(Random.Range(7f, 10f));
+        }
+        NoShooting = false;
     }
 
     static System.Collections.IEnumerator SpawnVipSoon(WaveSpawner spawner)
@@ -146,6 +209,22 @@ public static class WaveEvents
     // l'onada s'ha acabat
     public static void End()
     {
+        NoShooting = false;
+        if (crazyActive)
+        {
+            crazyActive = false;
+            Enemy.speedMultiplier /= 1.35f;
+            PlayerMovement pm = PlayerRef.Movement;
+            if (pm != null) pm.speed -= crazySpeed;
+        }
+        if (Current == WaveEventKind.Ressenya && !hitThisWave && !PlayerHealth.IsDying)
+        {
+            Progression.AddTips(15);
+            Transform p = PlayerRef.Transform;
+            if (p != null) HazardFx.Popup((Vector2)p.position + Vector2.up * 1.8f, "★★★★★ CINC ESTRELLES! +15 propines", new Color(1f, 0.9f, 0.4f), 2f);
+            AudioManager.Play("challenge");
+        }
+        BirthdayCake.ClearAll();
         if (darkness != null) Object.Destroy(darkness);
         darkness = null;
         Enemy.OnKilled -= HappyHourDrop;
@@ -175,6 +254,8 @@ public static class WaveEvents
         switch (Current)
         {
             case WaveEventKind.HoraPunta:
+            case WaveEventKind.Inspeccio:
+            case WaveEventKind.HoraBoja:
                 e.points = Mathf.RoundToInt(e.points * 1.5f);
                 break;
             case WaveEventKind.RacionsGegants:
@@ -373,4 +454,67 @@ public class WaveEventBanner : MonoBehaviour
             tag.color = c;
         }
     }
+}
+
+// ---------- FESTA D'ANIVERSARI: els pastissos de la sala ----------
+// si un tret el toca, esclata i esquitxa nata (fa mal als clients); si el toques tu, deixa monedes
+public class BirthdayCake : MonoBehaviour
+{
+    static readonly System.Collections.Generic.List<BirthdayCake> all = new System.Collections.Generic.List<BirthdayCake>();
+    static Sprite cake, splat;
+    bool done;
+
+    public static void Spawn(Vector2 pos)
+    {
+        if (cake == null) cake = Resources.Load<Sprite>("DishFx/Pastis");
+        if (splat == null) splat = Resources.Load<Sprite>("DishFx/Nata");
+        GameObject go = new GameObject("PastisAniversari");
+        go.transform.position = pos;
+        go.transform.localScale = Vector3.one * 1.1f;
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = cake != null ? cake : HazardFx.Circle();
+        sr.sortingOrder = 2;
+        CircleCollider2D col = go.AddComponent<CircleCollider2D>();
+        col.isTrigger = true;
+        col.radius = 0.45f;
+        all.Add(go.AddComponent<BirthdayCake>());
+        Fx.Sparkles(pos, new Color(1f, 0.7f, 0.85f), 6, 0.6f);
+    }
+
+    public static void ClearAll()
+    {
+        foreach (BirthdayCake c in all) if (c != null) { Fx.Poof(c.transform.position); Destroy(c.gameObject); }
+        all.Clear();
+    }
+
+    void Update()
+    {
+        if (Random.value < Time.deltaTime * 1.5f) Fx.Sparkle((Vector2)transform.position + new Vector2(0f, 0.6f), new Color(1f, 0.85f, 0.3f)); // l'espelma
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (done) return;
+        Vector2 p = transform.position;
+        if (other.GetComponent<Projectile>() != null)
+        {
+            done = true;
+            Fx.Shockwave(p, 1.6f, new Color(1f, 0.97f, 0.9f));
+            Fx.Sparkles(p, new Color(1f, 0.95f, 0.9f), 12, 1.6f);
+            AudioManager.Play("table", 0.7f, 1.3f);
+            DishUtil.HitCircle(p, 1.8f, 6 + DishUtil.Bonus, 7f, DmgKind.Explosion);
+            if (splat != null) BossPuddle.Spawn(p, 1.4f, 3f, splat, Color.white, 0f, null);
+            Destroy(gameObject);
+        }
+        else if (other.GetComponent<PlayerHealth>() != null)
+        {
+            done = true;
+            for (int i = 0; i < 4; i++) XpCoin.Spawn(p + Random.insideUnitCircle * 0.5f, 1);
+            HazardFx.Popup(p + Vector2.up, "PER MOLTS ANYS!", new Color(1f, 0.7f, 0.85f), 1f);
+            AudioManager.Play("coin_big", 0.7f);
+            Destroy(gameObject);
+        }
+    }
+
+    void OnDestroy() { all.Remove(this); }
 }

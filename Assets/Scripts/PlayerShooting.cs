@@ -75,6 +75,8 @@ public class PlayerShooting : MonoBehaviour
     {
         if (Time.timeScale == 0) return; // no disparar mentre la botiga està oberta
         UpdateHeat();
+        WaveEvents.Tick();
+        if (WaveEvents.NoShooting) return; // inspecció sanitària: ara no es pot llançar menjar
         if (Overheated) return;
         if (Time.time < nextFireTime) return;
 

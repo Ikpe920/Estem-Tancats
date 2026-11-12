@@ -464,6 +464,7 @@ public class WaveSpawner : MonoBehaviour
         ApplyWaveDifficulty(e);
         EnemyVariants.MaybeApply(e, prefab, DifficultyWave);
         if (actManager != null) RoomClient.Apply(e, actManager.currentAct % 8); // els clients del celler, la cambra i el plató
+        EliteClient.MaybeApply(e, currentWave); // de tant en tant, un client d'elit amb corona
         WaveEvents.OnEnemySpawned(e);
     }
 
@@ -597,7 +598,7 @@ public class WaveSpawner : MonoBehaviour
     }
 
     // el tret dels caps (el primer que tingui algun cap de l'escena)
-    GameObject ShotPrefab()
+    public GameObject ShotPrefab()
     {
         if (bosses != null) foreach (BossInfo b in bosses) if (b != null && b.projectilePrefab != null) return b.projectilePrefab;
         if (enemyTypes != null) foreach (EnemyType t in enemyTypes)

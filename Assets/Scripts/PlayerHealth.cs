@@ -56,6 +56,7 @@ public class PlayerHealth : MonoBehaviour
         lives--;
         if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa
         Progression.OnPlayerHit(); // per als reptes "sense cops"
+        WaveEvents.OnPlayerHit();  // la Ressenya en directe
         if (lives > 0) AudioManager.Play("hurt"); // si és l'últim cor, ja sona la mort
         GamepadInput.Rumble(0.6f, 0.5f, 0.22f);
         nextDamageTime = Time.time + invulnerabilityTime;
