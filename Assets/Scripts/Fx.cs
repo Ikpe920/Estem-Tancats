@@ -209,10 +209,10 @@ public class Fx : MonoBehaviour
     public static void Explosion(Vector2 pos, float radius, float strength = 1f)
     {
         radius = Mathf.Max(0.4f, radius);
-        // ona expansiva
-        Emit(Ring(), pos, Vector2.zero, 0.28f, radius * 0.4f, radius * 2.4f, new Color(1f, 0.9f, 0.5f, 0.9f), new Color(1f, 0.5f, 0.1f, 0f), 7);
+        // ona expansiva (suau)
+        Emit(Ring(), pos, Vector2.zero, 0.25f, radius * 0.4f, radius * 2.1f, new Color(1f, 0.9f, 0.5f, 0.55f), new Color(1f, 0.5f, 0.1f, 0f), 7);
         // l'explosió de dibuix animat: flaix, bola de foc punxeguda, foc i fum (Tools/SpriteGen/ice_boom.py)
-        if (!EmitSeq(Seq("Boom_", 6), pos, 0.6f, radius * 1.7f, radius * 2.5f, 8, Random.Range(-15f, 15f)))
+        if (!EmitSeq(Seq("Boom_", 6), pos, 0.5f, radius * 1.25f, radius * 1.7f, 8, Random.Range(-15f, 15f)))
         {
             Emit(Soft(), pos, Vector2.zero, 0.12f, radius * 2.2f, radius * 2.7f, new Color(1f, 1f, 0.85f, 0.9f), new Color(1f, 0.7f, 0.2f, 0f), 7);
             for (int i = 0; i < Mathf.RoundToInt(6 * strength); i++)
@@ -223,32 +223,32 @@ public class Fx : MonoBehaviour
             }
         }
         // les explosions grans: el rètol "BUM!" (no gaire sovint)
-        if (radius >= 1.4f && Time.time >= nextBum)
+        if (radius >= 2.2f && Time.time >= nextBum)
         {
-            nextBum = Time.time + 0.6f;
+            nextBum = Time.time + 2.5f;
             Sprite bum = One("Bum", null);
             if (bum != null)
-                Emit(bum, pos + new Vector2(Random.Range(-0.4f, 0.4f), radius * 0.6f + 0.5f), Vector2.up * 0.8f, 0.6f, 0.4f, Mathf.Clamp(radius * 0.7f, 0.9f, 1.6f),
+                Emit(bum, pos + new Vector2(Random.Range(-0.4f, 0.4f), radius * 0.6f + 0.5f), Vector2.up * 0.8f, 0.5f, 0.3f, Mathf.Clamp(radius * 0.5f, 0.8f, 1.2f),
                      Color.white, new Color(1f, 1f, 1f, 0f), 12, 3f, 0f, false, 0f);
         }
         // estrelletes que surten disparades
-        for (int i = 0; i < Mathf.RoundToInt(10 * strength); i++)
+        for (int i = 0; i < Mathf.RoundToInt(5 * strength); i++)
         {
-            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(5f, 11f) * Mathf.Sqrt(radius);
+            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(4f, 8f) * Mathf.Sqrt(radius);
             Emit(EmberSprite(), pos, d, Random.Range(0.25f, 0.5f), 0.26f, 0.08f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 9, 4f, 0f, false, Random.Range(-500f, 500f));
         }
         // fum amb contorn que puja a poc a poc
-        for (int i = 0; i < Mathf.RoundToInt(3 * strength); i++)
+        for (int i = 0; i < Mathf.RoundToInt(1.5f * strength); i++)
             Emit(SmokeSprite(), pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.6f + Vector2.up * 0.4f, Random.Range(0.8f, 1.2f),
                  radius * 0.5f, radius * 1.1f, new Color(0.5f, 0.46f, 0.44f, 0.8f), new Color(0.35f, 0.33f, 0.32f, 0f), 7, 1f, 0.8f, false, Random.Range(-40f, 40f));
         // unes quantes flames de dibuix animat que queden cremant
-        for (int i = 0; i < Mathf.RoundToInt(2 * strength); i++)
+        for (int i = 0; i < Mathf.RoundToInt(1 * strength); i++)
         {
-            float sz = Mathf.Clamp(radius * 0.4f, 0.3f, 0.9f) * Random.Range(0.8f, 1.2f);
+            float sz = Mathf.Clamp(radius * 0.35f, 0.3f, 0.7f) * Random.Range(0.8f, 1.2f);
             EmitFlame(pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.5f, Random.Range(0.5f, 0.8f), sz, sz * 0.2f, 6);
         }
         // marca de cremat a terra
-        Emit(ScorchSprite(), pos, Vector2.zero, 4f, radius * 1.9f, radius * 2f, new Color(1f, 1f, 1f, 0.8f), new Color(1f, 1f, 1f, 0f), -3);
+        Emit(ScorchSprite(), pos, Vector2.zero, 2.5f, radius * 1.5f, radius * 1.6f, new Color(1f, 1f, 1f, 0.55f), new Color(1f, 1f, 1f, 0f), -3);
     }
 
     public static void FrostBurst(Vector2 pos, float radius)

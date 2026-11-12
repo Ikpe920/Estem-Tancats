@@ -44,7 +44,7 @@ public class PlayerHealth : MonoBehaviour
         if (lives <= 0) return;
         if (GodMode) return;
         if (Time.time < nextDamageTime) return; // encara és invulnerable
-        if (invulnerableWhileDashing && movement != null && movement.IsDashing) return;
+        if (invulnerableWhileDashing && movement != null && movement.DashInvulnerable) return;
         if (dodgeChance > 0f && UnityEngine.Random.value < dodgeChance) // Carquinyolis: esquiva el cop
         {
             nextDamageTime = Time.time + 0.4f;

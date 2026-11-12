@@ -104,7 +104,7 @@ public class HandbagShot : MonoBehaviour
         if (Vector2.Distance(player.position, transform.position) > 0.55f) return;
 
         PlayerMovement pm = PlayerRef.Movement;
-        if (pm != null && !pm.IsDashing && Time.time > slowedUntil)
+        if (pm != null && !pm.DashInvulnerable && Time.time > slowedUntil)
         {
             slowedUntil = Time.time + 2f;
             PlayerBuffs buffs = pm.GetComponent<PlayerBuffs>();
@@ -171,7 +171,7 @@ public class ClientTurista : MonoBehaviour
         AudioManager.Play("pickup", 0.8f, 1.6f);
         Fx.Shockwave(transform.position, 1.2f, Color.white);
         PlayerMovement pm = PlayerRef.Movement;
-        bool dodged = pm != null && pm.IsDashing;
+        bool dodged = pm != null && pm.DashInvulnerable;
         if (!dodged && Vector2.Distance(player.position, transform.position) <= PhotoRange)
             ScreenFlash.Blind(1.3f);
     }

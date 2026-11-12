@@ -214,13 +214,30 @@ public class ChefAbility : MonoBehaviour
     // GANIVETADA: un ganivet gegant cau del cel i es clava a terra davant teu
     IEnumerator Ganivetada()
     {
-        Vector2 aim = Aim();
         int knives = Tier >= 4 ? 3 : Tier >= 2 ? 2 : 1;
+        // els objectius: primer el cap (si n'hi ha), després els clients més propers
+        Vector2 me = transform.position;
+        var targets = new List<Enemy>();
+        foreach (Enemy e in Enemy.All)
+            if (e != null && !e.IsDead && e.isBoss && Vector2.Distance(e.transform.position, me) < 14f) targets.Add(e);
+        var near = new List<Enemy>();
+        foreach (Enemy e in Enemy.All)
+            if (e != null && !e.IsDead && !e.isBoss && Vector2.Distance(e.transform.position, me) < 10f) near.Add(e);
+        near.Sort((a, b) => Vector2.Distance(a.transform.position, me).CompareTo(Vector2.Distance(b.transform.position, me)));
+        targets.AddRange(near);
+        Vector2 aim = Aim();
         for (int k = 0; k < knives; k++)
         {
-            float off = knives == 1 ? 0f : (k - (knives - 1) / 2f) * 50f;
-            Vector2 dir = Quaternion.Euler(0f, 0f, off) * aim;
-            StartCoroutine(Cleaver((Vector2)transform.position + dir * 2.4f, dir));
+            Vector2 p;
+            if (targets.Count > 0)
+            {
+                Enemy t = targets[Mathf.Min(k, targets.Count - 1)];
+                p = t != null ? (Vector2)t.transform.position : me + aim * 2.4f;
+                if (k >= targets.Count) p += Random.insideUnitCircle.normalized * 1.6f; // si hi ha menys objectius que ganivets
+            }
+            else p = me + (Vector2)(Quaternion.Euler(0f, 0f, knives == 1 ? 0f : (k - (knives - 1) / 2f) * 50f) * aim) * 2.4f;
+            Vector2 dir = p - me;
+            StartCoroutine(Cleaver(p, dir.sqrMagnitude > 0.01f ? dir.normalized : aim));
             yield return new WaitForSeconds(0.12f);
         }
     }

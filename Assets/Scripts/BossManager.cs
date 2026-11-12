@@ -214,10 +214,49 @@ public class BossManager : MonoBehaviour
     private readonly System.Collections.Generic.Dictionary<Enemy, KeyValuePairNameColor> tracked = new System.Collections.Generic.Dictionary<Enemy, KeyValuePairNameColor>();
     struct KeyValuePairNameColor { public string name; public Color color; }
 
+    // la segona barra (quan hi ha dos caps alhora): una còpia de la primera, a sota
+    private Enemy secondBoss;
+    private int secondMax;
+    private GameObject bar2;
+    private Slider slider2;
+    private TextMeshProUGUI name2;
+    private Image fill2;
+
+    void ShowSecond(Enemy boss, string bossName, Color color)
+    {
+        if (bar2 == null)
+        {
+            bar2 = Instantiate(healthBarRoot, healthBarRoot.transform.parent);
+            bar2.name = "BossHealthBar2";
+            // la còpia no porta el punt feble del primer cap (el seu es posa a sota)
+            foreach (Transform t in bar2.GetComponentsInChildren<Transform>(true))
+                if (t != null && t.name == "PuntFeble") Destroy(t.gameObject);
+            RectTransform r1 = healthBarRoot.GetComponent<RectTransform>();
+            RectTransform r2 = bar2.GetComponent<RectTransform>();
+            if (r1 != null && r2 != null) r2.anchoredPosition = r1.anchoredPosition + new Vector2(0f, -r1.sizeDelta.y - 70f);
+            slider2 = bar2.GetComponentInChildren<Slider>(true);
+            foreach (TextMeshProUGUI t in bar2.GetComponentsInChildren<TextMeshProUGUI>(true))
+                if (healthBarName != null && t.name == healthBarName.name) { name2 = t; break; }
+            if (slider2 != null && slider2.fillRect != null) fill2 = slider2.fillRect.GetComponent<Image>();
+        }
+        secondBoss = boss;
+        secondMax = Mathf.Max(1, boss.maxHealth);
+        if (name2 != null) name2.text = bossName;
+        if (fill2 != null) fill2.color = Color.Lerp(color, Color.white, 0.25f);
+        if (slider2 != null) slider2.value = 1f;
+        bar2.SetActive(true);
+    }
+
     public void TrackBoss(Enemy boss, string bossName, Color color)
     {
         if (boss == null) return;
         tracked[boss] = new KeyValuePairNameColor { name = bossName, color = color };
+        // ja n'hi ha un altre de viu: aquest va a la segona barra
+        if (currentBoss != null && !currentBoss.IsDead && currentBoss != boss)
+        {
+            ShowSecond(boss, bossName, color);
+            return;
+        }
         currentBoss = boss;
         bossMaxHealth = boss.maxHealth;
         healthBarName.text = bossName;
@@ -269,9 +308,27 @@ public class BossManager : MonoBehaviour
 
     void Update()
     {
+        // la segona barra
+        if (bar2 != null)
+        {
+            bool alive2 = secondBoss != null && !secondBoss.IsDead;
+            if (bar2.activeSelf != alive2) bar2.SetActive(alive2);
+            if (alive2 && slider2 != null) slider2.value = (float)secondBoss.CurrentHealth / secondMax;
+            if (!alive2) secondBoss = null;
+        }
+
         if (currentBoss == null)
         {
-            // si queda un altre cap viu, la barra passa a ell
+            // si queda un altre cap viu, la barra passa a ell (i la segona s'amaga)
+            if (secondBoss != null && !secondBoss.IsDead)
+            {
+                Enemy next = secondBoss;
+                secondBoss = null;
+                if (bar2 != null) bar2.SetActive(false);
+                KeyValuePairNameColor info2;
+                if (tracked.TryGetValue(next, out info2)) TrackBoss(next, info2.name, info2.color);
+                return;
+            }
             foreach (var kv in tracked)
                 if (kv.Key != null && !kv.Key.IsDead) { Enemy next = kv.Key; var info = kv.Value; TrackBoss(next, info.name, info.color); return; }
             tracked.Clear();
