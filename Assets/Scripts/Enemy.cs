@@ -32,6 +32,7 @@ public class Enemy : MonoBehaviour
     public int points = 10;
     public float damageMultiplier = 1f;
     [HideInInspector] public DmgKind weakness = DmgKind.None; // el posa el WaveSpawner als caps
+    [HideInInspector] public float lastBlastTime = -10f;      // l'última explosió que l'ha tocat (una cada 0,25 s)
 
     [Header("Tirador (opcional)")]
     public bool isShooter = false;
@@ -522,9 +523,26 @@ public class Enemy : MonoBehaviour
         colorState = ColorState.Flash;
     }
 
+    private float knockResistUntil;
+
     public void Knockback(Vector2 direction, float force, float duration)
     {
         if (!canBeKnockedBack) return;
+        if (!isBoss)
+        {
+            // els clients aguanten l'empenta: com més a prop del xef, menys els empenyen
+            // (si no, una pluja de trets no els deixa arribar mai), i si ja els acaben d'empènyer, gairebé gens
+            float res = 0.85f;
+            if (player != null)
+            {
+                float d = Vector2.Distance(player.position, transform.position);
+                res = d < 2.5f ? 0.2f : d < 5f ? 0.5f : 0.85f;
+            }
+            if (Time.time < knockResistUntil) res *= 0.3f;
+            knockResistUntil = Time.time + 0.35f;
+            force *= res;
+            duration *= Mathf.Lerp(0.4f, 1f, res);
+        }
         knockbackVelocity = direction.normalized * force;
         knockbackUntil = Time.time + duration;
     }

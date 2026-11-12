@@ -919,8 +919,26 @@ public class BoonManager : MonoBehaviour
         return level > 1 && b.levelAmount != 0f ? b.levelAmount : b.amount;
     }
 
+    // rendiment decreixent: cada vegada que una millora de tret es repeteix, val un 20% menys que l'anterior
+    private readonly Dictionary<BoonType, int> timesApplied = new Dictionary<BoonType, int>();
+
+    float Diminish(BoonType type, float amount)
+    {
+        int n;
+        timesApplied.TryGetValue(type, out n);
+        timesApplied[type] = n + 1;
+        return amount * Mathf.Pow(0.8f, n);
+    }
+
     void ApplyEffect(BoonType type, float amount, int level = 1)
     {
+        switch (type)
+        {
+            case BoonType.FireRate: case BoonType.Crit: case BoonType.Explosive: case BoonType.ProjectileSpeed:
+            case BoonType.CritDamage: case BoonType.Area: case BoonType.ProjectileSize: case BoonType.Knockback:
+                amount = Diminish(type, amount);
+                break;
+        }
         switch (type)
         {
             case BoonType.Damage:
@@ -973,7 +991,8 @@ public class BoonManager : MonoBehaviour
                 break;
 
             case BoonType.MultiShot:
-                if (shooting != null) shooting.extraShots += Mathf.RoundToInt(amount);
+                // el ventall té un màxim: 7 trets en total
+                if (shooting != null) shooting.extraShots = Mathf.Min(6, shooting.extraShots + Mathf.RoundToInt(amount));
                 break;
 
             case BoonType.Pierce:

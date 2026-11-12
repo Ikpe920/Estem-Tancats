@@ -26,10 +26,30 @@ public class DamageNumber : MonoBehaviour
     private bool crit;
     private Color color;
 
+    // els números normals que acaben de sortir (per ajuntar-hi els cops seguits al mateix client)
+    static readonly List<DamageNumber> recent = new List<DamageNumber>();
+    private int value;
+
     public static void Spawn(Vector2 pos, int amount, bool isCrit)
     {
         if (amount <= 0) return;
         if (!isCrit && !showNormalHits) return;
+
+        // un cop normal a tocar d'un número que acaba de sortir: se suma a aquell ("+48" en lloc de deu números)
+        if (!isCrit)
+        {
+            for (int i = recent.Count - 1; i >= 0; i--)
+            {
+                DamageNumber r = recent[i];
+                if (r == null || !r.gameObject.activeSelf || Time.time - r.born > 0.4f) { recent.RemoveAt(i); continue; }
+                if (((Vector2)r.start - pos).sqrMagnitude > 0.8f * 0.8f) continue;
+                r.value += amount;
+                r.tmp.text = r.value.ToString();
+                r.tmp.fontSize = Mathf.Min(5.5f, 3.2f + r.value * 0.04f) * Accessibility.TextMul; // creix una mica
+                r.born = Time.time;
+                return;
+            }
+        }
 
         // una mica d'atzar perquè els números d'una explosió no es tapin entre ells
         Vector2 p = pos + new Vector2(Random.Range(-0.35f, 0.35f), Random.Range(0f, 0.25f));
@@ -45,6 +65,8 @@ public class DamageNumber : MonoBehaviour
         t.outlineWidth = isCrit ? 0.3f : 0.25f;
 
         dn.start = p;
+        dn.value = amount;
+        if (!isCrit) recent.Add(dn);
         dn.born = Time.time;
         dn.crit = isCrit;
         dn.life = isCrit ? 0.85f : 0.55f;

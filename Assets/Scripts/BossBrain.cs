@@ -23,6 +23,12 @@ public static class DamageKind
     public static void Hit(Enemy e, int damage, DmgKind kind, bool crit = false)
     {
         if (e == null) return;
+        // un client només pot rebre una explosió cada 0,25 s (si no, set explosions a sobre fan set vegades mal)
+        if (kind == DmgKind.Explosion)
+        {
+            if (Time.time - e.lastBlastTime < 0.25f) return;
+            e.lastBlastTime = Time.time;
+        }
         DmgKind prev = Current;
         Current = kind;
         try { e.TakeDamage(damage, crit); }

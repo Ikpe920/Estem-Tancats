@@ -146,6 +146,12 @@ public class Projectile : MonoBehaviour
         boomerangSpeed = velocity.magnitude;
         if (boomerang) dieAt = Time.time + 4f; // torna sola: aquest temps és només per si de cas
         ApplyDishLook();
+        // jerarquia visual: els trets del xef, una mica més petits, translúcids i per sota de tot
+        // (els dels enemics van per sobre i amb contorn: sempre es veu el que et fa mal)
+        transform.localScale *= 0.85f;
+        if (renderers != null)
+            foreach (SpriteRenderer r in renderers)
+                if (r != null) { Color c = r.color; c.a *= 0.78f; r.color = c; r.sortingOrder = 2; }
         if (trailRenderer != null && trailRenderer.enabled) trailRenderer.Clear(); // que no surti una ratlla des de l'última posició
         if (rb != null) rb.linearVelocity = velocity;
     }
