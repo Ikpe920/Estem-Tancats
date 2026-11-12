@@ -92,7 +92,7 @@ public class EndScreenFx : MonoBehaviour
         RectTransform prt = MenuScreens.Rect(root, "Xef", new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), Vector2.zero, Vector2.zero);
         prt.sizeDelta = new Vector2(340f, 340f);
         portrait = prt.gameObject.AddComponent<Image>();
-        portrait.sprite = ChefRoster.LoadSprite(chef, "Down");
+        portrait.sprite = ChefRoster.Portrait(chef); // el retrat gran, amb el vestit
         portrait.preserveAspect = true;
         portrait.raycastTarget = false;
         portrait.enabled = portrait.sprite != null;

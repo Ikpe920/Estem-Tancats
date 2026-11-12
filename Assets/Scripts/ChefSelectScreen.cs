@@ -36,6 +36,8 @@ public class ChefSelectScreen : MonoBehaviour
     private TextMeshProUGUI diffHint;
     private GameObject challengesPanel;
     private TextMeshProUGUI helpText;
+    private TextMeshProUGUI outfitText;
+    private int[] shownOutfit;
 
     class Card
     {
@@ -62,6 +64,8 @@ public class ChefSelectScreen : MonoBehaviour
         GamepadInput.CustomScreens++; // aquesta pantalla es controla sola amb el comandament
         GamepadInput.OnModeChanged += RefreshHelp;
         selected = ChefRoster.Selected;
+        shownOutfit = new int[ChefRoster.All.Length];
+        for (int i = 0; i < shownOutfit.Length; i++) shownOutfit[i] = ChefRoster.OutfitOf(i);
         Build();
         Select(selected);
         RefreshAll();
@@ -81,9 +85,9 @@ public class ChefSelectScreen : MonoBehaviour
     {
         if (helpText == null) return;
         helpText.text = GamepadInput.UsingGamepad
-            ? "Creu triar  ·  " + GamepadInput.LeftShoulder() + "/" + GamepadInput.RightShoulder() + " dificultat  ·  " + GamepadInput.North() + " reptes  ·  "
+            ? "Creu triar  ·  ↑↓ vestit  ·  " + GamepadInput.LeftShoulder() + "/" + GamepadInput.RightShoulder() + " dificultat  ·  " + GamepadInput.North() + " reptes  ·  "
               + GamepadInput.South() + " començar  ·  " + GamepadInput.East() + " tornar"
-            : "← → triar  ·  Tab dificultat  ·  R reptes  ·  Enter començar  ·  Esc tornar";
+            : "← → triar  ·  V vestit  ·  Tab dificultat  ·  R reptes  ·  Enter començar  ·  Esc tornar";
     }
 
     void Update()
@@ -112,6 +116,8 @@ public class ChefSelectScreen : MonoBehaviour
             if (kb.digit4Key.wasPressedThisFrame) Select(3);
             if (kb.tabKey.wasPressedThisFrame) SetDifficulty(((int)Progression.Difficulty + 1) % 3);
             if (kb.rKey.wasPressedThisFrame) ShowChallenges(true);
+            if (kb.vKey.wasPressedThisFrame || kb.upArrowKey.wasPressedThisFrame) CycleOutfit(1);
+            if (kb.downArrowKey.wasPressedThisFrame) CycleOutfit(-1);
             if (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) Confirm();
             if (kb.escapeKey.wasPressedThisFrame) Close();
         }
@@ -119,6 +125,8 @@ public class ChefSelectScreen : MonoBehaviour
         {
             if (pad.dpad.left.wasPressedThisFrame) Select(selected - 1);
             if (pad.dpad.right.wasPressedThisFrame) Select(selected + 1);
+            if (pad.dpad.up.wasPressedThisFrame) CycleOutfit(1);
+            if (pad.dpad.down.wasPressedThisFrame) CycleOutfit(-1);
             if (pad.leftShoulder.wasPressedThisFrame) SetDifficulty(Mathf.Max(0, (int)Progression.Difficulty - 1));
             if (pad.rightShoulder.wasPressedThisFrame) SetDifficulty(Mathf.Min(2, (int)Progression.Difficulty + 1));
             if (pad.buttonNorth.wasPressedThisFrame) ShowChallenges(true);
@@ -158,6 +166,38 @@ public class ChefSelectScreen : MonoBehaviour
             if (cards[k].sprites[0] != null) cards[k].portrait.sprite = cards[k].sprites[0];
         }
         RefreshStartLabel();
+        RefreshOutfit();
+    }
+
+    // ---------- VESTITS ----------
+
+    void CycleOutfit(int dir)
+    {
+        int n = ChefRoster.Outfits.Length;
+        shownOutfit[selected] = ((shownOutfit[selected] + dir) % n + n) % n;
+        int o = shownOutfit[selected];
+        if (ChefRoster.OutfitOwned(selected, o)) ChefRoster.SetOutfit(selected, o);
+        AudioManager.Play("ui_click", 1f, 1.2f);
+        RefreshOutfit();
+        RefreshStartLabel();
+    }
+
+    void RefreshOutfit()
+    {
+        if (cards.Count == 0 || shownOutfit == null) return;
+        int o = shownOutfit[selected];
+        ChefRoster.Chef chef = ChefRoster.All[selected];
+        Sprite p = ChefRoster.Portrait(chef, o);
+        Card c = cards[selected];
+        for (int d = 0; d < c.sprites.Length; d++) c.sprites[d] = p;
+        if (p != null) c.portrait.sprite = p;
+        c.portrait.color = ChefRoster.OutfitOwned(selected, o) ? Color.white : new Color(0.55f, 0.55f, 0.6f);
+        if (outfitText != null)
+        {
+            ChefRoster.Outfit of = ChefRoster.Outfits[o];
+            outfitText.text = "Vestit: <color=#FFCC4D>" + of.name + "</color>" + (ChefRoster.OutfitOwned(selected, o) ? "" : "  ·  " + of.price + " propines")
+                            + "   <size=80%>(" + (GamepadInput.UsingGamepad ? "↑↓" : "V") + " per canviar)</size>";
+        }
     }
 
     // Començar: si el xef està bloquejat, primer es compra
@@ -175,6 +215,24 @@ public class ChefSelectScreen : MonoBehaviour
                 RefreshAll();
             }
             else { Say("Et falten " + (price - Progression.Tips) + " propines", new Color(1f, 0.55f, 0.5f)); AudioManager.Play("ui_back"); }
+            return;
+        }
+
+        // el vestit que es mira encara no és teu: primer es compra
+        int outfit = shownOutfit != null ? shownOutfit[selected] : 0;
+        if (!ChefRoster.OutfitOwned(selected, outfit))
+        {
+            int oprice = ChefRoster.Outfits[outfit].price;
+            if (ChefRoster.BuyOutfit(selected, outfit))
+            {
+                ChefRoster.SetOutfit(selected, outfit);
+                Say("Vestit " + ChefRoster.Outfits[outfit].name + " comprat!", new Color(0.55f, 1f, 0.6f));
+                AudioManager.Play("coin_big");
+                RefreshAll();
+                RefreshOutfit();
+                RefreshStartLabel();
+            }
+            else { Say("Et falten " + (oprice - Progression.Tips) + " propines", new Color(1f, 0.55f, 0.5f)); AudioManager.Play("ui_back"); }
             return;
         }
 
@@ -223,7 +281,9 @@ public class ChefSelectScreen : MonoBehaviour
     void RefreshStartLabel()
     {
         if (startLabel == null) return;
-        startLabel.text = Progression.IsChefUnlocked(selected) ? "Començar" : "Comprar (" + Progression.ChefPrice(selected) + ")";
+        int o = shownOutfit != null ? shownOutfit[selected] : 0;
+        startLabel.text = !Progression.IsChefUnlocked(selected) ? "Comprar (" + Progression.ChefPrice(selected) + ")"
+                        : !ChefRoster.OutfitOwned(selected, o) ? "Vestit (" + ChefRoster.Outfits[o].price + ")" : "Començar";
     }
 
     void RefreshDifficulty()
@@ -290,6 +350,8 @@ public class ChefSelectScreen : MonoBehaviour
 
         messageText = EndScreenUI.CreateText(bg, "Missatge", "", 30f, new Vector2(0.5f, 0.27f), new Vector2(1200f, 50f), Color.white, true);
         messageText.raycastTarget = false;
+        outfitText = EndScreenUI.CreateText(bg, "Vestit", "", 28f, new Vector2(0.5f, 0.315f), new Vector2(1200f, 44f), new Color(1f, 0.92f, 0.8f));
+        outfitText.raycastTarget = false;
         TextMeshProUGUI help = helpText = EndScreenUI.CreateText(bg, "Ajuda", "",
             22f, new Vector2(0.5f, 0.025f), new Vector2(1500f, 36f), new Color(0.7f, 0.64f, 0.55f));
         help.raycastTarget = false;
@@ -302,7 +364,9 @@ public class ChefSelectScreen : MonoBehaviour
     {
         ChefRoster.Chef chef = ChefRoster.All[index];
         Card c = new Card();
-        for (int d = 0; d < Dirs.Length; d++) c.sprites[d] = ChefRoster.LoadSprite(chef, Dirs[d]);
+        // el retrat gran (medalló) amb el vestit que porta
+        Sprite portrait = ChefRoster.Portrait(chef, ChefRoster.OutfitOf(index));
+        for (int d = 0; d < Dirs.Length; d++) c.sprites[d] = portrait;
 
         // marc (daurat si està triada) i la carta de paper
         GameObject go = new GameObject("Carta " + chef.name, typeof(RectTransform), typeof(Image), typeof(Button));
