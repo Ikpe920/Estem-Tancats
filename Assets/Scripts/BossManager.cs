@@ -102,15 +102,15 @@ public class BossManager : MonoBehaviour
             GameObject ic = new GameObject("PuntFeble", typeof(RectTransform), typeof(Image));
             RectTransform irt = ic.GetComponent<RectTransform>();
             irt.SetParent(barRt, false);
-            irt.anchorMin = irt.anchorMax = new Vector2(1f, 0.5f);
-            irt.pivot = new Vector2(0f, 0.5f);
-            irt.sizeDelta = new Vector2(56f, 56f);
-            irt.anchoredPosition = new Vector2(22f, 0f);
+            irt.anchorMin = irt.anchorMax = new Vector2(1f, 0f);
+            irt.pivot = new Vector2(1f, 1f);
+            irt.sizeDelta = new Vector2(44f, 44f);
+            irt.anchoredPosition = new Vector2(-4f, -14f);
             weakIcon = ic.GetComponent<Image>();
             weakIcon.preserveAspect = true;
             weakIcon.raycastTarget = false;
-            weakText = NewText(irt, "", 20f, new Vector2(1f, 0.5f), new Vector2(6f, 0f), new Vector2(220f, 56f), TextAlignmentOptions.Left);
-            weakText.rectTransform.pivot = new Vector2(0f, 0.5f);
+            weakText = NewText(irt, "", 22f, new Vector2(0f, 0.5f), new Vector2(-8f, 0f), new Vector2(320f, 40f), TextAlignmentOptions.Right);
+            weakText.rectTransform.pivot = new Vector2(1f, 0.5f);
         }
     }
 
@@ -233,7 +233,7 @@ public class BossManager : MonoBehaviour
         Sprite sp = icon != null ? Resources.Load<Sprite>("Weak/" + icon) : null;
         if (weakIcon != null) { weakIcon.sprite = sp; weakIcon.enabled = sp != null; }
         if (weakText != null)
-            weakText.text = sp != null ? "<size=75%><color=#FF9A40>PUNT FEBLE</color></size>\n" + DamageKind.Name(boss.weakness) : "";
+            weakText.text = sp != null ? "<color=#FF9A40>PUNT FEBLE:</color> " + DamageKind.Name(boss.weakness) : "";
     }
 
     void UpdateExtras()
