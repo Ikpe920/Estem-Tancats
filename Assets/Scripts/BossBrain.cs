@@ -275,6 +275,8 @@ public abstract class BossBrain : MonoBehaviour
     protected Enemy enemy;
     protected Rigidbody2D rb;
     protected bool phase2;
+    protected bool phase3;          // quan li queda un 20% de vida: l'últim recurs
+    private float nextTaunt, nextDesperate, fightStart;
 
     // moviment: per defecte camina cap a tu; amb keepMax > 0 es manté a distància i va de costat
     protected float keepMin, keepMax;
@@ -286,6 +288,10 @@ public abstract class BossBrain : MonoBehaviour
     protected abstract IEnumerator Brain();
     protected abstract string Phase2Line { get; }
     protected virtual void OnPhase2() { }
+    protected virtual string Phase3Line => "ÚLTIM PLAT!";
+    protected virtual Sprite DesperateSprite => null;      // el tret del seu atac desesperat
+    protected virtual string[] Taunts => new string[0];    // el que diu mentre lluita
+    protected virtual float VoicePitch => 1f;              // la seva veu de dibuix animat (bla-bla)
     protected virtual Color Tone => new Color(1f, 0.85f, 0.4f);
 
     protected virtual void Start()
@@ -293,8 +299,29 @@ public abstract class BossBrain : MonoBehaviour
         enemy = GetComponent<Enemy>();
         rb = GetComponent<Rigidbody2D>();
         if (enemy != null) enemy.externalMovement = true;
+        fightStart = Time.time;
+        nextTaunt = Time.time + 2.5f;
+        Enemy.OnKilled += OnAnyKilled;
         StartCoroutine(Run());
     }
+
+    void OnDestroy() { Enemy.OnKilled -= OnAnyKilled; }
+
+    // el rècord de temps contra aquest cap (es veu al Bestiari)
+    void OnAnyKilled(Enemy e)
+    {
+        if (e != enemy || e == null) return;
+        float time = Time.time - fightStart;
+        string key = "boss_time_" + Codex.ClientKey(e);
+        float best = PlayerPrefs.GetFloat(key, 0f);
+        bool record = best <= 0f || time < best;
+        if (record) { PlayerPrefs.SetFloat(key, time); PlayerPrefs.Save(); }
+        HazardFx.Popup(Pos + Vector2.up * 3f, (record ? "NOU RÈCORD! " : "TEMPS: ") + BossRush.Clock(time),
+                       record ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.85f), 2f);
+        AudioManager.SetBossPhase2(false);
+    }
+
+    public static float BestTime(string clientKey) { return PlayerPrefs.GetFloat("boss_time_" + clientKey, 0f); }
 
     IEnumerator Run()
     {
@@ -303,6 +330,12 @@ public abstract class BossBrain : MonoBehaviour
         {
             if (!Alive) { yield return null; continue; }
             yield return StartCoroutine(Brain());
+            // 3a fase: de tant en tant, l'atac desesperat
+            if (phase3 && Alive && Time.time >= nextDesperate)
+            {
+                nextDesperate = Time.time + 9f;
+                yield return StartCoroutine(Desperate());
+            }
             yield return null;
         }
     }
@@ -314,9 +347,31 @@ public abstract class BossBrain : MonoBehaviour
 
     void Update()
     {
-        if (phase2 || enemy == null || enemy.IsDead) return;
+        if (enemy == null || enemy.IsDead) return;
+        if (Alive && Time.time >= nextTaunt && Taunts.Length > 0)
+        {
+            nextTaunt = Time.time + Random.Range(7f, 12f);
+            Talk(Taunts[Random.Range(0, Taunts.Length)]);
+        }
+        if (phase2 && !phase3 && enemy.CurrentHealth <= enemy.MaxHealth / 5)
+        {
+            phase3 = true;
+            nextDesperate = Time.time + 1f;
+            Say(Phase3Line, new Color(1f, 0.25f, 0.2f), 2f);
+            Squash.Kick(gameObject, 0.3f, -0.3f);
+            Fx.Shockwave(Pos, 3.5f, new Color(1f, 0.25f, 0.2f));
+            Fx.Explosion(Pos, 1.2f, 0.5f);
+            CameraFX.Shake(0.5f, 0.3f);
+            enemy.Flash(new Color(1f, 0.2f, 0.2f), 0.6f);
+            AudioManager.Play("phase", 1f, 0.85f);
+            moveMul = 1.35f;
+            return;
+        }
+        if (phase2) return;
         if (enemy.CurrentHealth > enemy.MaxHealth / 2) return;
         phase2 = true;
+        AudioManager.Play("phase");
+        AudioManager.SetBossPhase2(true); // la música s'accelera
         Say(Phase2Line, new Color(1f, 0.4f, 0.35f), 1.8f);
         Squash.Kick(gameObject, -0.25f, 0.3f);
         Fx.Shockwave(Pos, 2.5f, new Color(1f, 0.4f, 0.3f));
@@ -358,13 +413,56 @@ public abstract class BossBrain : MonoBehaviour
 
     protected IEnumerator Wait(float seconds)
     {
-        float end = Time.time + seconds * (phase2 ? 0.75f : 1f);
+        float end = Time.time + seconds * (phase3 ? 0.6f : phase2 ? 0.75f : 1f);
         while (Time.time < end) yield return null;
     }
 
     protected void Say(string text, Color color, float life = 1.1f)
     {
         HazardFx.Popup(Pos + Vector2.up * 2.4f, text, color, life);
+    }
+
+    // parla: el text a sobre i la seva veu de dibuix animat (síl·labes "bla-bla")
+    protected void Talk(string text)
+    {
+        HazardFx.Popup(Pos + Vector2.up * 2.9f, "«" + text + "»", new Color(1f, 0.97f, 0.9f), 2.2f);
+        StartCoroutine(Babble(Mathf.Clamp(text.Length / 3, 3, 10)));
+    }
+
+    IEnumerator Babble(int syllables)
+    {
+        for (int i = 0; i < syllables; i++)
+        {
+            AudioManager.Play("voice_" + Random.Range(0, 4), 0.9f, VoicePitch * Random.Range(0.9f, 1.12f));
+            yield return new WaitForSeconds(Random.Range(0.08f, 0.13f));
+        }
+    }
+
+    // l'atac desesperat de la 3a fase: tres corones del seu tret que giren, i una onada
+    protected virtual IEnumerator Desperate()
+    {
+        hold = true;
+        Say(Phase3Line, new Color(1f, 0.3f, 0.25f), 1f);
+        Squash.Kick(gameObject, 0.25f, -0.25f);
+        for (float t = 0f; t < 0.5f; t += 0.1f)
+        {
+            Fx.Sparkle(Pos + Random.insideUnitCircle * 1.5f, new Color(1f, 0.4f, 0.3f));
+            yield return new WaitForSeconds(0.1f);
+        }
+        float off = Random.Range(0f, 360f);
+        for (int k = 0; k < 3 && Alive; k++)
+        {
+            foreach (BossShotFx f in Ring(DesperateSprite, 14, 5.5f, off + k * 13f, 0.7f, DesperateSprite == null ? new Color(1f, 0.4f, 0.3f) : (Color?)null))
+            {
+                f.spin = 400f;
+                f.curve = k % 2 == 0 ? 30f : -30f;
+            }
+            Fx.Shockwave(Pos, 2f, new Color(1f, 0.4f, 0.3f));
+            AudioManager.Play("explosion", 0.4f, 1.3f);
+            yield return new WaitForSeconds(0.35f);
+        }
+        hold = false;
+        yield return Wait(1f);
     }
 
     // fa mal al jugador si és dins del cercle (el dash ho esquiva); torna si l'ha tocat
@@ -607,6 +705,9 @@ public class BossCriticBrain : BossBrain
 {
     Sprite star;
     protected override string Phase2Line => "RESSENYA NEGATIVA!";
+    protected override Sprite DesperateSprite => star;
+    protected override float VoicePitch => 1.15f;
+    protected override string[] Taunts => new[] { "Massa sal!", "Això està cru!", "Un zero rodó!", "On és el xef?", "Quina vergonya!" };
     protected override void Start() { star = Shot("Star"); keepMin = 3f; keepMax = 6.5f; base.Start(); }
 
     protected override IEnumerator Brain()
@@ -670,6 +771,10 @@ public class BossDrunkBrain : BossBrain
 {
     Sprite beer;
     protected override string Phase2Line => "UNA ALTRA RONDA!";
+    protected override Sprite DesperateSprite => beer;
+    protected override float VoicePitch => 0.75f;
+    protected override string Phase3Line => "LA DARRERA... HIC!";
+    protected override string[] Taunts => new[] { "Una altra ronda!", "Hic!", "Tu ets el meu millor amic...", "On és la barra?", "Paga la casa!" };
     protected override void Start() { beer = Shot("Beer"); base.Start(); }
 
     static readonly Color Beer = new Color(0.95f, 0.7f, 0.2f);
@@ -740,6 +845,10 @@ public class BossChefBrain : BossBrain
     Sprite pan;
     float nextHelpers;
     protected override string Phase2Line => "FOC A LA CUINA!";
+    protected override Sprite DesperateSprite => pan;
+    protected override float VoicePitch => 0.85f;
+    protected override string Phase3Line => "TOT AL FOC!";
+    protected override string[] Taunts => new[] { "Aquesta cuina és meva!", "Al forn amb tu!", "Massa poc fet!", "Sí, xef!", "A la paella!" };
     protected override void Start() { pan = Shot("Pan"); keepMin = 3.5f; keepMax = 6.5f; base.Start(); }
 
     protected override IEnumerator Brain()
@@ -817,6 +926,10 @@ public class BossVipBrain : BossBrain
     SpriteRenderer body;
     protected override string Phase2Line => "LA FACTURA, SI US PLAU!";
     protected override Color Tone => new Color(0.6f, 0.95f, 0.5f);
+    protected override Sprite DesperateSprite => bill;
+    protected override float VoicePitch => 1.05f;
+    protected override string Phase3Line => "PAGO JO!";
+    protected override string[] Taunts => new[] { "Saps qui soc jo?", "Vull parlar amb l'encarregat!", "Taula per a u. Sempre.", "Ho pago tot!", "Quin servei més lent!" };
     protected override void Start() { bill = Shot("Bill"); keepMin = 4f; keepMax = 7f; body = GetComponent<SpriteRenderer>(); base.Start(); }
 
     static readonly Color Money = new Color(0.5f, 0.9f, 0.45f);
@@ -903,6 +1016,10 @@ public class BossInspectorBrain : BossBrain
 {
     Sprite paper;
     protected override string Phase2Line => "TANCAT PER INSPECCIÓ!";
+    protected override Sprite DesperateSprite => paper;
+    protected override float VoicePitch => 1.25f;
+    protected override string Phase3Line => "CLAUSURAT!";
+    protected override string[] Taunts => new[] { "Article 34-B!", "Això no compleix la norma.", "Multa!", "On és el llibre de queixes?", "Inspecció!" };
     protected override void Start() { paper = Shot("Paper"); keepMin = 4.5f; keepMax = 7.5f; base.Start(); }
 
     static readonly Color Ink = new Color(0.85f, 0.2f, 0.25f);
@@ -990,6 +1107,10 @@ public class BossSommelierBrain : BossBrain
 {
     Sprite cork;
     protected override string Phase2Line => "UN RESERVA DEL 82!";
+    protected override Sprite DesperateSprite => cork;
+    protected override float VoicePitch => 0.95f;
+    protected override string Phase3Line => "UNA GRAN RESERVA!";
+    protected override string[] Taunts => new[] { "Notes de cuir i desesperació...", "Un vi amb molt de cos!", "Massa àcid!", "Salut!", "Aquest no marida." };
     protected override void Start() { cork = Shot("Cork"); keepMin = 3f; keepMax = 6f; base.Start(); }
 
     static readonly Color Wine = new Color(0.6f, 0.1f, 0.25f);
@@ -1047,6 +1168,10 @@ public class BossGelaterBrain : BossBrain
 {
     Sprite ball;
     protected override string Phase2Line => "TEMPESTA DE NEU!";
+    protected override Sprite DesperateSprite => ball;
+    protected override float VoicePitch => 1.35f;
+    protected override string Phase3Line => "ERA GLACIAL!";
+    protected override string[] Taunts => new[] { "Una bola o dues?", "Fresquet, eh?", "Et deixaré glaçat!", "Gelat de xef!", "Brrrr!" };
     protected override void Start() { ball = Shot("IceBall"); keepMin = 3.5f; keepMax = 6.5f; base.Start(); }
 
     static readonly Color Ice = new Color(0.65f, 0.88f, 1f);
@@ -1105,6 +1230,9 @@ public class BossGelaterBrain : BossBrain
 public class BossTvBrain : BossBrain
 {
     protected override string Phase2Line => "PUBLICITAT? NO! MÉS EMOCIÓ!";
+    protected override float VoicePitch => 1.2f;
+    protected override string Phase3Line => "EN DIRECTE... I FINAL!";
+    protected override string[] Taunts => new[] { "Somriu a la càmera!", "Audiència rècord!", "Tornem després de la publicitat!", "Quin espectacle!", "Aplaudiments!" };
     protected override void Start() { keepMin = 5f; keepMax = 8f; base.Start(); }
 
     static readonly Color Spot = new Color(1f, 0.95f, 0.5f);

@@ -153,8 +153,29 @@ public class BossIntroScreen : MonoBehaviour
         if (!wasPaused) Time.timeScale = 1f;
     }
 
+    private string jingle;
+    private bool jinglePlayed;
+
+    // el jingle de cada cap (Tools/AudioGen/cartoon_sfx.py)
+    static string JingleFor(BossType t)
+    {
+        switch (t)
+        {
+            case BossType.Critic: return "jingle_0";
+            case BossType.Borratxo: return "jingle_1";
+            case BossType.Cuiner: return "jingle_2";
+            case BossType.Pallas: return "jingle_3";
+            case BossType.Inspector: return "jingle_4";
+            case BossType.Sommelier: return "jingle_5";
+            case BossType.Gelater: return "jingle_6";
+            case BossType.TvCritic: return "jingle_7";
+        }
+        return null;
+    }
+
     void Animate(float t)
     {
+        if (!jinglePlayed && t >= 0.45f && jingle != null) { jinglePlayed = true; AudioManager.Play(jingle); }
         dim.color = new Color(0f, 0f, 0f, 0.7f);
 
         // el cartell cau des de dalt i s'atura amb un petit rebot
@@ -219,6 +240,7 @@ public class BossIntroScreen : MonoBehaviour
 
     void Build(BossInfo info, Sprite sprite, int act, int wave, string tagLine)
     {
+        jingle = JingleFor(info.type);
         GameObject canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler));
         canvasGo.transform.SetParent(transform, false);
         Canvas canvas = canvasGo.GetComponent<Canvas>();

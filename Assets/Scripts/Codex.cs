@@ -291,7 +291,7 @@ public class CodexScreen : MonoBehaviour
             bool seen = kills > 0;
             Sprite sp = Resources.Load<Sprite>(c.sprite);
             string text = seen
-                ? c.desc + "\n\n<color=#FFCC4D>Despatxats: " + kills + "</color>" + (c.boss ? "" : "\nSurt a partir de l'onada " + c.firstWave)
+                ? c.desc + "\n\n<color=#FFCC4D>Despatxats: " + kills + "</color>" + (c.boss ? (BossBrain.BestTime(c.key) > 0f ? "\n<color=#FFCC4D>Millor temps: " + BossRush.Clock(BossBrain.BestTime(c.key)) + "</color>" : "") : "\nSurt a partir de l'onada " + c.firstWave)
                 : (c.boss ? "Un cap que encara no has vençut." : "Encara no n'has despatxat cap.") + "\nSurt a partir de l'onada " + c.firstWave + ".";
             Button cell = Cell(i, cols, Mathf.CeilToInt(clients.Count / (float)cols), sp, seen, () => ShowDetail(sp, seen, seen ? c.name : "???", text));
             if (c.boss) cell.GetComponent<Image>().color = new Color(0.32f, 0.14f, 0.14f);
