@@ -145,6 +145,7 @@ public class WaveSpawner : MonoBehaviour
         if (boonManager == null) boonManager = GetComponent<BoonManager>();
 
         LostRecipes.ResetRun();
+        if (DailyChallenge.Active) DailyChallenge.Apply(this); // el repte del dia: 15 onades, la llavor i la regla del dia
 
         // caps seguits: només els caps, contra rellotge
         if (BossRush.Active)
@@ -266,6 +267,16 @@ public class WaveSpawner : MonoBehaviour
                 yield return StartCoroutine(actManager.ShowRoundComplete(currentWave));
             yield return new WaitForSeconds(0.4f);
 
+            // el repte del dia: en acabar la 15a onada, guanyes
+            if (DailyChallenge.Active && !BossRush.Active && currentWave >= finalWave)
+            {
+                int dp = ScoreManager.Instance != null ? ScoreManager.Instance.totalScore : 0;
+                int dc = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
+                DailyChallenge.Finish(true, dp);
+                RunStats.Save(currentWave, dp, dc);
+                Iris.LoadScene(SceneNames.Win);
+                yield break;
+            }
             // final del joc: en acabar l'última onada, guanyes... o continues en mode infinit
             if (BossRush.Active && currentWave >= finalWave)
             {

@@ -110,7 +110,8 @@ public static class WaveEvents
             if (!(f == WaveEventKind.TallDeLlum && (act == 4 || act == 5))) { last = f; return f; }
         }
 
-        if (bossWave || wave < FirstWave || last != WaveEventKind.None || Random.value >= Chance)
+        bool every = DailyChallenge.Is(DailyChallenge.Rule.TotEspecial) && wave >= 2; // repte del dia: cada onada en té un
+        if (bossWave || (!every && (wave < FirstWave || last != WaveEventKind.None || Random.value >= Chance)))
         {
             last = WaveEventKind.None;
             return WaveEventKind.None;
@@ -220,6 +221,7 @@ public static class WaveEvents
         if (Current == WaveEventKind.Ressenya && !hitThisWave && !PlayerHealth.IsDying)
         {
             Progression.AddTips(15);
+            Achievements.Unlock("review");
             Transform p = PlayerRef.Transform;
             if (p != null) HazardFx.Popup((Vector2)p.position + Vector2.up * 1.8f, "★★★★★ CINC ESTRELLES! +15 propines", new Color(1f, 0.9f, 0.4f), 2f);
             AudioManager.Play("challenge");
@@ -511,6 +513,7 @@ public class BirthdayCake : MonoBehaviour
             done = true;
             for (int i = 0; i < 4; i++) XpCoin.Spawn(p + Random.insideUnitCircle * 0.5f, 1);
             HazardFx.Popup(p + Vector2.up, "PER MOLTS ANYS!", new Color(1f, 0.7f, 0.85f), 1f);
+            Achievements.Unlock("cake");
             AudioManager.Play("coin_big", 0.7f);
             Destroy(gameObject);
         }

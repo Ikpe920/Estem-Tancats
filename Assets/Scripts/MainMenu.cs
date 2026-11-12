@@ -17,7 +17,22 @@ public class MainMenu : MonoBehaviour
         Time.timeScale = 1f;
         if (ChefSelectScreen.IsOpen) return;
         BossRush.Active = false;
+        DailyChallenge.Active = false;
         ChefSelectScreen.Open(() => Iris.LoadScene(SceneNames.Story));
+    }
+
+    // el repte del dia: 15 onades amb la regla d'avui (sense la història)
+    public void PlayDaily()
+    {
+        Time.timeScale = 1f;
+        if (ChefSelectScreen.IsOpen) return;
+        BossRush.Active = false;
+        ChefSelectScreen.Open(() =>
+        {
+            RunStats.Reset();
+            DailyChallenge.Begin();
+            Iris.LoadScene(SceneNames.Game);
+        });
     }
 
     // el Menú Degustació: els 8 caps seguits, contra rellotge (sense història)
@@ -30,6 +45,7 @@ public class MainMenu : MonoBehaviour
         ChefSelectScreen.Open(() =>
         {
             RunStats.Reset();
+            DailyChallenge.Active = false;
             BossRush.Begin(m);
             Iris.LoadScene(SceneNames.Game);
         });

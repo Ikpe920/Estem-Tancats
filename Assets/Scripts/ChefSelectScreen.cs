@@ -211,6 +211,9 @@ public class ChefSelectScreen : MonoBehaviour
             if (Progression.BuyChef(selected))
             {
                 Say("Has desbloquejat " + ChefRoster.All[selected].name + "!", new Color(0.55f, 1f, 0.6f));
+                bool all = true;
+                for (int k = 0; k < ChefRoster.All.Length; k++) if (!Progression.IsChefUnlocked(k)) all = false;
+                if (all) Achievements.Unlock("allchefs");
                 AudioManager.Play("coin_big");
                 RefreshAll();
             }
@@ -226,6 +229,7 @@ public class ChefSelectScreen : MonoBehaviour
             if (ChefRoster.BuyOutfit(selected, outfit))
             {
                 ChefRoster.SetOutfit(selected, outfit);
+                Achievements.Unlock("outfit");
                 Say("Vestit " + ChefRoster.Outfits[outfit].name + " comprat!", new Color(0.55f, 1f, 0.6f));
                 AudioManager.Play("coin_big");
                 RefreshAll();

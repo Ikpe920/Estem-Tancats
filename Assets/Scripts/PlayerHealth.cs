@@ -57,6 +57,7 @@ public class PlayerHealth : MonoBehaviour
         if (ScoreManager.Instance != null) ScoreManager.Instance.NotifyPlayerHit(); // talla la ratxa
         Progression.OnPlayerHit(); // per als reptes "sense cops"
         WaveEvents.OnPlayerHit();  // la Ressenya en directe
+        Achievements.LastPlayerHit = Time.time;
         if (lives > 0) AudioManager.Play("hurt"); // si és l'últim cor, ja sona la mort
         GamepadInput.Rumble(0.6f, 0.5f, 0.22f);
         nextDamageTime = Time.time + invulnerabilityTime;
@@ -74,6 +75,7 @@ public class PlayerHealth : MonoBehaviour
             int combo = ScoreManager.Instance != null ? ScoreManager.Instance.MaxCombo : 0;
             RunStats.Save(wave, points, combo);
             if (BossRush.Active) BossRush.Finish(false);
+            if (DailyChallenge.Active) DailyChallenge.Finish(false, points);
             StartCoroutine(DeathSequence(spawner));
         }
     }

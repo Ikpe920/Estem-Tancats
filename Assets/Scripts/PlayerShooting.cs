@@ -94,6 +94,7 @@ public class PlayerShooting : MonoBehaviour
     {
         Heat = 1f;
         overheatedUntil = Time.time + overheatTime;
+        Achievements.Unlock("overheat");
         HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.5f, "MASSA CALENT!", new Color(1f, 0.45f, 0.3f), 1f);
         AudioManager.Play("fuse", 1f, 1.4f);
         for (int i = 0; i < 4; i++) Fx.Steam((Vector2)transform.position + Random.insideUnitCircle * 0.4f + Vector2.up * 0.3f);

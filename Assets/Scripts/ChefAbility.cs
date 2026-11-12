@@ -89,6 +89,7 @@ public class ChefAbility : MonoBehaviour
     {
         if (Tier == shownTier) return;
         shownTier = Tier;
+        if (shownTier >= 4) Achievements.Unlock("tier4");
         if (nameText != null) nameText.text = def.name + Roman[shownTier];
         HazardFx.Popup((Vector2)transform.position + Vector2.up * 2.2f, def.name + Roman[shownTier] + "!", def.color, 1.6f);
         AudioManager.Play("set", 0.8f, 1.1f);
@@ -128,6 +129,7 @@ public class ChefAbility : MonoBehaviour
         readyAt = Time.time + def.cooldown;
         wasReady = false;
         Stats.Add("abilities");
+        if (Stats.Get("abilities") >= 100) Achievements.Unlock("abil100");
         HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.6f, def.name + "!", def.color, 0.9f);
         GamepadInput.Rumble(0.5f, 0.5f, 0.2f);
         switch (chef)

@@ -24,8 +24,9 @@ public class EliteClient : MonoBehaviour
 
     public static void MaybeApply(Enemy e, int wave)
     {
-        if (e == null || e.isBoss || wave < 6 || BossRush.Active) return;
-        float chance = Mathf.Lerp(0.05f, 0.14f, Mathf.InverseLerp(6f, 35f, wave));
+        bool party = DailyChallenge.Is(DailyChallenge.Rule.FestaElit); // repte del dia: festa d'elit
+        if (e == null || e.isBoss || wave < (party ? 2 : 6) || BossRush.Active) return;
+        float chance = Mathf.Lerp(0.05f, 0.14f, Mathf.InverseLerp(6f, 35f, wave)) * (party ? 4f : 1f);
         if (Random.value > chance) return;
         EliteClient ec = e.gameObject.AddComponent<EliteClient>();
         ec.kind = (Kind)Random.Range(0, 4);
@@ -122,6 +123,7 @@ public class EliteClient : MonoBehaviour
     {
         if (e != enemy) return;
         Vector2 pos = transform.position;
+        Achievements.Add("elite", 1, 10, "elite10");
         for (int i = 0; i < 5; i++) XpCoin.Spawn(pos + Random.insideUnitCircle * 0.6f, 1);
         Fx.Sparkles(pos, new Color(1f, 0.85f, 0.3f), 10, 1f);
         if (kind == Kind.Petard && WaveSpawner.Instance != null) WaveSpawner.Instance.StartCoroutine(Blast(pos));

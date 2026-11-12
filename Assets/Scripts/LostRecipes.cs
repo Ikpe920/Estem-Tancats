@@ -66,6 +66,8 @@ public static class LostRecipes
         PlayerPrefs.SetInt("recipe_found_" + room, 1);
         PlayerPrefs.Save();
         Stats.Add("recipes");
+        Achievements.Unlock("recipe1");
+        if (FoundCount() >= All.Length) Achievements.Unlock("recipe8");
         if (first) Progression.AddTips(20);
     }
 }

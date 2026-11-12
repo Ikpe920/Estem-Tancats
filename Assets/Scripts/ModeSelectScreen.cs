@@ -66,23 +66,30 @@ public class ModeSelectScreen : MonoBehaviour
             ? "Rècord: " + RunStats.BestPoints + " punts · onada " + RunStats.BestWave : "Encara no l'has jugat";
         string rushRecord = BossRush.RecordLine(BossRush.Menu.Classic) + "\n<size=85%>5 menús per triar</size>";
 
-        Button normal = Card(root, new Vector2(0.29f, 0.47f), NormalCol, "Walk/Enemy_Front_1",
+        Button normal = Card(root, new Vector2(0.2f, 0.47f), NormalCol, "Walk/Enemy_Front_1",
             "EL SERVEI",
             "La partida de sempre: la història,\n40 onades, 8 sales i 8 caps.\nI si aguantes, hores extres.",
             normalRecord, () => { Close(false); if (menu != null) menu.PlayNormal(); });
-        Button rush = Card(root, new Vector2(0.71f, 0.47f), RushCol, "Bosses/Sommelier",
+        Button rush = Card(root, new Vector2(0.5f, 0.47f), RushCol, "Bosses/Sommelier",
             "MENÚ DEGUSTACIÓ",
             "Vuit plats forts: els 8 caps\nl'un darrere l'altre, sense clients.\nContra rellotge.",
             rushRecord, () => ShowMenus());
-        cards = new[] { (RectTransform)normal.transform, (RectTransform)rush.transform };
+        // el repte del dia: una partida curta amb la regla d'avui
+        DailyChallenge.Rule today = DailyChallenge.Today;
+        Button daily = Card(root, new Vector2(0.8f, 0.47f), new Color(0.22f, 0.32f, 0.55f), "Decor/Medalla",
+            "REPTE DEL DIA",
+            "15 onades amb la regla d'avui:\n<color=#FFCC4D>" + DailyChallenge.Name(today) + "</color>\n<size=85%>" + DailyChallenge.Desc(today) + "</size>",
+            DailyChallenge.RecordLine(), () => { Close(false); if (menu != null) menu.PlayDaily(); });
+        cards = new[] { (RectTransform)normal.transform, (RectTransform)rush.transform, (RectTransform)daily.transform };
 
         Button back = EndScreenUI.CreateButton(root, "Tornar", new Vector2(0.5f, 0.1f), new Vector2(300f, 72f), new Color(0.30f, 0.30f, 0.35f), () => Close(true));
         this.root = root;
-        firstPage = new GameObject[] { normal.gameObject, rush.gameObject, back.gameObject };
+        firstPage = new GameObject[] { normal.gameObject, rush.gameObject, back.gameObject, daily.gameObject };
 
         // navegació amb el comandament només entre aquests tres botons (no els del menú de sota)
         Link(normal, null, rush, null, back);
-        Link(rush, normal, null, null, back);
+        Link(rush, normal, daily, null, back);
+        Link(daily, rush, null, null, back);
         Link(back, null, null, normal, null);
 
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(normal.gameObject);
@@ -137,7 +144,7 @@ public class ModeSelectScreen : MonoBehaviour
         if (menusPage != null) Destroy(menusPage.gameObject);
         menusPage = null;
         foreach (GameObject g in firstPage) g.SetActive(true);
-        cards = new[] { (RectTransform)firstPage[0].transform, (RectTransform)firstPage[1].transform };
+        cards = new[] { (RectTransform)firstPage[0].transform, (RectTransform)firstPage[1].transform, (RectTransform)firstPage[3].transform };
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(firstPage[1]);
     }
 
@@ -153,7 +160,7 @@ public class ModeSelectScreen : MonoBehaviour
 
     Button Card(RectTransform root, Vector2 anchor, Color color, string sprite, string name, string desc, string record, UnityEngine.Events.UnityAction onClick)
     {
-        Button b = EndScreenUI.CreateButton(root, "", anchor, new Vector2(680f, 560f), color, onClick);
+        Button b = EndScreenUI.CreateButton(root, "", anchor, new Vector2(560f, 560f), color, onClick);
         Transform t = b.transform;
 
         Sprite sp = Resources.Load<Sprite>(sprite);
@@ -171,10 +178,10 @@ public class ModeSelectScreen : MonoBehaviour
             img.raycastTarget = false;
         }
 
-        TextMeshProUGUI n = Label(t, name, 54f, new Vector2(0f, 35f), new Vector2(640f, 70f), UIStyle.Gold, true);
+        TextMeshProUGUI n = Label(t, name, 50f, new Vector2(0f, 35f), new Vector2(520f, 70f), UIStyle.Gold, true);
         UIStyle.Outline(n, 0.25f);
-        Label(t, desc, 28f, new Vector2(0f, -70f), new Vector2(640f, 130f), new Color(1f, 0.95f, 0.88f), false);
-        Label(t, record, 24f, new Vector2(0f, -205f), new Vector2(640f, 36f), new Color(1f, 0.85f, 0.55f), false).fontStyle = FontStyles.Italic;
+        Label(t, desc, 26f, new Vector2(0f, -70f), new Vector2(520f, 130f), new Color(1f, 0.95f, 0.88f), false);
+        Label(t, record, 22f, new Vector2(0f, -200f), new Vector2(520f, 60f), new Color(1f, 0.85f, 0.55f), false).fontStyle = FontStyles.Italic;
         return b;
     }
 
