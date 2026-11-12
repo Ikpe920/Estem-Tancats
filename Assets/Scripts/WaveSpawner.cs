@@ -162,8 +162,8 @@ public class WaveSpawner : MonoBehaviour
         if (BossRush.Active && boonManager != null && boonManager.xpMode)
         {
             yield return new WaitForSeconds(0.6f);
-            yield return StartCoroutine(boonManager.OpenChest("CAPS SEGUITS!"));
-            yield return StartCoroutine(boonManager.OpenChest("CAPS SEGUITS!"));
+            yield return StartCoroutine(boonManager.OpenChest("APERITIU!"));
+            yield return StartCoroutine(boonManager.OpenChest("APERITIU!"));
         }
 
         while (true)
@@ -199,7 +199,7 @@ public class WaveSpawner : MonoBehaviour
                     if (psr != null) portrait = psr.sprite;
                 }
                 int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
-                string bossTag = BossRush.Active ? "— CAPS SEGUITS · CAP " + currentWave + " DE " + BossRush.Bosses + " —"
+                string bossTag = BossRush.Active ? "— MENÚ DEGUSTACIÓ · PLAT " + currentWave + " DE " + BossRush.Bosses + " —"
                                : endless && actManager != null ? "— HORES EXTRES · " + ActManager.Clock(actManager.Hour) + " · ONADA " + currentWave + " —" : null;
                 yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
 
