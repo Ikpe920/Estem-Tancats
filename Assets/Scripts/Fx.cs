@@ -89,7 +89,7 @@ public class Fx : MonoBehaviour
     static Sprite One(string name, Sprite fallback)
     {
         Sprite sp;
-        if (!singles.TryGetValue(name, out sp)) { sp = Resources.Load<Sprite>("Fx/" + name); singles[name] = sp; }
+        if (!singles.TryGetValue(name, out sp)) { sp = Resources.Load<Sprite>(name.Contains("/") ? name : "Fx/" + name); singles[name] = sp; } // amb "/" és un camí sencer
         return sp != null ? sp : fallback;
     }
 
@@ -364,6 +364,18 @@ public class Fx : MonoBehaviour
             Emit(EmberSprite(), from + dir * 0.5f, d * range * 3f, Random.Range(0.3f, 0.5f), 0.18f, 0.05f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 7, 2f, 0f, false, 300f);
         }
         if (Random.value < 0.03f * amount) Scorch(from + dir * range * Random.Range(0.5f, 0.95f), range * 0.25f, 1f);
+    }
+
+    // estelles de vidre que surten disparades (les ampolles de la Barra)
+    public static void Glass(Vector2 pos, int n)
+    {
+        Sprite sp = One("Hazards/Vidre", Spark());
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(4f, 10f);
+            Emit(sp, pos + Vector2.up * 0.3f, d, Random.Range(0.35f, 0.6f), Random.Range(0.25f, 0.4f), 0.1f,
+                 Color.white, new Color(1f, 1f, 1f, 0f), 9, 4f, -3f, false, Random.Range(-720f, 720f));
+        }
     }
 
     // bombolles de cava (Resources/DishFx/Bombolla) que surten i pugen
