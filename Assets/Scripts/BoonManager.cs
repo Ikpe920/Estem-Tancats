@@ -933,9 +933,26 @@ public class BoonManager : MonoBehaviour
         foreach (SetBonus s in SetBonuses.All)
         {
             if (SetBonuses.Has(s.id)) continue;
-            if (TypeStacks(s.a) > 0 && TypeStacks(s.b) > 0) ActivateSet(s);
+            if (TypeStacks(s.a) > 0 && TypeStacks(s.b) > 0)
+            {
+                // un conjunt contrari ja actiu (gel contra foc): aquest no s'activa
+                SetBonus blocker = SetBonuses.BlockedBy(s.id);
+                if (blocker != null)
+                {
+                    if (!blockedWarned.Contains(s.id) && health != null)
+                    {
+                        blockedWarned.Add(s.id);
+                        HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 2.2f,
+                            s.name.ToUpper() + " NO CONVIU AMB " + blocker.name.ToUpper(), new Color(0.75f, 0.85f, 1f), 2f);
+                    }
+                    continue;
+                }
+                ActivateSet(s);
+            }
         }
     }
+
+    private readonly HashSet<SetId> blockedWarned = new HashSet<SetId>();
 
     void ActivateSet(SetBonus s)
     {

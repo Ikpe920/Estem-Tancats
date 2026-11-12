@@ -278,6 +278,10 @@ public class CodexScreen : MonoBehaviour
             btn.targetGraphic = img;
             string hint = "Combina un plat de <b>" + TypeName(set.a) + "</b> i un de <b>" + TypeName(set.b) + "</b>";
             Sprite icon = IconOfType(set.a);
+            string against = "";
+            foreach (SetId cid in SetBonuses.ConflictsOf(set.id))
+                foreach (SetBonus o in sets) if (o.id == cid) against += (against.Length > 0 ? ", " : "") + o.name;
+            if (against.Length > 0) hint += "\n<color=#9EC9FF>No conviu amb: " + against + "</color>";
             btn.onClick.AddListener(() => ShowDetail(icon, true, seen ? set.name : "???", seen ? set.effect + "\n\n" + hint : hint + " per descobrir-lo."));
             r.gameObject.AddComponent<CodexHover>().onFocus = () => btn.onClick.Invoke();
             TextMeshProUGUI tx = EndScreenUI.CreateText(r, "Text", seen ? "<color=#FFCC4D><b>" + set.name + "</b></color>  " + set.effect : "<color=#888888>???</color>", 22f, new Vector2(0.5f, 0.5f), Vector2.zero, Color.white);
