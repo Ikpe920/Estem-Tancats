@@ -130,6 +130,7 @@ public class RomescoWave : MonoBehaviour
 public class PanelletsRing : MonoBehaviour
 {
     public int count = 0; // panellets per dash
+    static Sprite panellet;
 
     private PlayerMovement movement;
     private PlayerShooting shooting;
@@ -165,6 +166,8 @@ public class PanelletsRing : MonoBehaviour
             Projectile p = Projectile.Get(prefab, (Vector2)transform.position + dir * 0.6f, Quaternion.Euler(0f, 0f, a));
             if (p == null) continue;
             p.damage += shooting.damage - 1;
+            if (panellet == null) panellet = Resources.Load<Sprite>("Projectiles/Panellet");
+            p.SetSprite(panellet); // un panellet de debò (Tools/SpriteGen/dish_fx.py)
             p.Launch(dir * shooting.projectileSpeed * 0.8f);
         }
     }

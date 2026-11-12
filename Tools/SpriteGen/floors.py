@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 # =====================================================================
-#  TERRES DE LES SALES NOVES (Resources/Actes/<nom>.png, 256x256, es repeteixen sense tall)
+#  TERRES DE LES SALES (Resources/Actes/<nom>.png, 256x256, es repeteixen sense tall)
 # =====================================================================
-#   python3 Tools/SpriteGen/floors.py            -> Celler, Cambra i Plato
+#   python3 Tools/SpriteGen/floors.py            -> totes les sales: Sala, Barra, Cuina, Terrassa, Teulada,
+#                                                   Celler, Cambra i Plato
 #   python3 Tools/SpriteGen/floors.py full.png   -> i una làmina per veure'ls
 import os, sys, random
 from PIL import Image, ImageDraw
@@ -13,6 +14,120 @@ N = 256
 def jitter(c, r, k=10):
     j = r.randint(-k, k)  # el mateix canvi als tres canals: més clar o més fosc, sense canviar de color
     return tuple(max(0, min(255, v + j)) for v in c)
+
+
+def wrap_rect(d, x0, y0, x1, y1, fill):
+    """Un rectangle que, si surt per la dreta, continua per l'esquerra (perquè la rajola no tingui tall)."""
+    for dx in (-N, 0, N):
+        d.rectangle([x0 + dx, y0, x1 + dx, y1], fill=fill)
+
+
+def sala():
+    """El menjador: parquet de taulons de fusta clara, amb veta i claus."""
+    r = random.Random(11)
+    im = Image.new('RGB', (N, N), (66, 44, 28))
+    d = ImageDraw.Draw(im)
+    w = 32
+    for i in range(N // w):
+        x0 = i * w
+        y = -r.randint(0, 120)
+        while y < N:
+            ln = r.randint(70, 130)
+            base = jitter((126, 88, 55), r, 8)
+            for dy in (-N, 0, N):
+                d.rectangle([x0 + 2, y + dy + 2, x0 + w - 2, y + ln + dy - 2], fill=base)
+                for k in range(3):  # veta de la fusta
+                    vx = x0 + 6 + k * 8 + r.randint(-1, 1)
+                    d.line([vx, y + dy + 6, vx + r.randint(-2, 2), y + ln + dy - 8], fill=jitter((104, 70, 44), r, 4))
+                d.point([(x0 + 6, y + dy + 6), (x0 + w - 7, y + dy + 6)], fill=(60, 40, 26))  # els claus
+            y += ln
+    return im
+
+
+def barra():
+    """La barra: fusta fosca i les franges de llautó dels reposapeus."""
+    r = random.Random(13)
+    im = Image.new('RGB', (N, N), (44, 30, 20))
+    d = ImageDraw.Draw(im)
+    h = 32
+    for j in range(N // h):
+        y0 = j * h
+        x = -r.randint(0, 100)
+        while x < N:
+            ln = r.randint(80, 140)
+            base = jitter((66, 44, 30), r, 5)
+            wrap_rect(d, x + 2, y0 + 2, x + ln - 2, y0 + h - 2, base)
+            for k in range(2):
+                vy = y0 + 9 + k * 10
+                for dx in (-N, 0, N):
+                    d.line([x + 6 + dx, vy, x + ln - 8 + dx, vy + r.randint(-1, 1)], fill=jitter((54, 36, 24), r, 3))
+            x += ln
+    for x in (52, 180):  # el llautó
+        d.rectangle([x, 0, x + 7, N], fill=(168, 128, 52))
+        d.line([x + 2, 0, x + 2, N], fill=(205, 168, 78), width=2)
+        d.line([x + 7, 0, x + 7, N], fill=(120, 88, 34))
+    return im
+
+
+def cuina():
+    """La cuina: rajoles grises amb junta fosca i alguna taca."""
+    r = random.Random(17)
+    im = Image.new('RGB', (N, N), (74, 80, 84))
+    d = ImageDraw.Draw(im)
+    s = 32
+    for y in range(0, N, s):
+        for x in range(0, N, s):
+            base = jitter((160, 166, 170), r, 7)
+            d.rectangle([x + 2, y + 2, x + s - 2, y + s - 2], fill=base)
+            d.line([x + 3, y + 3, x + s - 3, y + 3], fill=jitter((178, 184, 190), r, 3))
+            d.line([x + 3, y + 3, x + 3, y + s - 3], fill=jitter((178, 184, 190), r, 3))
+    for _ in range(9):  # taques d'oli i de salsa
+        cx, cy, rr = r.randint(0, N), r.randint(0, N), r.randint(3, 8)
+        c = r.choice([(130, 129, 122), (120, 112, 100), (140, 120, 110)])
+        for dx in (-N, 0, N):
+            for dy in (-N, 0, N):
+                d.ellipse([cx + dx - rr, cy + dy - rr * 0.7, cx + dx + rr, cy + dy + rr * 0.7], fill=c)
+    return im
+
+
+def terrassa():
+    """La terrassa: lloses de pedra clara, grans i petites."""
+    r = random.Random(19)
+    im = Image.new('RGB', (N, N), (142, 129, 99))
+    d = ImageDraw.Draw(im)
+    s = 64
+    for y in range(0, N, s):
+        for x in range(0, N, s):
+            if r.random() < 0.4:  # algunes lloses partides en quatre
+                for (ox, oy) in ((0, 0), (32, 0), (0, 32), (32, 32)):
+                    base = jitter((184, 168, 130), r, 9)
+                    d.rectangle([x + ox + 2, y + oy + 2, x + ox + 30, y + oy + 30], fill=base)
+            else:
+                base = jitter((188, 172, 134), r, 9)
+                d.rectangle([x + 2, y + 2, x + s - 2, y + s - 2], fill=base)
+                d.line([x + 3, y + 3, x + s - 3, y + 3], fill=jitter((200, 186, 150), r, 3))
+            for _ in range(5):  # porus de la pedra
+                d.point((x + r.randint(4, s - 4), y + r.randint(4, s - 4)), fill=jitter((158, 142, 106), r, 5))
+    return im
+
+
+def teulada():
+    """La teulada: maons vermells col·locats a trencajunts."""
+    r = random.Random(23)
+    im = Image.new('RGB', (N, N), (92, 40, 32))
+    d = ImageDraw.Draw(im)
+    h, w = 16, 32
+    for j in range(N // h):
+        y0 = j * h
+        off = 16 if j % 2 else 0
+        for i in range(-1, N // w + 1):
+            x0 = i * w + off
+            base = jitter((182, 86, 70), r, 12)
+            wrap_rect(d, x0 + 1, y0 + 1, x0 + w - 2, y0 + h - 2, base)
+            for dx in (-N, 0, N):
+                d.line([x0 + 2 + dx, y0 + 2, x0 + w - 3 + dx, y0 + 2], fill=jitter((196, 100, 84), r, 4))
+                d.line([x0 + 2 + dx, y0 + h - 2, x0 + w - 3 + dx, y0 + h - 2], fill=jitter((154, 70, 56), r, 4))
+    return im
 
 
 def celler():
@@ -87,7 +202,8 @@ def plato():
     return im
 
 
-FLOORS = {'Celler': celler, 'Cambra': cambra, 'Plato': plato}
+FLOORS = {'Sala': sala, 'Barra': barra, 'Cuina': cuina, 'Terrassa': terrassa, 'Teulada': teulada,
+          'Celler': celler, 'Cambra': cambra, 'Plato': plato}
 
 
 def main():

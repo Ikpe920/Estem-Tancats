@@ -184,6 +184,7 @@ public class SoupTrail : MonoBehaviour
 {
     public int level = 1;
     private float next;
+    static Sprite soup;
 
     void Update()
     {
@@ -196,7 +197,13 @@ public class SoupTrail : MonoBehaviour
 
     IEnumerator Puddle(Vector2 pos, float radius, float life)
     {
+        if (soup == null) soup = Resources.Load<Sprite>("DishFx/Sopa");
         SpriteRenderer sr = HazardFx.MakeCircle(pos, radius, new Color(0.95f, 0.7f, 0.3f, 0.35f), -2);
+        if (soup != null)
+        {
+            sr.sprite = soup; // el toll de sopa de galets (1 unitat de diàmetre, com el cercle)
+            sr.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+        }
         int dmg = 1 + (level >= 3 ? 1 : 0) + DishUtil.Bonus / 2;
         bool slow = SetBonuses.Has(SetId.SopaPedra); // conjunt Sopa de pedra: els tolls frenen
         for (float t = 0f; t < life; t += 0.5f)
@@ -208,7 +215,9 @@ public class SoupTrail : MonoBehaviour
                     Enemy e = c.GetComponentInParent<Enemy>();
                     if (e != null && !e.IsDead) e.Slow(0.5f, 0.6f);
                 }
-            if (sr != null) sr.color = new Color(0.95f, 0.7f, 0.3f, 0.35f * (1f - t / life) + 0.1f);
+            if (sr != null) sr.color = soup != null ? new Color(1f, 1f, 1f, Mathf.Clamp01((life - t) / 1f) * 0.9f)
+                                                    : new Color(0.95f, 0.7f, 0.3f, 0.35f * (1f - t / life) + 0.1f);
+            if (Random.value < 0.3f) Fx.Ripple(pos + Random.insideUnitCircle * radius * 0.6f, 0.6f, new Color(1f, 0.9f, 0.6f));
             if (Random.value < 0.6f) Fx.Sparkle(pos + Random.insideUnitCircle * radius * 0.8f, new Color(1f, 0.9f, 0.6f));
             yield return new WaitForSeconds(0.5f);
         }
@@ -235,22 +244,57 @@ public class PieRain : MonoBehaviour
         }
     }
 
+    static Sprite pie, splat;
+
     IEnumerator Drop(Vector2 pos)
     {
         float radius = 1.4f * DishArea.Mul;
+        if (pie == null) pie = Resources.Load<Sprite>("DishFx/Pastis");
+        if (splat == null) splat = Resources.Load<Sprite>("DishFx/Nata");
         SpriteRenderer shadow = HazardFx.MakeCircle(pos, radius, new Color(0f, 0f, 0f, 0.15f), -2);
+        SpriteRenderer falling = null;
+        if (pie != null)
+        {
+            falling = new GameObject("PastisQueCau").AddComponent<SpriteRenderer>();
+            falling.sprite = pie;
+            falling.sortingOrder = 20;
+            falling.transform.localScale = Vector3.one * 1.3f * Mathf.Sqrt(DishArea.Mul);
+            Destroy(falling.gameObject, 1f);
+        }
         for (float t = 0f; t < 0.6f; t += Time.deltaTime)
         {
-            if (shadow != null) shadow.color = new Color(0f, 0f, 0f, Mathf.Lerp(0.1f, 0.35f, t / 0.6f));
+            float k = t / 0.6f;
+            if (shadow != null) shadow.color = new Color(0f, 0f, 0f, Mathf.Lerp(0.1f, 0.35f, k));
+            if (falling != null) falling.transform.position = pos + Vector2.up * (7f * (1f - k * k) + 0.3f);
             yield return null;
         }
         if (shadow != null) Destroy(shadow.gameObject);
+        if (falling != null) Destroy(falling.gameObject);
+        if (splat != null) StartCoroutine(Splat(pos, radius));
         Fx.Shockwave(pos, radius * 0.6f, new Color(1f, 0.97f, 0.9f));
         Fx.Sparkles(pos, new Color(1f, 0.95f, 0.9f), 8, radius);
         AudioManager.Play("table", 0.6f, 1.3f);
         int dmg = 3 + level + DishUtil.Bonus;
         if (SetBonuses.Has(SetId.Berenar)) dmg *= 2; // conjunt Berenar: els pastissos fan el doble de mal
         DishUtil.HitCircle(pos, radius, dmg);
+    }
+
+    // la taca de nata que queda a terra i s'esvaeix
+    IEnumerator Splat(Vector2 pos, float radius)
+    {
+        SpriteRenderer sr = new GameObject("TacaDeNata").AddComponent<SpriteRenderer>();
+        sr.sprite = splat;
+        sr.sortingOrder = -2;
+        sr.transform.position = pos;
+        sr.transform.rotation = Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
+        sr.transform.localScale = Vector3.one * radius * 1.8f;
+        Destroy(sr.gameObject, 2.6f);
+        for (float t = 0f; t < 2.5f; t += Time.deltaTime)
+        {
+            if (sr == null) yield break;
+            sr.color = new Color(1f, 1f, 1f, t < 1.5f ? 1f : 1f - (t - 1.5f));
+            yield return null;
+        }
     }
 }
 
@@ -268,7 +312,8 @@ public class CavaPop : MonoBehaviour
         float radius = 2.2f * DishArea.Mul * (evo ? 1.5f : 1f);
         Vector2 pos = transform.position;
         Fx.Shockwave(pos, radius * 0.55f, new Color(1f, 0.95f, 0.7f));
-        for (int i = 0; i < 10; i++) Fx.Sparkle(pos + Random.insideUnitCircle * radius, new Color(1f, 0.97f, 0.8f));
+        for (int i = 0; i < 6; i++) Fx.Sparkle(pos + Random.insideUnitCircle * radius, new Color(1f, 0.97f, 0.8f));
+        Fx.Bubbles(pos, radius, 14); // bombolles de cava de debò
         AudioManager.Play("pickup", 0.5f, 0.8f);
         int dmg = 2 + level + DishUtil.Bonus;
         if (SetBonuses.Has(SetId.Brindis)) dmg *= 2; // conjunt Brindis: les bombolles fan el doble de mal
@@ -315,6 +360,7 @@ public class BombDropper : MonoBehaviour
 {
     public int level = 1;
     private float next;
+    static Sprite bombSprite;
 
     void Update()
     {
@@ -330,13 +376,29 @@ public class BombDropper : MonoBehaviour
 
     IEnumerator Bomb(Vector2 pos)
     {
-        SpriteRenderer sr = HazardFx.MakeCircle(pos, 0.3f, new Color(0.25f, 0.18f, 0.15f, 1f), 3);
+        if (bombSprite == null) bombSprite = Resources.Load<Sprite>("DishFx/Bomba");
+        SpriteRenderer sr;
+        if (bombSprite != null)
+        {
+            sr = new GameObject("Bomba").AddComponent<SpriteRenderer>();
+            sr.sprite = bombSprite;
+            sr.transform.position = pos;
+            sr.transform.localScale = Vector3.one * 0.8f;
+            sr.sortingOrder = 3;
+        }
+        else sr = HazardFx.MakeCircle(pos, 0.3f, new Color(0.25f, 0.18f, 0.15f, 1f), 3);
         float radius = 2f * DishArea.Mul;
         float armedAt = Time.time + 0.6f;
         float dieAt = Time.time + 6f;
         while (Time.time < dieAt)
         {
-            if (sr != null && Time.time > armedAt) sr.color = Mathf.Repeat(Time.time * 4f, 1f) < 0.5f ? new Color(0.9f, 0.25f, 0.2f) : new Color(0.25f, 0.18f, 0.15f);
+            if (sr != null && Time.time > armedAt)
+            {
+                bool on = Mathf.Repeat(Time.time * 4f, 1f) < 0.5f;
+                if (bombSprite != null) sr.color = on ? new Color(1f, 0.6f, 0.55f) : Color.white;
+                else sr.color = on ? new Color(0.9f, 0.25f, 0.2f) : new Color(0.25f, 0.18f, 0.15f);
+                if (bombSprite != null && Random.value < 0.15f) Fx.Sparkle(pos + new Vector2(0.27f, 0.4f), new Color(1f, 0.85f, 0.3f)); // la metxa
+            }
             if (Time.time > armedAt && DishUtil.NearestEnemy(pos, 1.1f) != null) break;
             yield return null;
         }
@@ -369,7 +431,7 @@ public class FuetWhip : MonoBehaviour
         float w = (3.2f + 0.3f * (level - 1)) * DishArea.Mul * (evo ? 1.4f : 1f);
         float h = 0.9f * Mathf.Sqrt(DishArea.Mul);
         Vector2 center = (Vector2)transform.position + new Vector2(dir * (w * 0.5f + 0.3f), 0.1f);
-        StartCoroutine(Show(center, w, h));
+        StartCoroutine(Show(center, w, h, dir));
         foreach (Collider2D c in Physics2D.OverlapBoxAll(center, new Vector2(w, h), 0f))
         {
             Enemy e = c.GetComponentInParent<Enemy>();
@@ -381,16 +443,29 @@ public class FuetWhip : MonoBehaviour
         AudioManager.Play("dash", 0.35f, 1.6f);
     }
 
-    IEnumerator Show(Vector2 center, float w, float h)
+    static Sprite[] frames;
+
+    // el cop de fuet de debò (Tools/SpriteGen/dish_fx.py): s'enrotlla, s'estira i peta
+    IEnumerator Show(Vector2 center, float w, float h, float dir)
     {
-        SpriteRenderer sr = HazardFx.MakeCircle(center, 0.5f, new Color(1f, 0.95f, 0.85f, 0.75f), 5);
-        sr.transform.localScale = new Vector3(w, h * 0.5f, 1f);
-        for (float t = 0f; t < 0.15f; t += Time.deltaTime)
+        if (frames == null)
+            frames = new[] { Resources.Load<Sprite>("DishFx/Fuet_0"), Resources.Load<Sprite>("DishFx/Fuet_1"), Resources.Load<Sprite>("DishFx/Fuet_2") };
+        if (frames[0] == null) yield break;
+        GameObject go = new GameObject("CopDeFuet");
+        go.transform.position = center;
+        go.transform.localScale = new Vector3(w * dir, Mathf.Max(1.2f, h * 2f), 1f);
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sortingOrder = 5;
+        for (float t = 0f; t < 0.3f; t += Time.deltaTime)
         {
-            if (sr != null) sr.color = new Color(1f, 0.95f, 0.85f, 0.75f * (1f - t / 0.15f));
+            if (go == null) yield break;
+            int f = Mathf.Min(2, (int)(t / 0.07f));
+            sr.sprite = frames[f] != null ? frames[f] : frames[0];
+            if (t > 0.21f) sr.color = new Color(1f, 1f, 1f, 1f - (t - 0.21f) / 0.09f);
             yield return null;
         }
-        if (sr != null) Destroy(sr.gameObject);
+        if (go != null) Destroy(go);
+        Fx.Hit(center + new Vector2(dir * w * 0.45f, 0f), new Vector2(-dir, 0f), false);
     }
 }
 
