@@ -745,6 +745,7 @@ public class BoonManager : MonoBehaviour
         {
             if (b == null) continue;
             if (!CanPick(b)) continue; // topall propi o del tipus
+            if (DailyChallenge.Is(DailyChallenge.Rule.NomesRars) && RarityOf(b) < Rarity.Rar) continue; // repte del dia
             if (exclou != null && exclou.Contains(b)) continue; // no repetim la mateixa carta
             pool.Add(b);
         }
@@ -882,6 +883,9 @@ public class BoonManager : MonoBehaviour
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
         Codex.DiscoverDish(boon);
         Apply(boon);
+        if (RarityOf(boon) == Rarity.Llegendari) Achievements.Unlock("legend");
+        if (shiny.Contains(boon)) Achievements.Unlock("shiny");
+        if (SpecialtiesUsed >= 6) Achievements.Unlock("fulltable");
         if (shiny.Contains(boon) && taken[boon] < MaxLevel(boon))
         {
             // carta brillant: un nivell de regal

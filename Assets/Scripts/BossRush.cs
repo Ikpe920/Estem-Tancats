@@ -91,6 +91,11 @@ public static class BossRush
     public static void Finish(bool completed)
     {
         NewBest = false;
+        if (completed)
+        {
+            Achievements.Unlock("rush_" + Variant);
+            if (Variant == Menu.Classic && Elapsed < 600f) Achievements.Unlock("rush_fast");
+        }
         if (completed && (BestTime <= 0f || Elapsed < BestTime))
         {
             PlayerPrefs.SetFloat(Key("best_time", Variant), Elapsed);

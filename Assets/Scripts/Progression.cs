@@ -218,6 +218,7 @@ public static class Progression
         if (finalWave > 0 && wave >= finalWave)
         {
             Complete("win");
+            Achievements.Unlock("win");
             if (Difficulty == Difficulty.Dificil) Complete("win_hard");
         }
         if (endless && wave >= 50) Complete("endless35");

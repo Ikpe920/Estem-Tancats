@@ -331,6 +331,7 @@ public abstract class BossBrain : MonoBehaviour
         bool otherBoss = false;
         foreach (Enemy o in Enemy.All) if (o != null && o != e && o.isBoss && !o.IsDead) { otherBoss = true; break; }
         if (!otherBoss) ClearBattlefield();
+        Achievements.OnBossKilled(e, Achievements.LastPlayerHit < fightStart);
         AudioManager.SetBossPhase2(false);
     }
 

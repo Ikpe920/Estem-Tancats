@@ -74,6 +74,27 @@ public class ChefAbility : MonoBehaviour
     }
 
     static int Level => BoonManager.Instance != null ? BoonManager.Instance.ChefLevel : 0;
+
+    // ---------- L'HABILITAT MILLORA AMB EL NIVELL DE XEF (cada 5 nivells, fins al IV) ----------
+    //   ONA DE CALOR    II: una segona ona   III: deixa un anell de brases   IV: més gran
+    //   GANIVETADA      II: dos ganivets     III: l'esquerda talla en línia   IV: tres ganivets
+    //   GLASSA          II: més gran i dura més   III: la cúpula esclata en estelles   IV: glaça més els caps
+    //   TALL DE KATANA  II: dos talls en X   III: tres talls en estrella   IV: més llarg i més mal
+    //   FORN DE LLENYA  II: dura més   III: més gran   IV: la fogonada final és el doble
+    public static int Tier => Mathf.Clamp(1 + Level / 5, 1, 4);
+    static readonly string[] Roman = { "", "", " II", " III", " IV" };
+    int shownTier = 1;
+
+    void WatchTier()
+    {
+        if (Tier == shownTier) return;
+        shownTier = Tier;
+        if (shownTier >= 4) Achievements.Unlock("tier4");
+        if (nameText != null) nameText.text = def.name + Roman[shownTier];
+        HazardFx.Popup((Vector2)transform.position + Vector2.up * 2.2f, def.name + Roman[shownTier] + "!", def.color, 1.6f);
+        AudioManager.Play("set", 0.8f, 1.1f);
+        pop = 1f;
+    }
     bool Ready => Time.time >= readyAt;
 
     bool Pressed()
@@ -89,6 +110,7 @@ public class ChefAbility : MonoBehaviour
     void Update()
     {
         UpdateHud();
+        WatchTier();
         if (PlayerHealth.IsDying || Time.timeScale < 0.5f || PauseMenu.IsOpen || GamepadInput.CustomScreens > 0) return;
 
         if (!wasReady && Ready)
@@ -107,15 +129,16 @@ public class ChefAbility : MonoBehaviour
         readyAt = Time.time + def.cooldown;
         wasReady = false;
         Stats.Add("abilities");
+        if (Stats.Get("abilities") >= 100) Achievements.Unlock("abil100");
         HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.6f, def.name + "!", def.color, 0.9f);
         GamepadInput.Rumble(0.5f, 0.5f, 0.2f);
         switch (chef)
         {
-            case 1: Ganivetada(); break;
-            case 2: Glassa(); break;
+            case 1: StartCoroutine(Ganivetada()); break;
+            case 2: StartCoroutine(Glassa()); break;
             case 3: StartCoroutine(Katana()); break;
             case 4: StartCoroutine(Forn()); break;
-            default: OnaDeCalor(); break;
+            default: StartCoroutine(OnaDeCalor()); break;
         }
     }
 
@@ -138,104 +161,273 @@ public class ChefAbility : MonoBehaviour
 
     // ---------- LES HABILITATS ----------
 
-    void OnaDeCalor()
+    // ONA DE CALOR: una ona de flames que s'expandeix des del xef; esborra els trets que toca
+    IEnumerator OnaDeCalor()
     {
-        Vector2 p = transform.position;
-        float r = 3.5f * DishArea.Mul;
-        Fx.Shockwave(p, r, new Color(1f, 0.6f, 0.25f));
-        for (int i = 0; i < 10; i++)
-        {
-            float a = i * 36f * Mathf.Deg2Rad;
-            Fx.Flames(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r * 0.7f, 0.5f, 0.6f);
-        }
+        int waves = Tier >= 2 ? 2 : 1;
+        float r = 3.5f * DishArea.Mul * (Tier >= 4 ? 1.3f : 1f);
+        int dmg = 6 + 2 * Level + DishUtil.Bonus;
         CameraFX.Shake(0.2f, 0.18f);
-        AudioManager.Play("explosion", 0.5f, 1.3f);
-        DishUtil.HitCircle(p, r, 6 + 2 * Level + DishUtil.Bonus, 10f, DmgKind.Fire);
-        // esborra els trets dels clients que hi ha a prop
-        foreach (EnemyProjectile ep in FindObjectsByType<EnemyProjectile>(FindObjectsSortMode.None))
-            if (ep != null && Vector2.Distance(ep.transform.position, p) <= r + 0.5f)
+        for (int w = 0; w < waves; w++)
+        {
+            Vector2 p = transform.position;
+            AudioManager.Play("explosion", 0.5f, 1.3f - w * 0.15f);
+            Fx.Shockwave(p, r, new Color(1f, 0.6f, 0.25f));
+            DishUtil.HitCircle(p, r, w == 0 ? dmg : dmg / 2 + 1, 10f, DmgKind.Fire);
+            const int N = 18;
+            for (float t = 0f; t < 0.35f; t += Time.deltaTime)
             {
-                Fx.Sparkle(ep.transform.position, new Color(1f, 0.8f, 0.4f));
-                Destroy(ep.gameObject);
+                float rr = r * (t / 0.35f);
+                for (int i = 0; i < N; i++)
+                {
+                    float a = (i * 360f / N + w * 10f) * Mathf.Deg2Rad;
+                    if (Random.value < 0.55f) Fx.FlameAt(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr, Mathf.Lerp(0.5f, 0.85f, t / 0.35f), 0.4f);
+                }
+                // els trets dels clients que l'ona toca es fonen
+                foreach (EnemyProjectile ep in FindObjectsByType<EnemyProjectile>(FindObjectsSortMode.None))
+                    if (ep != null && Vector2.Distance(ep.transform.position, p) <= rr + 0.4f)
+                    {
+                        Fx.Sparkles(ep.transform.position, new Color(1f, 0.8f, 0.4f), 3, 0.3f);
+                        Destroy(ep.gameObject);
+                    }
+                yield return null;
             }
+            if (w + 1 < waves) yield return new WaitForSeconds(0.25f);
+        }
+        // III: deixa un anell de brases que crema uns segons
+        if (Tier >= 3)
+        {
+            Vector2 p = transform.position;
+            for (float t = 0f; t < 3f; t += 0.3f)
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    float a = (i * 36f + t * 40f) * Mathf.Deg2Rad;
+                    Fx.Flames(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r * 0.9f, 0.3f, 0.6f);
+                }
+                DishUtil.HitCircle(p, r, 1 + Level / 4, 0f, DmgKind.Fire);
+                yield return new WaitForSeconds(0.3f);
+            }
+        }
     }
 
-    void Ganivetada()
+    // GANIVETADA: un ganivet gegant cau del cel i es clava a terra davant teu
+    IEnumerator Ganivetada()
     {
-        Vector2 p = (Vector2)transform.position + Aim() * 2.2f;
+        Vector2 aim = Aim();
+        int knives = Tier >= 4 ? 3 : Tier >= 2 ? 2 : 1;
+        for (int k = 0; k < knives; k++)
+        {
+            float off = knives == 1 ? 0f : (k - (knives - 1) / 2f) * 50f;
+            Vector2 dir = Quaternion.Euler(0f, 0f, off) * aim;
+            StartCoroutine(Cleaver((Vector2)transform.position + dir * 2.4f, dir));
+            yield return new WaitForSeconds(0.12f);
+        }
+    }
+
+    static Sprite knife;
+
+    IEnumerator Cleaver(Vector2 p, Vector2 dir)
+    {
         float r = 2.2f * DishArea.Mul;
+        if (knife == null) knife = Resources.Load<Sprite>("Projectiles/Ganivet");
+        // l'ombra a terra i el ganivet que cau (la punta cap avall)
+        SpriteRenderer shadow = HazardFx.MakeCircle(p, 0.8f, new Color(0f, 0f, 0f, 0.15f), -2);
+        GameObject go = new GameObject("Ganivetada");
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = knife != null ? knife : HazardFx.Square();
+        sr.sortingOrder = 25;
+        go.transform.localScale = Vector3.one * 3f;
+        go.transform.rotation = Quaternion.Euler(0f, 0f, -90f + Random.Range(-8f, 8f));
+        for (float t = 0f; t < 0.22f; t += Time.deltaTime)
+        {
+            float k = t / 0.22f;
+            go.transform.position = p + Vector2.up * (7f * (1f - k * k) + 1.2f);
+            if (shadow != null) shadow.transform.localScale = Vector3.one * Mathf.Lerp(0.6f, 2.2f, k);
+            yield return null;
+        }
+        go.transform.position = p + Vector2.up * 1.2f;
+        if (shadow != null) Destroy(shadow.gameObject);
+
+        // el cop: esquerdes a terra, ona, pols i espurnes
         Fx.Shockwave(p, r, new Color(1f, 0.85f, 0.8f));
         Fx.Dust(p);
         Fx.Hit(p, Vector2.down, true);
+        for (int i = 0; i < 5; i++)
+        {
+            Vector2 cd = Random.insideUnitCircle.normalized;
+            SpriteRenderer crack = BossFx.Line(p, cd, Random.Range(1f, 2f), 0.12f, new Color(0.15f, 0.08f, 0.06f, 0.8f), "Esquerda");
+            crack.sortingOrder = -1;
+            Destroy(crack.gameObject, 1.2f);
+        }
         CameraFX.Shake(0.3f, 0.3f);
         HitStop.Do(0.06f);
         AudioManager.Play("crit", 0.9f, 0.7f);
+        AudioManager.Play("table", 0.8f, 0.6f);
         int dmg = 14 + 4 * Level + 2 * DishUtil.Bonus;
-        foreach (Collider2D c in Physics2D.OverlapCircleAll(p, r))
+        List<Collider2D> hits = Phys.Circle(p, r);
+        for (int i = 0; i < hits.Count; i++)
         {
-            Enemy e = c.GetComponentInParent<Enemy>();
+            Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
             if (e == null || e.IsDead) continue;
             DamageKind.Hit(e, dmg, DmgKind.Crit, true);
-            if (e != null && !e.IsDead) e.Freeze(e.isBoss ? 0.4f : 1.2f);
+            if (!e.IsDead) e.Freeze(e.isBoss ? 0.4f : 1.2f);
         }
+        Phys.Release(hits);
+        // III: l'esquerda continua endavant i talla en línia
+        if (Tier >= 3)
+        {
+            for (int s = 1; s <= 4; s++)
+            {
+                Vector2 q = p + dir * (s * 1.2f);
+                Fx.Dust(q);
+                Fx.Hit(q, dir, false);
+                List<Collider2D> h2 = Phys.Circle(q, 0.9f);
+                for (int i = 0; i < h2.Count; i++)
+                {
+                    Enemy e = h2[i] != null ? h2[i].GetComponentInParent<Enemy>() : null;
+                    if (e != null && !e.IsDead) DamageKind.Hit(e, dmg / 2, DmgKind.Crit, true);
+                }
+                Phys.Release(h2);
+                yield return new WaitForSeconds(0.05f);
+            }
+        }
+        // el ganivet es queda clavat una estona i s'esvaeix
+        for (float t = 0f; t < 0.6f; t += Time.deltaTime)
+        {
+            if (go == null) yield break;
+            sr.color = new Color(1f, 1f, 1f, t < 0.4f ? 1f : 1f - (t - 0.4f) / 0.2f);
+            yield return null;
+        }
+        Destroy(go);
     }
 
-    void Glassa()
+    // GLASSA: una cúpula de gel es forma al teu voltant i glaça els clients
+    IEnumerator Glassa()
     {
         Vector2 p = transform.position;
-        float r = 4.5f * DishArea.Mul;
-        Fx.FrostBurst(p, r);
-        FrostZone.Spawn(p, r * 0.8f, 0.5f, 3.5f);
+        float r = 4.5f * DishArea.Mul * (Tier >= 2 ? 1.2f : 1f);
+        float freeze = Tier >= 2 ? 3f : 2.2f;
+        float bossFreeze = Tier >= 4 ? 1.6f : 0.8f;
+        Fx.FrostBurst(p, r * 0.6f);
+        FrostZone.Spawn(p, r * 0.8f, 0.5f, Tier >= 2 ? 5f : 3.5f);
         AudioManager.Play("crit", 0.7f, 1.5f);
         CameraFX.Shake(0.15f, 0.12f);
-        foreach (Collider2D c in Physics2D.OverlapCircleAll(p, r))
+
+        // la cúpula: una corona de gel que creix
+        SpriteRenderer dome = HazardFx.MakeCircle(p, r, new Color(0.75f, 0.92f, 1f, 0.9f), -1);
+        dome.sprite = Fx.RingBand();
+        SpriteRenderer fill = HazardFx.MakeCircle(p, r, new Color(0.7f, 0.9f, 1f, 0.12f), -2);
+        Destroy(dome.gameObject, 3f); Destroy(fill.gameObject, 3f);
+        for (float t = 0f; t < 0.3f; t += Time.deltaTime)
         {
-            Enemy e = c.GetComponentInParent<Enemy>();
-            if (e == null || e.IsDead) continue;
-            DamageKind.Hit(e, 4 + Level + DishUtil.Bonus, DmgKind.Ice);
-            if (e != null && !e.IsDead) e.Freeze(e.isBoss ? 0.8f : 2.2f);
+            float k = t / 0.3f;
+            dome.transform.localScale = fill.transform.localScale = Vector3.one * r * 2f * Mathf.Lerp(0.2f, 1f, 1f - (1f - k) * (1f - k));
+            if (Random.value < 0.6f) Fx.Snowflake(p + Random.insideUnitCircle * r);
+            yield return null;
         }
+        int dmg = 4 + Level + DishUtil.Bonus;
+        List<Collider2D> hits = Phys.Circle(p, r);
+        for (int i = 0; i < hits.Count; i++)
+        {
+            Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
+            if (e == null || e.IsDead) continue;
+            DamageKind.Hit(e, dmg, DmgKind.Ice);
+            if (!e.IsDead) e.Freeze(e.isBoss ? bossFreeze : freeze);
+        }
+        Phys.Release(hits);
+        // la cúpula brilla i es va fonent
+        for (float t = 0f; t < 1.5f; t += Time.deltaTime)
+        {
+            if (dome == null) yield break;
+            dome.color = new Color(0.75f, 0.92f, 1f, 0.9f * (1f - t / 1.5f) + 0.1f * Mathf.Sin(t * 20f));
+            if (Random.value < 0.3f) Fx.Sparkle(p + Random.insideUnitCircle.normalized * r, new Color(0.85f, 0.97f, 1f));
+            yield return null;
+        }
+        // III: la cúpula esclata en estelles que tornen a fer mal
+        if (Tier >= 3)
+        {
+            for (int i = 0; i < 12; i++)
+            {
+                float a = i * 30f * Mathf.Deg2Rad;
+                Fx.IceShatter(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r, 3);
+            }
+            Fx.FrostBurst(p, r * 0.5f);
+            AudioManager.Play("box_break", 0.7f, 1.6f);
+            DishUtil.HitCircle(p, r, dmg, 0f, DmgKind.Ice);
+        }
+        if (dome != null) Destroy(dome.gameObject);
+        if (fill != null) Destroy(fill.gameObject);
     }
 
+    // TALL DE KATANA: una estrebada que travessa la sala; un instant després, els clients tallats cauen
     IEnumerator Katana()
     {
-        Vector2 dir = Aim();
-        Vector2 from = transform.position;
-        Vector2 to = from + dir * 6f;
+        int cuts = Tier >= 3 ? 3 : Tier >= 2 ? 2 : 1;
+        float length = Tier >= 4 ? 7.5f : 6f;
+        int dmg = 10 + 3 * Level + 2 * DishUtil.Bonus + (Tier >= 4 ? 6 : 0);
+        Vector2 aim = Aim();
         Vector2 c = HazardManager.ArenaCenter;
         Vector2 half = HazardManager.ArenaSize * 0.5f - Vector2.one * 1.2f;
-        to.x = Mathf.Clamp(to.x, c.x - half.x, c.x + half.x);
-        to.y = Mathf.Clamp(to.y, c.y - half.y, c.y + half.y);
+        SpriteRenderer body = GetComponent<SpriteRenderer>();
+        var hitAll = new List<Enemy>();
+        for (int k = 0; k < cuts; k++)
+        {
+            Vector2 dir = Quaternion.Euler(0f, 0f, k == 0 ? 0f : (k == 1 ? 135f : -135f)) * aim; // en X o en estrella
+            Vector2 from = transform.position;
+            Vector2 to = from + dir * length;
+            to.x = Mathf.Clamp(to.x, c.x - half.x, c.x + half.x);
+            to.y = Mathf.Clamp(to.y, c.y - half.y, c.y + half.y);
 
-        // el tall: una línia blanca que s'esvaeix
-        SpriteRenderer line = BossFx.Line(from, (to - from).normalized, Vector2.Distance(from, to), 0.35f, new Color(1f, 1f, 1f, 0.9f), "Tall");
-        line.sortingOrder = 30;
-        Destroy(line.gameObject, 0.35f);
-        Fx.Dust(from);
-        if (rb != null) rb.position = to; else transform.position = to;
-        Fx.Dust(to);
-        AudioManager.Play("dash", 0.9f, 1.4f);
-
-        int dmg = 10 + 3 * Level + 2 * DishUtil.Bonus;
-        Vector2 seg = to - from;
-        float len = seg.magnitude;
-        foreach (Enemy e in Enemy.All.ToArray())
+            // ombres del xef al llarg del camí
+            if (body != null)
+                for (int i = 0; i < 6; i++)
+                {
+                    GameObject g = new GameObject("OmbraKatana");
+                    g.transform.position = Vector2.Lerp(from, to, i / 5f);
+                    g.transform.localScale = transform.localScale;
+                    SpriteRenderer gs = g.AddComponent<SpriteRenderer>();
+                    gs.sprite = body.sprite;
+                    gs.flipX = body.flipX;
+                    gs.color = new Color(0.6f, 0.7f, 1f, 0.5f - i * 0.06f);
+                    gs.sortingOrder = body.sortingOrder - 1;
+                    Destroy(g, 0.25f);
+                }
+            // el tall: una línia blanca amb vora daurada
+            Vector2 seg = to - from;
+            float len = seg.magnitude;
+            SpriteRenderer glow = BossFx.Line(from, seg.normalized, len, 0.6f, new Color(1f, 0.85f, 0.4f, 0.6f), "TallVora");
+            SpriteRenderer line = BossFx.Line(from, seg.normalized, len, 0.22f, Color.white, "Tall");
+            glow.sortingOrder = 29; line.sortingOrder = 30;
+            Destroy(glow.gameObject, 0.4f); Destroy(line.gameObject, 0.4f);
+            Fx.Dust(from);
+            if (rb != null) rb.position = to; else transform.position = to;
+            Fx.Dust(to);
+            AudioManager.Play("dash", 0.9f, 1.4f + k * 0.1f);
+            foreach (Enemy e in Enemy.All.ToArray())
+            {
+                if (e == null || e.IsDead || hitAll.Contains(e)) continue;
+                Vector2 q = (Vector2)e.transform.position - from;
+                float t = len > 0.01f ? Mathf.Clamp(Vector2.Dot(q, seg) / (len * len), 0f, 1f) : 0f;
+                if (Vector2.Distance(e.transform.position, from + seg * t) > 1.3f) continue;
+                hitAll.Add(e);
+            }
+            yield return new WaitForSeconds(0.08f);
+        }
+        HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.6f, "ZAS!", Color.white, 0.6f);
+        // un instant de silenci... i els clients tallats cauen
+        yield return new WaitForSeconds(0.18f);
+        foreach (Enemy e in hitAll)
         {
             if (e == null || e.IsDead) continue;
-            Vector2 q = (Vector2)e.transform.position - from;
-            float t = len > 0.01f ? Mathf.Clamp(Vector2.Dot(q, seg) / (len * len), 0f, 1f) : 0f;
-            if (Vector2.Distance(e.transform.position, from + seg * t) > 1.3f) continue;
-            Fx.Hit(e.transform.position, seg, true);
+            Vector2 ep = e.transform.position;
+            SpriteRenderer cut = BossFx.Line(ep - new Vector2(0.6f, -0.3f), new Vector2(1f, -0.5f).normalized, 1.4f, 0.1f, Color.white, "TallClient");
+            cut.sortingOrder = 31;
+            Destroy(cut.gameObject, 0.15f);
+            Fx.Hit(ep, Vector2.right, true);
             DamageKind.Hit(e, dmg, DmgKind.None);
         }
         CameraFX.Shake(0.15f, 0.15f);
-        yield return null;
-        if (line != null)
-            for (float a = 0.9f; a > 0f && line != null; a -= Time.deltaTime * 3f)
-            {
-                line.color = new Color(1f, 1f, 1f, a);
-                yield return null;
-            }
     }
 
     // EL FORN DE LLENYA: un anell de flames que s'encén al teu voltant i et segueix.
@@ -244,9 +436,9 @@ public class ChefAbility : MonoBehaviour
     // - En acabar, l'anell esclata cap enfora en una fogonada.
     IEnumerator Forn()
     {
-        const float Dur = 4.5f;
+        float Dur = Tier >= 2 ? 5.5f : 4.5f;
         const int Points = 14;
-        float r = 2.8f * DishArea.Mul;
+        float r = 2.8f * DishArea.Mul * (Tier >= 3 ? 1.25f : 1f);
         int ringDmg = 3 + Level / 2 + DishUtil.Bonus;     // la vora (el mur de foc)
         int coreDmg = 1 + Level / 4 + DishUtil.Bonus / 2; // el caliu de dins
 
@@ -324,7 +516,7 @@ public class ChefAbility : MonoBehaviour
         Fx.Scorch(end, r, 1f);
         CameraFX.Shake(0.2f, 0.18f);
         AudioManager.Play("explosion", 0.6f, 0.9f);
-        DishUtil.HitCircle(end, r + 1f, ringDmg + 2, 8f, DmgKind.Fire);
+        DishUtil.HitCircle(end, r + 1f, (ringDmg + 2) * (Tier >= 4 ? 2 : 1), 8f, DmgKind.Fire);
         if (edge != null) Destroy(edge.gameObject);
         if (core != null) Destroy(core.gameObject);
     }

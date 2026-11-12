@@ -23,7 +23,15 @@ public static class Codex
     public static void DiscoverSet(SetId id) { PlayerPrefs.SetInt("seen_set_" + id, 1); }
     public static bool SetSeen(SetId id) { return PlayerPrefs.GetInt("seen_set_" + id, 0) == 1; }
     public static int Kills(string key) { return PlayerPrefs.GetInt("kills_" + key, 0); }
-    public static void DiscoverEvo(EvoId id) { PlayerPrefs.SetInt("seen_evo_" + id, 1); Stats.Add("evos"); }
+    public static void DiscoverEvo(EvoId id)
+    {
+        PlayerPrefs.SetInt("seen_evo_" + id, 1);
+        Stats.Add("evos");
+        Achievements.Unlock("evo1");
+        int n = 0;
+        foreach (Evo.Def d in Evo.All) if (EvoSeen(d.id)) n++;
+        if (n >= 5) Achievements.Unlock("evo5");
+    }
     public static bool EvoSeen(EvoId id) { return PlayerPrefs.GetInt("seen_evo_" + id, 0) == 1; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -123,7 +131,7 @@ public class CodexScreen : MonoBehaviour
     private GameObject lastSelected;
     private Image detailIcon;
     private TextMeshProUGUI detailName, detailText, countText;
-    const int Tabs = 5;
+    const int Tabs = 6;
     private readonly Button[] tabs = new Button[Tabs];
     private int tab;
     private Boon[] dishes;
@@ -160,11 +168,11 @@ public class CodexScreen : MonoBehaviour
         countText = EndScreenUI.CreateText(root, "Compte", "", 28f, new Vector2(0.5f, 0.855f), new Vector2(1400f, 44f), new Color(1f, 0.92f, 0.78f));
         countText.raycastTarget = false;
 
-        string[] names = { "PLATS", "CONJUNTS", "CLIENTS", "RECEPTES", "XIFRES" };
+        string[] names = { "PLATS", "CONJUNTS", "CLIENTS", "RECEPTES", "MEDALLES", "XIFRES" };
         for (int i = 0; i < Tabs; i++)
         {
             int captured = i;
-            tabs[i] = EndScreenUI.CreateButton(root, names[i], new Vector2(0.18f + i * 0.16f, 0.785f), new Vector2(270f, 64f), CellCol, () => ShowTab(captured));
+            tabs[i] = EndScreenUI.CreateButton(root, names[i], new Vector2(0.135f + i * 0.146f, 0.785f), new Vector2(255f, 64f), CellCol, () => ShowTab(captured));
         }
 
         // a l'esquerra la graella, a la dreta el detall
@@ -192,7 +200,7 @@ public class CodexScreen : MonoBehaviour
         int s = 0; foreach (SetBonus set in SetBonuses.All) if (Codex.SetSeen(set.id)) s++;
         List<Codex.ClientInfo> clients = Codex.Clients();
         int c = 0; foreach (Codex.ClientInfo ci in clients) if (Codex.Kills(ci.key) > 0) c++;
-        countText.text = "Plats " + d + "/" + dishes.Length + "   ·   Estrella " + ev + "/" + Evo.All.Length + "   ·   Conjunts " + s + "/" + SetBonuses.All.Length + "   ·   Clients " + c + "/" + clients.Count;
+        countText.text = "Plats " + d + "/" + dishes.Length + "   ·   Estrella " + ev + "/" + Evo.All.Length + "   ·   Conjunts " + s + "/" + SetBonuses.All.Length + "   ·   Clients " + c + "/" + clients.Count + "   ·   Medalles " + Achievements.Count() + "/" + Achievements.All.Length;
     }
 
     void ShowTab(int t)
@@ -207,6 +215,7 @@ public class CodexScreen : MonoBehaviour
         else if (t == 1) first = BuildSets();
         else if (t == 2) first = BuildClients();
         else if (t == 3) first = BuildRecipes();
+        else if (t == 4) first = BuildMedals();
         else first = BuildStats();
         if (EventSystem.current != null && first != null) EventSystem.current.SetSelectedGameObject(first.gameObject);
     }
@@ -332,6 +341,28 @@ public class CodexScreen : MonoBehaviour
         }
         ShowDetail(sp, true, "RECEPTES PERDUDES", "Has trobat " + LostRecipes.FoundCount() + " de " + n + ".\n\nSi en una partida d'El Servei en trobes almenys "
             + LostRecipes.GhostNeeds + ", després de l'onada 40 passa alguna cosa...");
+        return first;
+    }
+
+    // ---------- MEDALLES ----------
+
+    Button BuildMedals()
+    {
+        Button first = null;
+        Sprite sp = Resources.Load<Sprite>("Decor/Medalla");
+        Achievements.Medal[] all = Achievements.All;
+        int cols = 7;
+        int rows = Mathf.CeilToInt(all.Length / (float)cols);
+        for (int i = 0; i < all.Length; i++)
+        {
+            Achievements.Medal m = all[i];
+            bool has = Achievements.Has(m.id);
+            string name = has || !m.secret ? m.name : "???";
+            string text = (has || !m.secret ? m.desc : "Una medalla secreta.") + "\n\n<color=#FFCC4D>+" + m.reward + " propines</color>" + (has ? "  ·  <color=#8FE39B>ACONSEGUIDA</color>" : "");
+            Button cell = Cell(i, cols, rows, sp, has, () => ShowDetail(sp, has, name, text));
+            if (first == null) first = cell;
+        }
+        ShowDetail(sp, true, "MEDALLES", "Tens " + Achievements.Count() + " de " + all.Length + " medalles.\n\nCada medalla dona propines per al Rebost.");
         return first;
     }
 

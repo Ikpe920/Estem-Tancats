@@ -181,10 +181,25 @@ def esquitx():
     return [s, seeds]
 
 
+def medalla():
+    rib = Part((200, 50, 50), (150, 30, 30))
+    rib.rect(22, 4, 30, 30).rect(34, 4, 42, 30)
+    stripe = Part((250, 240, 220), None, outline=False).rect(25, 4, 26, 28).rect(38, 4, 39, 28)
+    m = Part((240, 190, 60), (190, 140, 30), hi=(255, 240, 160))
+    m.ellipse(32, 42, 16, 16)
+    inner = Part((220, 165, 40), None, outline=False).ellipse(32, 42, 11, 11)
+    star = Part((255, 235, 140), None, outline=False)
+    for i in range(10):
+        r = 9 if i % 2 == 0 else 4
+        a = math.radians(i * 36 - 90)
+        star.line(32, 42, 32 + math.cos(a) * r, 42 + math.sin(a) * r)
+    return [rib, stripe, m, inner, star]
+
+
 SPRITES = {
     'Gramola': gramola, 'Nota': nota, 'CartellBar': cartell_bar, 'Olla': olla, 'Testos': testos, 'Fulla': fulla,
     'Xemeneia': xemeneia, 'Barril': barril, 'BlocGel': bloc_gel, 'Focus': focus, 'Llum': llum, 'Atac': atac,
-    'Tomaquet': tomaquet, 'Esquitx': esquitx,
+    'Tomaquet': tomaquet, 'Esquitx': esquitx, 'Medalla': medalla,
 }
 
 

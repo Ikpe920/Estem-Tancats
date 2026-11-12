@@ -76,6 +76,7 @@ public class EndScreenFx : MonoBehaviour
 
         // títol i subtítol
         bool rush = BossRush.Active;
+        bool daily = DailyChallenge.Active && !rush;
         string titleText = rush ? (win ? "MENÚ DEGUSTACIÓ ACABAT!" : "FI DEL MENÚ DEGUSTACIÓ")
                                 : win ? "HAS SOBREVISCUT AL SERVEI!" : (RunStats.endless ? "FI DEL MODE INFINIT" : "FI DEL JOC");
         Color titleCol = win ? UIStyle.Gold : new Color(1f, 0.42f, 0.38f);
@@ -85,6 +86,7 @@ public class EndScreenFx : MonoBehaviour
                                  : "Has caigut al plat " + Mathf.Min(BossRush.Beaten + 1, BossRush.Bosses) + " de " + BossRush.Bosses + ".")
                    : win ? "Has completat les " + RunStats.wave + " onades. El restaurant ja pot tancar."
                          : "T'han fet fora a l'onada " + RunStats.wave + ". Els clients guanyen... per ara.";
+        if (daily) sub = "Repte del dia: " + DailyChallenge.Name(DailyChallenge.Today) + "  ·  " + DailyChallenge.RecordLine();
         MenuScreens.Text(root, sub, 34f, new Vector2(0.5f, 0.75f), Vector2.zero, new Vector2(1500f, 50f), new Color(1f, 0.92f, 0.82f), false).fontStyle = FontStyles.Italic;
 
         // el retrat del xef
