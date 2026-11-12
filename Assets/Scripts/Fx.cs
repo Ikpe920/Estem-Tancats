@@ -398,6 +398,21 @@ public class Fx : MonoBehaviour
         }
     }
 
+    // una flama de dibuix animat de la mida que vulguis, just en aquell punt (l'anell del Forn de llenya)
+    public static void FlameAt(Vector2 pos, float size, float life = 0.55f)
+    {
+        EmitFlame(pos, new Vector2(Random.Range(-0.15f, 0.15f), Random.Range(0.2f, 0.5f)), life * Random.Range(0.85f, 1.15f), size, size * 0.3f, 5);
+    }
+
+    // un anell (una corona) de 1 unitat de diàmetre, amb les vores suaus: es tenyeix i s'escala des del codi
+    static Sprite ringBand;
+    public static Sprite RingBand()
+    {
+        if (ringBand != null) return ringBand;
+        ringBand = Radial(128, d => Mathf.Clamp01(1f - Mathf.Abs(d - 0.86f) / 0.13f), FilterMode.Bilinear);
+        return ringBand;
+    }
+
     // una partícula amb un dibuix qualsevol (la decoració de les sales: notes, fulles...)
     public static void EmitSprite(Sprite sp, Vector2 pos, Vector2 vel, float life, float size0, float size1, Color color, int order, float rotVel)
     {

@@ -245,7 +245,7 @@ public class ChefAbility : MonoBehaviour
     IEnumerator Forn()
     {
         const float Dur = 4.5f;
-        const int Points = 12;
+        const int Points = 14;
         float r = 2.8f * DishArea.Mul;
         int ringDmg = 3 + Level / 2 + DishUtil.Bonus;     // la vora (el mur de foc)
         int coreDmg = 1 + Level / 4 + DishUtil.Bonus / 2; // el caliu de dins
@@ -255,8 +255,10 @@ public class ChefAbility : MonoBehaviour
         Fx.Shockwave(transform.position, r, new Color(1f, 0.55f, 0.15f));
 
         // el terra: el caliu a dins i una vora més encesa
-        SpriteRenderer edge = HazardFx.MakeCircle(transform.position, r, new Color(1f, 0.4f, 0.08f, 0.28f), -3);
-        SpriteRenderer core = HazardFx.MakeCircle(transform.position, r * 0.88f, new Color(0.35f, 0.12f, 0.04f, 0.22f), -2);
+        // una corona encesa a la vora (no un disc pla) i, a dins, només una mica d'escalfor
+        SpriteRenderer edge = HazardFx.MakeCircle(transform.position, r, new Color(1f, 0.5f, 0.1f, 0.85f), -2);
+        edge.sprite = Fx.RingBand();
+        SpriteRenderer core = HazardFx.MakeCircle(transform.position, r * 0.9f, new Color(1f, 0.55f, 0.15f, 0.07f), -3);
         Destroy(edge.gameObject, Dur + 1f);
         Destroy(core.gameObject, Dur + 1f);
 
@@ -270,20 +272,21 @@ public class ChefAbility : MonoBehaviour
             float grow = Mathf.Clamp01(t / 0.3f);
             float rr = r * Mathf.Lerp(0.3f, 1f, 1f - (1f - grow) * (1f - grow));
             float pulse = 1f + 0.04f * Mathf.Sin(t * 12f);
-            if (edge != null) { edge.transform.position = p; edge.transform.localScale = Vector3.one * rr * 2f * pulse; edge.color = new Color(1f, 0.4f, 0.08f, 0.22f + 0.08f * Mathf.Sin(t * 9f)); }
+            if (edge != null) { edge.transform.position = p; edge.transform.localScale = Vector3.one * rr * 2f * pulse; edge.color = new Color(1f, 0.5f + 0.1f * Mathf.Sin(t * 7f), 0.1f, 0.75f + 0.15f * Mathf.Sin(t * 9f)); }
             if (core != null) { core.transform.position = p; core.transform.localScale = Vector3.one * rr * 1.76f; }
 
             // les flames de la vora, que giren a poc a poc
             spin += 70f * Time.deltaTime;
             if (t >= nextFx)
             {
-                nextFx = t + 0.09f;
+                nextFx = t + 0.12f;
+                // flames grosses, una a cada punt de la vora (com un cercle d'espelmes enceses)
                 for (int i = 0; i < Points; i++)
                 {
                     float a = (spin + i * 360f / Points) * Mathf.Deg2Rad;
-                    Fx.Flames(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.22f, 0.7f);
+                    Fx.FlameAt(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr, Random.Range(0.75f, 1.05f));
                 }
-                if (Random.value < 0.5f) Fx.Flames(p + Random.insideUnitCircle * rr * 0.6f, 0.2f, 0.3f); // el caliu de dins
+                if (Random.value < 0.3f) Fx.Flames(p + Random.insideUnitCircle.normalized * rr, 0.3f, 1f); // alguna espurna i fum
             }
 
             // el mal: cada client, com a molt cada 0,3 s
