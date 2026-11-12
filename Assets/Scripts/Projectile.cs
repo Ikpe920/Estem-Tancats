@@ -423,6 +423,6 @@ public class Projectile : MonoBehaviour
         GamepadInput.Rumble(0.15f, 0.2f, 0.06f);
         // gel (Calçots + Sorbet) o foc
         if (slowDuration > 0f) Fx.FrostBurst(transform.position, radius);
-        else Fx.Explosion(transform.position, radius, 0.8f);
+        else Fx.Explosion(transform.position, radius * 0.85f, 0.6f);
     }
 }

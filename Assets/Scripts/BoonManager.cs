@@ -482,7 +482,7 @@ public class BoonManager : MonoBehaviour
     // Cada nivell demana una mica més: 5, 7, 9, 11... (uns 40 nivells en una partida de 40 onades)
     public int ChefLevel { get; private set; }
     public float Xp { get; private set; }
-    public float XpToNext => 5f + 2f * ChefLevel;
+    public float XpToNext => 6f + 2.6f * ChefLevel; // abans 5 + 2·nivell: pujaves massa de pressa
     private int pendingLevels;
     private bool offering;
     private string offerTitle;
@@ -677,9 +677,28 @@ public class BoonManager : MonoBehaviour
         }
 
         if (b.type == BoonType.Heal && health != null && health.CurrentLives >= health.maxLives) return false; // vida plena: carta morta
+        if (!taken.ContainsKey(b) && ConflictsWithTaken(b)) return false; // plats contraris: no es poden tenir alhora
         if (b.type == BoonType.MaxLives && health != null && health.maxLives >= PlayerHealth.MaxLivesCap) return false;
         return true;
     }
+
+    // ---------- PLATS CONTRARIS ----------
+    // Un plat amb risc (p. ex. el Xili: clients més ràpids) i el plat que fa just el contrari (l'Oli: clients
+    // més lents) no es poden tenir alhora: si no, el risc no compta. Ho mateix amb la Fondue i els Macarrons,
+    // la Fideuà i els Xurros, i els Calamars i les Croquetes.
+    bool ConflictsWithTaken(Boon b)
+    {
+        foreach (KeyValuePair<Boon, int> kv in taken)
+        {
+            Boon o = kv.Key;
+            if (o == null || o == b) continue;
+            if (IsRisk(b) && o.type == b.type2) return true;  // tens el remei i aquest és el risc
+            if (IsRisk(o) && b.type == o.type2) return true;  // tens el risc i aquest és el remei
+        }
+        return false;
+    }
+
+    static bool IsRisk(Boon b) { return b != null && b.type2 != BoonType.None && b.amount2 < 0f; }
 
     // ---------- REROLL (canviar les cartes de l'oferta) ----------
 

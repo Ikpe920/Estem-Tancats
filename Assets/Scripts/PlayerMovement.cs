@@ -44,6 +44,8 @@ public class PlayerMovement : MonoBehaviour
     }
 
     public bool IsDashing => isDashing;
+    // invulnerable mentre fa el dash i 0,3 s després d'arribar (si no, el cop just a l'arribada et tocava)
+    public bool DashInvulnerable => isDashing || Time.time < dashEndTime + 0.3f;
     public bool CanDash => Time.time >= nextDashTime;
     public float DashCooldownRemaining => Mathf.Max(0f, nextDashTime - Time.time);
 

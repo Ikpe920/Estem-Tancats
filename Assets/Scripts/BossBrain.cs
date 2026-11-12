@@ -499,7 +499,7 @@ public abstract class BossBrain : MonoBehaviour
         Transform player = PlayerRef.Transform;
         if (player == null || Vector2.Distance(player.position, p) > radius) return false;
         PlayerMovement pm = PlayerRef.Movement;
-        if (pm != null && pm.IsDashing) return false;
+        if (pm != null && pm.DashInvulnerable) return false;
         if (PlayerRef.Health != null) PlayerRef.Health.TakeDamage();
         return true;
     }
@@ -537,7 +537,7 @@ public abstract class BossBrain : MonoBehaviour
         EnemyProjectile ep = s.GetComponent<EnemyProjectile>();
         if (ep != null) ep.lifetime = 6f;
         Rigidbody2D srb = s.GetComponent<Rigidbody2D>();
-        if (srb != null) srb.linearVelocity = dir * speed;
+        if (srb != null) srb.linearVelocity = dir * speed * DifficultyShotMul;
         BossShotFx fx = s.AddComponent<BossShotFx>();
         fx.Init(prefab);
         return fx;
@@ -545,8 +545,14 @@ public abstract class BossBrain : MonoBehaviour
 
     protected BossShotFx Shoot(Sprite sprite, Vector2 dir, float speed, float scale = 0.7f, Color? tint = null)
     {
-        return SpawnShot(shotPrefab, sprite, Pos, dir, speed * (phase2 ? 1.1f : 1f), scale, tint);
+        return SpawnShot(shotPrefab, sprite, Pos, dir, speed * (phase2 ? 1.1f : 1f) * ShotMul, scale, tint);
     }
+
+    // la velocitat de les bales dels caps segons la dificultat (Fàcil, més lentes)
+    public static float DifficultyShotMul =>
+        Progression.Difficulty == Difficulty.Facil ? 0.72f : Progression.Difficulty == Difficulty.Dificil ? 1f : 0.88f;
+    // i cada cap la pot ajustar (el primer, el Crític, les llança més a poc a poc)
+    protected virtual float ShotMul => 1f;
 
     protected static Vector2 Dir(float degrees)
     {
@@ -734,6 +740,7 @@ public class BossCriticBrain : BossBrain
     Sprite star;
     protected override string Phase2Line => "RESSENYA NEGATIVA!";
     protected override Sprite DesperateSprite => star;
+    protected override float ShotMul => Progression.Difficulty == Difficulty.Facil ? 0.75f : Progression.Difficulty == Difficulty.Dificil ? 0.95f : 0.82f; // el primer cap: per aprendre
     protected override float VoicePitch => 1.15f;
     protected override string[] Taunts => new[] { "Massa sal!", "Això està cru!", "Un zero rodó!", "On és el xef?", "Quina vergonya!" };
     protected override void Start() { star = Shot("Star"); keepMin = 3f; keepMax = 6.5f; base.Start(); }
@@ -854,8 +861,8 @@ public class BossDrunkBrain : BossBrain
             if (PlayerInCone(Pos, aim, 6f, 35f))
             {
                 PlayerMovement pm = PlayerRef.Movement;
-                if (pm != null && !pm.IsDashing) pm.Knockback(aim, 18f, 0.35f);
-                if (PlayerRef.Health != null && (pm == null || !pm.IsDashing)) PlayerRef.Health.TakeDamage();
+                if (pm != null && !pm.DashInvulnerable) pm.Knockback(aim, 18f, 0.35f);
+                if (PlayerRef.Health != null && (pm == null || !pm.DashInvulnerable)) PlayerRef.Health.TakeDamage();
             }
             AudioManager.Play("bounce", 0.9f, 0.4f);
             hold = false;
@@ -900,7 +907,7 @@ public class BossChefBrain : BossBrain
             if (PlayerInCone(Pos, aim, range, halfA))
             {
                 PlayerMovement pm = PlayerRef.Movement;
-                if (PlayerRef.Health != null && (pm == null || !pm.IsDashing)) PlayerRef.Health.TakeDamage();
+                if (PlayerRef.Health != null && (pm == null || !pm.DashInvulnerable)) PlayerRef.Health.TakeDamage();
             }
             yield return null;
         }
@@ -1291,7 +1298,7 @@ public class BossTvBrain : BossBrain
         if (PlayerInCone(Pos, aim, 7.5f, 20f))
         {
             PlayerMovement pm = PlayerRef.Movement;
-            if (pm == null || !pm.IsDashing)
+            if (pm == null || !pm.DashInvulnerable)
             {
                 ScreenFlash.Blind(0.9f);
                 if (PlayerRef.Health != null) PlayerRef.Health.TakeDamage();
@@ -1446,7 +1453,7 @@ public class BossGhostBrain : BossBrain
         if (PlayerInCone(Pos, aim, 5.5f, 35f))
         {
             PlayerMovement pm = PlayerRef.Movement;
-            if (pm == null || !pm.IsDashing)
+            if (pm == null || !pm.DashInvulnerable)
             {
                 PlayerSlow.Apply(0.55f, 1.8f, "ESPANTAT!");
                 if (PlayerRef.Health != null) PlayerRef.Health.TakeDamage();
