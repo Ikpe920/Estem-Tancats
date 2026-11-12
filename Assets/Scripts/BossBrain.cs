@@ -18,11 +18,19 @@ public static class DamageKind
 {
     // el tipus del cop que s'està fent ara mateix (Enemy.TakeDamage el mira)
     public static DmgKind Current = DmgKind.None;
+    public static float FireMul = 1f; // el safrà: el foc fa més mal (el BoonManager el torna a 1 a cada partida)
     static float nextPopup;
 
     public static void Hit(Enemy e, int damage, DmgKind kind, bool crit = false)
     {
         if (e == null) return;
+        // un client només pot rebre una explosió cada 0,25 s (si no, set explosions a sobre fan set vegades mal)
+        if (kind == DmgKind.Explosion)
+        {
+            if (Time.time - e.lastBlastTime < 0.25f) return;
+            e.lastBlastTime = Time.time;
+        }
+        if (kind == DmgKind.Fire && FireMul != 1f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * FireMul));
         DmgKind prev = Current;
         Current = kind;
         try { e.TakeDamage(damage, crit); }

@@ -60,16 +60,76 @@ public class PlayerShooting : MonoBehaviour
         cam = Camera.main;
     }
 
+    // ---------- LA CALOR DE LA PAELLA (sobreescalfament) ----------
+    // Disparar sense parar escalfa la paella; si arriba al màxim, s'encalla uns segons i no pots disparar.
+    // Escalfa igual per segon sigui quin sigui el ritme de tret (el Pastisser no s'escalfa abans que el Pizzer).
+    public float heatPerSecond = 0.22f;   // ~4,5 s disparant sense parar per encallar-se
+    public float coolPerSecond = 0.5f;    // es refreda quan no dispares
+    public float overheatTime = 1.5f;     // segons encallada
+    public float Heat { get; private set; }
+    public bool Overheated => Time.time < overheatedUntil;
+    private float overheatedUntil, lastShotTime;
+    private SpriteRenderer heatBg, heatFill;
+
     void Update()
     {
         if (Time.timeScale == 0) return; // no disparar mentre la botiga està oberta
+        UpdateHeat();
+        if (Overheated) return;
         if (Time.time < nextFireTime) return;
 
         if (TryGetAim(out Vector2 dir))
         {
             nextFireTime = Time.time + CurrentFireRate;
             Shoot(dir);
+            lastShotTime = Time.time;
+            Heat += heatPerSecond * (Progression.Difficulty == Difficulty.Facil ? 0.8f : 1f) * CurrentFireRate;
+            if (Heat >= 1f) Overheat();
         }
+    }
+
+    void Overheat()
+    {
+        Heat = 1f;
+        overheatedUntil = Time.time + overheatTime;
+        HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.5f, "MASSA CALENT!", new Color(1f, 0.45f, 0.3f), 1f);
+        AudioManager.Play("fuse", 1f, 1.4f);
+        for (int i = 0; i < 4; i++) Fx.Steam((Vector2)transform.position + Random.insideUnitCircle * 0.4f + Vector2.up * 0.3f);
+        Squash.Kick(gameObject, 0.2f, -0.2f);
+    }
+
+    void UpdateHeat()
+    {
+        if (Overheated) Heat = Mathf.Clamp01((overheatedUntil - Time.time) / overheatTime); // es buida mentre està encallada
+        else if (Time.time - lastShotTime > 0.25f) Heat = Mathf.Max(0f, Heat - coolPerSecond * Time.deltaTime);
+
+        // la barreta de calor, sota el xef (només quan s'escalfa)
+        if (heatBg == null)
+        {
+            heatBg = MakeBar("CalorFons", new Color(0.1f, 0.06f, 0.06f, 0.85f), 30);
+            heatFill = MakeBar("Calor", Color.white, 31);
+        }
+        bool show = Heat > 0.05f && !PlayerHealth.IsDying;
+        heatBg.enabled = heatFill.enabled = show;
+        if (!show) return;
+        const float W = 1.1f, Hh = 0.13f;
+        Vector2 at = (Vector2)transform.position + Vector2.down * 0.75f;
+        heatBg.transform.position = at;
+        heatBg.transform.localScale = new Vector3(W + 0.08f, Hh + 0.08f, 1f);
+        heatFill.transform.position = at + Vector2.left * (W * (1f - Heat) * 0.5f);
+        heatFill.transform.localScale = new Vector3(W * Heat, Hh, 1f);
+        Color col = Color.Lerp(new Color(1f, 0.85f, 0.3f), new Color(1f, 0.25f, 0.15f), Heat);
+        if (Overheated || Heat > 0.8f) col = Mathf.Repeat(Time.time * 8f, 1f) < 0.5f ? col : Color.white; // avisa abans d'encallar-se
+        heatFill.color = col;
+    }
+
+    SpriteRenderer MakeBar(string name, Color c, int order)
+    {
+        SpriteRenderer sr = new GameObject(name).AddComponent<SpriteRenderer>();
+        sr.sprite = HazardFx.Square();
+        sr.color = c;
+        sr.sortingOrder = order;
+        return sr;
     }
 
     // ratolí: clic esquerre i apunta al cursor
@@ -154,23 +214,29 @@ public class PlayerShooting : MonoBehaviour
     void OnDestroy()
     {
         if (reticle != null) Destroy(reticle.gameObject);
+        if (heatBg != null) Destroy(heatBg.gameObject);
+        if (heatFill != null) Destroy(heatFill.gameObject);
     }
 
     // un tret extra (ganivets, cercle de la paella): com un tret normal, sense crític
     static Sprite knifeSprite;
 
-    void FireExtra(float angle, Sprite sprite = null)
+    // 'clean': un tret net, sense explosions, perforació ni rebots (els ganivets del pernil)
+    void FireExtra(float angle, Sprite sprite = null, bool clean = false)
     {
         Vector2 dir = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
         GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
         Projectile proj = Projectile.Get(prefab, (Vector2)transform.position + dir * spawnOffset, Quaternion.Euler(0f, 0f, angle));
         if (proj == null) return;
         proj.damage += damage - 1;
-        proj.pierce = pierce;
-        proj.bounces = bounces;
-        proj.explosionRadius = explosionRadius;
-        proj.slowFactor = slowFactor;
-        proj.slowDuration = slowDuration;
+        if (!clean)
+        {
+            proj.pierce = pierce;
+            proj.bounces = bounces;
+            proj.slowFactor = slowFactor;
+            proj.slowDuration = slowDuration;
+        }
+        proj.explosionRadius = 0f; // els trets extra no exploten (només el tret central)
         proj.knockback = knockback;
         if (projectileScale != 1f) proj.transform.localScale *= projectileScale;
         if (sprite != null) proj.SetSprite(sprite);
@@ -189,10 +255,15 @@ public class PlayerShooting : MonoBehaviour
         float baseAngle = Mathf.Atan2(baseDir.y, baseDir.x) * Mathf.Rad2Deg;
 
         // plats de conjunt
-        float sideDamage = SetBonuses.Has(SetId.FullFan) ? 1f : sideShotDamage; // Paella exprés: el ventall fa tot el dany
         bool anyCrit = false;
 
         int total = 1 + extraShots;
+        // el ventall reparteix el mal: com més trets, menys en fa cadascun dels dels costats
+        // (3 trets: 0,6 cadascun · 5: 0,36 · 7: 0,3); la Paella exprés en dona més
+        float fanShare = total > 1 ? Mathf.Clamp(1.8f / total, 0.3f, 1f) : 1f;
+        float sideDamage = Mathf.Min(sideShotDamage, fanShare);
+        if (SetBonuses.Has(SetId.FullFan)) sideDamage = Mathf.Min(1f, fanShare * 1.6f); // Paella exprés
+        int center = total / 2;
         for (int i = 0; i < total; i++)
         {
             // els projectils es reparteixen en ventall, centrats cap al ratolí
@@ -204,7 +275,7 @@ public class PlayerShooting : MonoBehaviour
             Projectile proj = Projectile.Get(prefab, spawnPos, Quaternion.Euler(0f, 0f, angle)); // de la reserva
             if (proj == null) continue; // prefab mal configurat
             proj.damage += damage - 1; // dany del prefab + millores
-            bool isCenter = total % 2 == 1 && i == total / 2;
+            bool isCenter = i == center;
             if (total > 1 && !isCenter && sideDamage < 1f)
             {
                 // la part del dany que toca, en mitjana: amb 1 de dany i la meitat, un tret de cada dos fa mal
@@ -222,7 +293,7 @@ public class PlayerShooting : MonoBehaviour
             }
             proj.pierce = pierce;
             proj.bounces = bounces;
-            proj.explosionRadius = explosionRadius;
+            proj.explosionRadius = isCenter ? explosionRadius : 0f; // només explota el tret central (els calçots)
             proj.slowFactor = slowFactor;
             proj.slowDuration = slowDuration;
             proj.knockback = knockback;
@@ -245,8 +316,9 @@ public class PlayerShooting : MonoBehaviour
             for (int k = 0; k < backs; k++)
             {
                 float off = (k - (backs - 1) / 2f) * 14f;
-                FireExtra(baseAngle + 180f + off, knifeSprite);
-                if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off, knifeSprite); FireExtra(baseAngle - 90f + off, knifeSprite); }
+                // els ganivets van nets: el seu mal, sense explosions, perforació ni rebots
+                FireExtra(baseAngle + 180f + off, knifeSprite, true);
+                if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off, knifeSprite, true); FireExtra(baseAngle - 90f + off, knifeSprite, true); }
             }
         }
         // Paella gegant: cada 3 trets, un cercle sencer

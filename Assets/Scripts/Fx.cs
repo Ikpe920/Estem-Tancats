@@ -39,6 +39,10 @@ public class Fx : MonoBehaviour
     private readonly SpriteRenderer[] srs = new SpriteRenderer[Max];
     private readonly bool[] alive = new bool[Max];
     private int cursor;
+    private int aliveCount;
+
+    // hi ha massa coses a la pantalla: els efectes petits (espurnes, lluentons) se salten
+    public static bool Busy => instance != null && instance.aliveCount > 420;
 
     static Sprite soft, ring, spark, square, flake;
 
@@ -136,6 +140,7 @@ public class Fx : MonoBehaviour
             size0 = size0, size1 = size1, c0 = c0, c1 = c1,
             rot = Random.Range(0f, 360f), rotVel = rotVel, stretch = stretch
         };
+        if (!f.alive[i]) f.aliveCount++;
         f.alive[i] = true;
         f.Apply(i);
     }
@@ -148,7 +153,7 @@ public class Fx : MonoBehaviour
             if (!alive[i]) continue;
             P p = ps[i];
             p.age += dt;
-            if (p.age >= p.life) { alive[i] = false; srs[i].enabled = false; continue; }
+            if (p.age >= p.life) { alive[i] = false; aliveCount--; srs[i].enabled = false; continue; }
             p.vel *= Mathf.Max(0f, 1f - p.drag * dt);
             p.vel.y += p.rise * dt;
             p.pos += p.vel * dt;
@@ -275,6 +280,7 @@ public class Fx : MonoBehaviour
 
     public static void Hit(Vector2 pos, Vector2 dir, bool crit)
     {
+        if (Busy && !crit) return;
         Vector2 back = dir.sqrMagnitude > 0.01f ? -dir.normalized : Random.insideUnitCircle.normalized;
         int n = crit ? 9 : 4;
         Color c0 = crit ? new Color(1f, 0.9f, 0.4f) : new Color(1f, 1f, 0.95f);
@@ -317,6 +323,7 @@ public class Fx : MonoBehaviour
     // flames de dibuix animat (Resources/Fx/Flame_0..5), estrelletes, fum amb contorn i cremat a terra
     public static void Flames(Vector2 pos, float radius, float amount = 1f)
     {
+        if (Busy) amount *= 0.5f;
         float size = Mathf.Clamp(radius * 0.7f, 0.25f, 0.9f);
         if (Random.value < 0.5f * amount)
         {
@@ -460,6 +467,7 @@ public class Fx : MonoBehaviour
 
     public static void Sparkle(Vector2 pos, Color color)
     {
+        if (Busy && Random.value < 0.7f) return;
         Emit(Flake(), pos, Vector2.zero, Random.Range(0.35f, 0.6f), 0.05f, 0.28f, new Color(color.r, color.g, color.b, 1f), new Color(1f, 1f, 1f, 0f), 7, 0f, 0f, false, 90f);
     }
 
@@ -489,6 +497,7 @@ public class Fx : MonoBehaviour
     // un grapat de lluentons (premis, cures)
     public static void Sparkles(Vector2 pos, Color color, int n = 6, float spread = 0.8f)
     {
+        if (Busy) n = Mathf.Max(1, n / 3);
         for (int i = 0; i < n; i++)
             Emit(Flake(), pos + Random.insideUnitCircle * spread, new Vector2(0f, Random.Range(0.5f, 1.5f)), Random.Range(0.4f, 0.7f), 0.08f, 0.26f,
                  new Color(color.r, color.g, color.b, 1f), new Color(1f, 1f, 1f, 0f), 9, 1f, 0f, false, 120f);
