@@ -105,6 +105,7 @@ public class ChefAbility : MonoBehaviour
 
         readyAt = Time.time + def.cooldown;
         wasReady = false;
+        Stats.Add("abilities");
         HazardFx.Popup((Vector2)transform.position + Vector2.up * 1.6f, def.name + "!", def.color, 0.9f);
         GamepadInput.Rumble(0.5f, 0.5f, 0.2f);
         switch (chef)

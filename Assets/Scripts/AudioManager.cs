@@ -32,7 +32,7 @@ public class AudioManager : MonoBehaviour
         { "bounce", 0.3f }, { "fuse", 0.22f },
         { "voice_0", 0.3f }, { "voice_1", 0.3f }, { "voice_2", 0.3f }, { "voice_3", 0.3f }, { "phase", 0.7f },
         { "jingle_0", 0.7f }, { "jingle_1", 0.7f }, { "jingle_2", 0.7f }, { "jingle_3", 0.7f },
-        { "jingle_4", 0.7f }, { "jingle_5", 0.7f }, { "jingle_6", 0.7f }, { "jingle_7", 0.7f },
+        { "jingle_4", 0.7f }, { "jingle_5", 0.7f }, { "jingle_6", 0.7f }, { "jingle_7", 0.7f }, { "jingle_8", 0.7f }, { "recipe", 0.6f },
     };
 
     // temps mínim entre dues vegades el mateix so (perquè 20 impactes alhora no siguin un soroll)

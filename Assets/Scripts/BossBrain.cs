@@ -74,6 +74,7 @@ public static class DamageKind
             case BossType.Sommelier: return DmgKind.Crit;
             case BossType.Gelater: return DmgKind.Fire;
             case BossType.TvCritic: return DmgKind.Explosion;
+            case BossType.Ghost: return DmgKind.Fire;
         }
         return DmgKind.None;
     }
@@ -1315,5 +1316,139 @@ public class BossTvBrain : BossBrain
         }
         yield return Wait(1f);
         if (Random.value < 0.35f) FlipStrafe();
+    }
+}
+
+// =====================================================================
+//  9. EL FANTASMA DEL RESTAURANT (cap secret) — es fa invisible, crida i llença plats encantats
+//     (punt feble: foc). Surt si trobes prou receptes perdudes en una partida d'El Servei.
+// =====================================================================
+public class BossGhostBrain : BossBrain
+{
+    Sprite plate;
+    SpriteRenderer body;
+    float alpha = 0.8f;
+    readonly System.Collections.Generic.List<GameObject> decoys = new System.Collections.Generic.List<GameObject>();
+
+    protected override string Phase2Line => "SOM MOLTS, ARA!";
+    protected override string Phase3Line => "EL RESTAURANT ÉS MEU!";
+    protected override Sprite DesperateSprite => plate;
+    protected override float VoicePitch => 0.6f;
+    protected override string[] Taunts => new[] { "Buuuu!", "Aquí no tanca ningú...", "El servei no s'acaba mai!", "Fa cent anys que espero!", "Qui ha tocat la meva recepta?" };
+
+    static readonly Color Ecto = new Color(0.6f, 1f, 0.85f);
+
+    protected override void Start()
+    {
+        plate = Shot("PlatFantasma");
+        body = GetComponent<SpriteRenderer>();
+        keepMin = 4f; keepMax = 7f;
+        base.Start();
+    }
+
+    void LateUpdate()
+    {
+        // translúcid, i batega una mica
+        if (body != null) body.color = new Color(1f, 1f, 1f, alpha * (0.85f + 0.15f * Mathf.Sin(Time.time * 4f)));
+        if (Random.value < Time.deltaTime * 6f) Fx.Sparkle(Pos + Random.insideUnitCircle * 1.4f, Ecto);
+    }
+
+    void OnDisable()
+    {
+        foreach (GameObject d in decoys) if (d != null) Destroy(d);
+    }
+
+    protected override void OnPhase2()
+    {
+        // dues còpies falses que el segueixen i també disparen
+        for (int i = 0; i < 2; i++) StartCoroutine(Decoy(i == 0 ? 1f : -1f));
+    }
+
+    IEnumerator Decoy(float side)
+    {
+        GameObject go = new GameObject("CopiaFantasma");
+        decoys.Add(go);
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = body != null ? body.sprite : null;
+        sr.sortingOrder = body != null ? body.sortingOrder : 0;
+        go.transform.localScale = transform.localScale;
+        float a = side > 0 ? 0f : 180f;
+        float nextShot = Time.time + 2f;
+        while (Alive)
+        {
+            a += Time.deltaTime * 50f * side;
+            Vector2 p = PlayerPos + Dir(a) * 5.5f;
+            go.transform.position = Vector2.Lerp(go.transform.position, ClampArena(p, 2f), Time.deltaTime * 2f);
+            sr.color = new Color(1f, 1f, 1f, 0.45f + 0.15f * Mathf.Sin(Time.time * 5f + side));
+            if (Time.time >= nextShot)
+            {
+                nextShot = Time.time + 3.2f;
+                Vector2 to = PlayerPos - (Vector2)go.transform.position;
+                BossShotFx f = SpawnShot(shotPrefab, plate, go.transform.position, to, 4.5f, 0.6f);
+                if (f != null) f.spin = 300f;
+            }
+            yield return null;
+        }
+        if (go != null) { Fx.Poof(go.transform.position); Destroy(go); }
+    }
+
+    protected override IEnumerator Brain()
+    {
+        // BUUU!: desapareix, travessa la sala i surt al teu costat cridant
+        Say("...", Ecto, 0.6f);
+        hold = true;
+        if (enemy != null) enemy.damageMultiplier = 0.25f; // mig invisible: costa tocar-lo
+        for (float t = 0f; t < 0.5f; t += Time.deltaTime) { alpha = Mathf.Lerp(0.8f, 0.08f, t / 0.5f); yield return null; }
+        Vector2 to = ClampArena(PlayerPos + Random.insideUnitCircle.normalized * 3.2f, 2f);
+        Vector2 from = Pos;
+        for (float t = 0f; t < 0.8f; t += Time.deltaTime)
+        {
+            Vector2 p = Vector2.Lerp(from, to, t / 0.8f);
+            if (rb != null) rb.position = p; else transform.position = p;
+            yield return null;
+            if (!Alive) break;
+        }
+        for (float t = 0f; t < 0.25f; t += Time.deltaTime) { alpha = Mathf.Lerp(0.08f, 0.9f, t / 0.25f); yield return null; }
+        alpha = 0.8f;
+        if (enemy != null) enemy.damageMultiplier = 1f;
+        Say("BUUUU!", Ecto, 1f);
+        Squash.Kick(gameObject, -0.3f, 0.35f);
+        Vector2 aim = ToPlayer;
+        for (int k = 0; k < 4; k++) Fx.Ripple(Pos + aim * (1.2f + k * 1.1f), 1.2f + k * 0.5f, Ecto);
+        AudioManager.Play("voice_2", 1f, 0.45f);
+        if (PlayerInCone(Pos, aim, 5.5f, 35f))
+        {
+            PlayerMovement pm = PlayerRef.Movement;
+            if (pm == null || !pm.IsDashing)
+            {
+                PlayerSlow.Apply(0.55f, 1.8f, "ESPANTAT!");
+                if (PlayerRef.Health != null) PlayerRef.Health.TakeDamage();
+            }
+        }
+        hold = false;
+        yield return Wait(1f);
+        if (!Alive) yield break;
+
+        // plats encantats que fan espirals
+        Say("A TAULA!", Ecto);
+        for (int v = 0; v < (phase2 ? 3 : 2) && Alive; v++)
+        {
+            int i = 0;
+            foreach (BossShotFx f in Fan(plate, ToPlayer, 5, 18f, 5f, 0.7f))
+            { f.spin = 360f; f.curve = (i++ % 2 == 0 ? 55f : -55f); f.trail = "brillo"; f.trailColor = Ecto; }
+            AudioManager.Play("pickup", 0.4f, 0.6f);
+            yield return Wait(0.55f);
+        }
+        yield return Wait(0.8f);
+
+        // els clients de l'altre món
+        if (Alive && spawner != null && Random.value < 0.5f)
+        {
+            Say("CLIENTS DE L'ALTRE MÓN!", Ecto, 1.4f);
+            spawner.SpawnMinions(Pos, phase2 ? 4 : 3);
+            yield return Wait(1f);
+        }
+        yield return Wait(1f);
+        if (Random.value < 0.5f) FlipStrafe();
     }
 }

@@ -223,6 +223,8 @@ S['jingle_6'] = mix(*[at(bell(n, 0.4) * 0.7, i * 0.07) for i, n in enumerate((10
 S['jingle_7'] = mix(seq(brass_chord([60, 64, 67], 0.15), brass_chord([60, 64, 67], 0.15), brass_chord([65, 69, 72, 77], 0.6)),
                     at(cymbal(1.0) * 0.5, 0.3), at(kick(), 0.3))                                                                  # Crítica TV: entrada de programa
 S['phase'] = mix(brass_chord([48, 51, 54, 57], 0.6), at(cymbal(1.0) * 0.6, 0.0), thud(60, 0.5))                                   # el cap s'enfada (2a i 3a fase)
+S['jingle_8'] = mix(slide_whistle(300, 600, 1.2, vib=0.05, shape=1.0) * 0.6, *[at(bell(n, 0.9) * 0.5, i * 0.22) for i, n in enumerate((81, 80, 77, 73, 72))])  # Fantasma: uuuuh
+S['recipe'] = mix(harp([72, 79, 84, 88, 91, 96], 0.05, 0.9), at(bell(100, 0.8) * 0.6, 0.3))                                     # recepta perduda
 
 if __name__ == '__main__':
     for k, v in S.items():
