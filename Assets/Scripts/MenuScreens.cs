@@ -147,7 +147,7 @@ public class MainMenuDecor : MonoBehaviour
         foreach (Button b in GetComponentsInChildren<Button>(true))
         {
             RectTransform rt = (RectTransform)b.transform;
-            rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, 420f), 60f);
+            rt.sizeDelta = new Vector2(Mathf.Max(rt.sizeDelta.x, 420f), 66f);
             if (b.name.Contains("Play")) play = b;
             if (b.name.Contains("Quit")) quit = b;
         }
@@ -162,22 +162,8 @@ public class MainMenuDecor : MonoBehaviour
             TextMeshProUGUI ot = options.GetComponentInChildren<TextMeshProUGUI>();
             if (ot != null) ot.text = "Opcions";
             RectTransform prt = (RectTransform)play.transform;
-            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -140f);
+            ((RectTransform)options.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -76f);
 
-            // els caps seguits (Boss Rush), just sota Jugar
-            Button rush = Instantiate(play, play.transform.parent);
-            rush.name = "BossRushButton";
-            rush.onClick = new Button.ButtonClickedEvent();
-            MainMenu mm = FindAnyObjectByType<MainMenu>();
-            rush.onClick.AddListener(() =>
-            {
-                AudioManager.Play("ui_click");
-                if (mm != null) mm.PlayBossRush();
-                else if (!ChefSelectScreen.IsOpen) ChefSelectScreen.Open(() => { RunStats.Reset(); BossRush.Begin(); Iris.LoadScene(SceneNames.Game); });
-            });
-            TextMeshProUGUI rt0 = rush.GetComponentInChildren<TextMeshProUGUI>();
-            if (rt0 != null) rt0.text = "Caps seguits";
-            ((RectTransform)rush.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -70f);
 
             // i el del Receptari (plats, conjunts i clients descoberts)
             Button codex = Instantiate(play, play.transform.parent);
@@ -186,7 +172,7 @@ public class MainMenuDecor : MonoBehaviour
             codex.onClick.AddListener(() => { AudioManager.Play("ui_click"); CodexScreen.Open(); });
             TextMeshProUGUI ct = codex.GetComponentInChildren<TextMeshProUGUI>();
             if (ct != null) ct.text = "Receptari";
-            ((RectTransform)codex.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -210f);
+            ((RectTransform)codex.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -152f);
 
             // i el del Rebost (millores permanents amb propines)
             Button rebost = Instantiate(play, play.transform.parent);
@@ -195,9 +181,9 @@ public class MainMenuDecor : MonoBehaviour
             rebost.onClick.AddListener(() => { AudioManager.Play("ui_click"); RebostScreen.Open(); });
             TextMeshProUGUI rt2 = rebost.GetComponentInChildren<TextMeshProUGUI>();
             if (rt2 != null) rt2.text = "Rebost";
-            ((RectTransform)rebost.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -280f);
+            ((RectTransform)rebost.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -228f);
 
-            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -350f);
+            if (quit != null) ((RectTransform)quit.transform).anchoredPosition = prt.anchoredPosition + new Vector2(0f, -304f);
         }
 
         // rècord, onada, propines i reptes

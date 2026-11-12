@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 
 // =====================================================================
-//  CAPS SEGUITS (Boss Rush): els 8 caps l'un darrere l'altre, contra rellotge
+//  MENÚ DEGUSTACIÓ (Boss Rush): els 8 caps l'un darrere l'altre, contra rellotge, com 8 plats
 // =====================================================================
 // - Es tria al menú principal. No hi ha història ni clients normals: només caps (i els que facin sortir ells).
 // - Comences amb 4 plats (dos cofres) i cada cap et deixa el seu cofre i un cor.
@@ -57,8 +57,8 @@ public static class BossRush
     // per al menú principal
     public static string MenuLine()
     {
-        if (BestTime > 0f) return "Caps seguits: " + Clock(BestTime);
-        if (BestCount > 0) return "Caps seguits: " + BestCount + "/" + Bosses;
+        if (BestTime > 0f) return "Menú degustació: " + Clock(BestTime);
+        if (BestCount > 0) return "Menú degustació: " + BestCount + "/" + Bosses;
         return null;
     }
 
@@ -120,6 +120,6 @@ public class BossRushHud : MonoBehaviour
         if (!BossRush.Active) { Destroy(gameObject); return; }
         if (!PlayerHealth.IsDying) BossRush.Elapsed += Time.deltaTime; // amb el joc pausat no avança
         clock.text = BossRush.Clock(BossRush.Elapsed);
-        count.text = "CAP " + Mathf.Min(BossRush.Beaten + 1, BossRush.Bosses) + " DE " + BossRush.Bosses;
+        count.text = "PLAT " + Mathf.Min(BossRush.Beaten + 1, BossRush.Bosses) + " DE " + BossRush.Bosses;
     }
 }
