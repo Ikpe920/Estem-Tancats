@@ -343,9 +343,44 @@ public class Enemy : MonoBehaviour
         UpdateColor();
         UpdateShooting(); // abans el "return" del flaix/frenat se saltava el tir
 
+        AttackTell();
+
         // frenat pel gel: li cauen flocs de neu
         if (Time.time < slowUntil && Random.value < Time.deltaTime * 7f)
             Fx.Snowflake((Vector2)transform.position + new Vector2(Random.Range(-0.4f, 0.4f), Random.Range(0.1f, 0.6f)));
+    }
+
+    // ---------- L'AVÍS D'ATAC (dibuix animat) ----------
+    // quan un client és a tocar del xef, aixeca la forquilla i el ganivet i s'arronsa per agafar embranzida
+    static Sprite attackIcon;
+    private float nextTell;
+    private SpriteRenderer tellIcon;
+    private float tellUntil;
+
+    void AttackTell()
+    {
+        if (isBoss || isShooter || dead || player == null) return;
+        if (tellIcon != null)
+        {
+            float left = tellUntil - Time.time;
+            if (left <= 0f) { Destroy(tellIcon.gameObject); tellIcon = null; }
+            else tellIcon.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 40f) * 12f);
+        }
+        if (Time.time < nextTell) return;
+        if (((Vector2)player.position - (Vector2)transform.position).sqrMagnitude > 1.8f * 1.8f) return;
+        nextTell = Time.time + Random.Range(1.2f, 1.8f);
+        Squash.Kick(gameObject, -0.2f, 0.25f); // s'arronsa i s'estira, com qui agafa embranzida
+        if (attackIcon == null) attackIcon = Resources.Load<Sprite>("Decor/Atac");
+        if (attackIcon == null || tellIcon != null) return;
+        GameObject go = new GameObject("AvisAtac");
+        go.transform.SetParent(transform, false);
+        go.transform.localPosition = new Vector3(0f, 0.95f, 0f);
+        float inv = transform.localScale.x != 0f ? 1f / Mathf.Abs(transform.localScale.x) : 1f;
+        go.transform.localScale = Vector3.one * 0.55f * inv;
+        tellIcon = go.AddComponent<SpriteRenderer>();
+        tellIcon.sprite = attackIcon;
+        tellIcon.sortingOrder = 30;
+        tellUntil = Time.time + 0.45f;
     }
 
     // només toca els sprites quan canvia l'estat (abans els reescrivia cada frame)

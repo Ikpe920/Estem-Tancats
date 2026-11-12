@@ -114,6 +114,8 @@ public class CartoonDeath : MonoBehaviour
     private float life, age;
     private Vector3 startScale;
     private bool boss;
+    private DmgKind kind;   // de què ha mort: foc (surt cremat), gel (es trenca), explosió (vola lluny)
+    private float nextFx;
 
     public static void Launch(Enemy e, Vector2 from)
     {
@@ -143,6 +145,28 @@ public class CartoonDeath : MonoBehaviour
         d.gravity = 26f;
         d.life = e.isBoss ? 1.0f : 0.62f;
         d.startScale = go.transform.localScale;
+
+        // la mort depèn del cop que l'ha rematat
+        d.kind = e.isBoss ? DmgKind.None : DamageKind.Current;
+        switch (d.kind)
+        {
+            case DmgKind.Fire: // cremat: negre de sutge, amb flametes i fum
+                sr.color = new Color(0.28f, 0.22f, 0.2f);
+                break;
+            case DmgKind.Ice: // glaçat: es queda quiet, tremola i es trenca a trossos
+                sr.color = new Color(0.7f, 0.9f, 1f);
+                d.velocity = Vector2.zero;
+                d.spin = 0f;
+                d.gravity = 0f;
+                d.life = 0.4f;
+                break;
+            case DmgKind.Explosion: // explotat: surt volant molt més lluny i més de pressa
+                sr.color = new Color(0.55f, 0.45f, 0.4f);
+                d.velocity *= 1.6f;
+                d.spin *= 1.6f;
+                d.life += 0.2f;
+                break;
+        }
     }
 
 
@@ -150,6 +174,26 @@ public class CartoonDeath : MonoBehaviour
     {
         float dt = Time.deltaTime; // la pausa d'impacte el congela a l'aire, com un fotograma clau
         age += dt;
+
+        if (kind == DmgKind.Ice)
+        {
+            // tremola dins del gel... i es trenca
+            transform.localPosition += (Vector3)(Random.insideUnitCircle * 0.03f);
+            if (age >= life)
+            {
+                Fx.FrostBurst(transform.position, 0.7f);
+                Fx.IceShatter(transform.position, 10);
+                AudioManager.Play("box_break", 0.5f, 1.6f);
+                Destroy(gameObject);
+            }
+            return;
+        }
+        if (Time.time >= nextFx && (kind == DmgKind.Fire || kind == DmgKind.Explosion))
+        {
+            nextFx = Time.time + 0.06f;
+            if (kind == DmgKind.Fire) Fx.Flames(transform.position, 0.25f, 0.7f);
+            else Fx.Steam(transform.position, new Color(0.4f, 0.38f, 0.37f, 0.7f));
+        }
         velocity.y -= gravity * dt;
         transform.position += (Vector3)(velocity * dt);
         transform.Rotate(0f, 0f, spin * dt);
