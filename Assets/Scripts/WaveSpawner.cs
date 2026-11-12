@@ -462,6 +462,7 @@ public class WaveSpawner : MonoBehaviour
         Enemy e = Instantiate(prefab, pos, Quaternion.identity).GetComponent<Enemy>();
         ApplyWaveDifficulty(e);
         EnemyVariants.MaybeApply(e, prefab, DifficultyWave);
+        if (actManager != null) RoomClient.Apply(e, actManager.currentAct % 8); // els clients del celler, la cambra i el plató
         WaveEvents.OnEnemySpawned(e);
     }
 

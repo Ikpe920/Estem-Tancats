@@ -241,16 +241,10 @@ public class ActManager : MonoBehaviour
         acts = list.ToArray();
     }
 
-    // l'aspecte de les parets, les portes i les caixes de cada sala (les noves fan servir el d'una de les velles)
+    // l'aspecte de les parets, les portes i les caixes de cada sala (ara cada sala té el seu)
     public static int LookOf(int act)
     {
-        switch (act)
-        {
-            case 5: return 1; // el celler: prestatges amb ampolles i bótes
-            case 6: return 2; // la cambra: rajoles
-            case 7: return 0; // el plató: fusta i cadires
-        }
-        return act;
+        return ((act % 8) + 8) % 8;
     }
 
     static ActData MakeAct(string actName, string actSubtitle, string resName, Color actTint, int extra, float speed, float hp)

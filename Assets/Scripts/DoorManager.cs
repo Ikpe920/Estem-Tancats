@@ -14,6 +14,9 @@ public class DoorManager : MonoBehaviour
         new Color(0.75f, 0.80f, 0.82f),
         new Color(0.55f, 0.42f, 0.25f),
         new Color(0.40f, 0.43f, 0.55f),
+        new Color(0.36f, 0.32f, 0.30f), // el celler: pedra
+        new Color(0.72f, 0.80f, 0.86f), // la cambra: acer
+        new Color(0.80f, 0.62f, 0.22f), // el plató: daurat
     };
 
     private static readonly Color[] PanelColors =
@@ -23,6 +26,9 @@ public class DoorManager : MonoBehaviour
         new Color(0.40f, 0.45f, 0.50f),
         new Color(0.22f, 0.30f, 0.20f),
         new Color(0.15f, 0.16f, 0.24f),
+        new Color(0.26f, 0.12f, 0.08f), // fusta de bóta
+        new Color(0.45f, 0.55f, 0.62f), // porta de cambra frigorífica
+        new Color(0.10f, 0.08f, 0.10f), // porta negra d'escenari
     };
 
     void Awake()
@@ -60,7 +66,7 @@ public class DoorManager : MonoBehaviour
 
     public void SetAct(int act)
     {
-        act = ((act % 5) + 5) % 5;
+        act = ((act % 8) + 8) % 8;
         foreach (Door d in doors) d.SetColors(FrameColors[act], PanelColors[act]);
     }
 
