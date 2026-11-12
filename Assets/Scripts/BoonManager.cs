@@ -487,6 +487,12 @@ public class BoonManager : MonoBehaviour
     private bool offering;
     private string offerTitle;
 
+    // mode de prova: puja 'n' nivells de cop (les cartes surten una darrere l'altra, com si fos jugant)
+    public void DebugLevelUp(int n)
+    {
+        for (int i = 0; i < n; i++) AddXp(Mathf.Max(0.01f, XpToNext - Xp) / (1f + 0.1f * PowerUps.Level("experiencia")) + 0.001f);
+    }
+
     public void AddXp(float v)
     {
         Xp += v * (1f + 0.1f * PowerUps.Level("experiencia"));
