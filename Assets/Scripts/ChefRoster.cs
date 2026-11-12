@@ -122,6 +122,7 @@ public static class ChefRoster
         }
 
         c.apply?.Invoke(m, s, h);
+        if (m != null) ChefAbility.Attach(m.gameObject, index); // l'habilitat del xef (Q)
         PowerUps.ApplyToPlayer(m, s, h); // les millores del Rebost
 
         // en FÀCIL, un cor més

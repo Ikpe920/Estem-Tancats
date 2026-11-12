@@ -343,8 +343,10 @@ public class ChefSelectScreen : MonoBehaviour
 
         // nom, punt fort i punt feble
         Label(face, chef.name, 38f, new Vector2(0.5f, 1f), new Vector2(0f, -268f), new Vector2(340f, 52f), Ink, true);
-        Label(face, "<color=#2E8B3E>+</color> " + chef.strong, 25f, new Vector2(0.5f, 1f), new Vector2(0f, -345f), new Vector2(330f, 90f), Ink, false);
-        Label(face, "<color=#B8352F>−</color> " + chef.weak, 25f, new Vector2(0.5f, 1f), new Vector2(0f, -435f), new Vector2(330f, 90f), new Color(0.45f, 0.33f, 0.26f), false);
+        Label(face, "<color=#2E8B3E>+</color> " + chef.strong, 22f, new Vector2(0.5f, 1f), new Vector2(0f, -322f), new Vector2(330f, 64f), Ink, false);
+        Label(face, "<color=#B8352F>−</color> " + chef.weak, 22f, new Vector2(0.5f, 1f), new Vector2(0f, -388f), new Vector2(330f, 64f), new Color(0.45f, 0.33f, 0.26f), false);
+        ChefAbility.Def ab = ChefAbility.For(index);
+        Label(face, "<color=#B8862F><b>" + ab.name + "</b></color>\n<size=85%>" + ab.desc + "</size>", 21f, new Vector2(0.5f, 1f), new Vector2(0f, -458f), new Vector2(340f, 72f), Ink, false);
 
         // la tecla per triar-lo
         Label(face, (index + 1).ToString(), 28f, new Vector2(0f, 1f), new Vector2(28f, -26f), new Vector2(40f, 40f), Ink, true);
