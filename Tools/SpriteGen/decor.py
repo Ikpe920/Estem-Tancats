@@ -7,6 +7,7 @@
 #   Testos (Terrassa, fulles)        Xemeneia (Teulada, fum)                  Barril (Celler, gotes de vi)
 #   BlocGel (Cambra, boira i neu)    Focus (Plató, llum que escombra)
 #   i les peces de les partícules: Nota, Fulla, Llum; i Atac (la forquilla i el ganivet dels clients)
+#   Tomaquet i Esquitx: els tomàquets que llença el públic del Plató
 #   python3 Tools/SpriteGen/decor.py            -> escriu els PNG
 #   python3 Tools/SpriteGen/decor.py full.png   -> i una làmina per veure'ls
 import math, os, sys
@@ -156,9 +157,34 @@ def atac():
     return [fork, knife, handle, lines]
 
 
+def tomaquet():
+    t = Part((220, 50, 40), (170, 30, 25), hi=(250, 130, 110))
+    t.ellipse(32, 36, 18, 16)
+    leaf = Part((60, 140, 50), (40, 100, 30))
+    for a in range(0, 360, 72):
+        leaf.ellipse(32 + math.cos(math.radians(a)) * 5, 21 + math.sin(math.radians(a)) * 3, 3, 2)
+    stem = Part((60, 110, 40), None).rect(31, 14, 33, 20)
+    shine = Part(WHITE, None, outline=False).ellipse(24, 30, 3, 4)
+    return [t, leaf, stem, shine]
+
+
+def esquitx():
+    s = Part((210, 40, 35), (160, 25, 20))
+    s.ellipse(32, 34, 14, 11)
+    for a in range(0, 360, 45):
+        r = 18 + (a % 90) / 10
+        x = 32 + math.cos(math.radians(a)) * r; y = 34 + math.sin(math.radians(a)) * r * 0.8
+        s.ellipse(x, y, 3.4, 3)
+        s.line(32, 34, x, y)
+    seeds = Part((250, 220, 120), None, outline=False)
+    for (x, y) in ((28, 32), (36, 36), (32, 30), (26, 38)): seeds.put(x, y)
+    return [s, seeds]
+
+
 SPRITES = {
     'Gramola': gramola, 'Nota': nota, 'CartellBar': cartell_bar, 'Olla': olla, 'Testos': testos, 'Fulla': fulla,
     'Xemeneia': xemeneia, 'Barril': barril, 'BlocGel': bloc_gel, 'Focus': focus, 'Llum': llum, 'Atac': atac,
+    'Tomaquet': tomaquet, 'Esquitx': esquitx,
 }
 
 

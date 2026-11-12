@@ -6,11 +6,11 @@ using UnityEngine;
 
 public static class WallSkin
 {
-    private static readonly Sprite[] cache = new Sprite[5];
+    private static readonly Sprite[] cache = new Sprite[8];
 
     public static Sprite Get(int act)
     {
-        act = ((act % 5) + 5) % 5;
+        act = ((act % 8) + 8) % 8;
         if (cache[act] != null) return cache[act];
 
         int size = 32;
@@ -73,6 +73,32 @@ public static class WallSkin
                 if (h < 12) return C(0.30f, 0.62f, 0.28f);
                 if (h < 26) return C(0.09f, 0.26f, 0.11f);
                 return C(0.16f, 0.40f, 0.18f);
+            }
+            case 5: // el celler: carreus de pedra amb molsa i taques de vi
+            {
+                int row = y / 8;
+                int sx = x + (row % 2) * 8;
+                if (y % 8 == 0 || sx % 16 == 0) return C(0.16f, 0.13f, 0.12f);
+                int h = Hash(sx / 16, row);
+                float v = 0.8f + 0.2f * (h % 100) / 100f;
+                if (Hash(x, y) % 100 < 6) return C(0.25f, 0.38f, 0.18f);        // molsa
+                if (h % 7 == 0 && Hash(x, y + 3) % 100 < 30) return C(0.40f, 0.10f, 0.16f); // vi
+                return C(0.42f * v, 0.37f * v, 0.33f * v);
+            }
+            case 6: // la cambra frigorífica: planxes d'acer amb reblons i gebre
+            {
+                if (x % 16 == 0 || y % 16 == 0) return C(0.38f, 0.45f, 0.52f);
+                if ((x % 16 == 2 || x % 16 == 13) && (y % 16 == 2 || y % 16 == 13)) return C(0.88f, 0.92f, 0.96f); // reblons
+                float s = 0.9f + 0.06f * ((y * 3 + x / 5) % 4) / 3f;              // acer raspallat
+                if (Hash(x, y) % 100 < 14 + (y % 16 > 11 ? 30 : 0)) return C(0.90f, 0.96f, 1f); // gebre a dalt de cada planxa
+                return C(0.62f * s, 0.70f * s, 0.78f * s);
+            }
+            case 7: // el plató: cortina de vellut vermell amb sanefa daurada
+            {
+                if (y < 3) return C(0.80f, 0.62f, 0.20f);
+                if (y == 3) return C(0.45f, 0.32f, 0.10f);
+                float fold = 0.65f + 0.35f * Mathf.Abs(Mathf.Sin((x + 0.5f) * Mathf.PI / 8f)); // els plecs
+                return C(0.62f * fold, 0.08f * fold, 0.12f * fold);
             }
             default: // la teulada: teules
             {

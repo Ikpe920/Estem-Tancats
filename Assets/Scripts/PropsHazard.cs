@@ -14,6 +14,9 @@ public class PropsHazard : MonoBehaviour
         new Vector2(1.2f, 0.9f),
         new Vector2(0.9f, 0.9f),
         new Vector2(1.1f, 1.1f),
+        new Vector2(1.2f, 1.0f), // el celler: botellero
+        new Vector2(1.0f, 1.0f), // la cambra: bloc de gel
+        new Vector2(1.2f, 0.9f), // el plató: bagul de material
     };
 
     private Transform player;
@@ -60,7 +63,7 @@ public class PropsHazard : MonoBehaviour
 
     void Build(Vector2 pos)
     {
-        int a = Mathf.Clamp(act, 0, 4);
+        int a = Mathf.Clamp(act, 0, Sizes.Length - 1);
 
         GameObject root = new GameObject("Caixa");
         root.transform.SetParent(transform, false);

@@ -10,7 +10,7 @@ public static class PropArt
     public const int PPU = 40;
 
     static Sprite tableUpright, tableFlipped, shadow;
-    static readonly Sprite[] props = new Sprite[5];
+    static readonly Sprite[] props = new Sprite[8];
 
     // ---------- PALETA ----------
     static readonly Color Outline = new Color(0.16f, 0.09f, 0.06f);
@@ -82,7 +82,7 @@ public static class PropArt
     // 0 cadira · 1 bóta · 2 caixa de verdura · 3 test amb flors · 4 caixa de fusta
     public static Sprite Prop(int act, Vector2 size)
     {
-        act = ((act % 5) + 5) % 5;
+        act = ((act % 8) + 8) % 8;
         if (props[act] != null) return props[act];
 
         int w = Mathf.Max(8, Mathf.RoundToInt(size.x * PPU));
@@ -95,6 +95,9 @@ public static class PropArt
             case 1: Barrel(c); break;
             case 2: VeggieCrate(c); break;
             case 3: FlowerPot(c); break;
+            case 5: WineRack(c); break;
+            case 6: IceBlock(c); break;
+            case 7: FlightCase(c); break;
             default: Crate(c); break;
         }
 
@@ -195,6 +198,56 @@ public static class PropArt
             c.Set(fx, fy, new Color(0.95f, 0.75f, 0.2f));
         }
         c.Rect(cx - r / 2, cy + r - 2, r, 1, Shade(clay, 1.25f)); // reflex a la vora
+    }
+
+    // el celler: un botellero de fusta amb els culs de les ampolles
+    static void WineRack(PixelCanvas c)
+    {
+        int w = c.w, h = c.h;
+        c.Rect(0, 0, w, h, WoodDark);
+        Color[] glass = { new Color(0.20f, 0.42f, 0.25f), new Color(0.40f, 0.10f, 0.16f), new Color(0.28f, 0.30f, 0.20f) };
+        int cell = 11;
+        for (int y = 3; y + cell <= h - 2; y += cell)
+            for (int x = 3; x + cell <= w - 2; x += cell)
+            {
+                c.Rect(x, y, cell - 1, cell - 1, Shade(WoodDark, 0.55f));
+                Color g = glass[Hash(x, y) % glass.Length];
+                c.Circle(x + cell / 2, y + cell / 2, cell / 2 - 1, g);
+                c.Circle(x + cell / 2, y + cell / 2, 1, Shade(g, 0.5f));
+                c.Set(x + cell / 2 - 2, y + cell / 2 + 2, Shade(g, 1.8f));
+            }
+        c.Rect(0, h - 2, w, 2, Wood);
+        c.Rect(0, 0, w, 2, Wood);
+    }
+
+    // la cambra: un bloc de gel amb un peix glaçat a dins
+    static void IceBlock(PixelCanvas c)
+    {
+        int w = c.w, h = c.h;
+        Color ice = new Color(0.70f, 0.88f, 0.98f);
+        c.Rect(0, 0, w, h, ice);
+        c.Rect(0, h - 5, w, 5, new Color(0.88f, 0.96f, 1f));                 // la cara de dalt
+        c.Ellipse(w / 2, h / 2 - 2, w / 4, h / 8, new Color(0.95f, 0.58f, 0.32f)); // el peix
+        c.Line(w / 2 + w / 4, h / 2 - 2, w / 2 + w / 4 + 4, h / 2 + 2, 2, new Color(0.95f, 0.58f, 0.32f));
+        c.Line(w / 2 + w / 4, h / 2 - 2, w / 2 + w / 4 + 4, h / 2 - 6, 2, new Color(0.95f, 0.58f, 0.32f));
+        c.Set(w / 2 - w / 4 + 3, h / 2 - 1, new Color(0.1f, 0.1f, 0.15f));
+        Color crack = new Color(0.45f, 0.65f, 0.82f);
+        c.Line(4, 6, 12, 14, 1, crack); c.Line(12, 14, 9, 22, 1, crack); c.Line(w - 6, 4, w - 12, 12, 1, crack);
+        c.Rect(2, 2, 2, h - 8, Color.white);                                    // reflex
+    }
+
+    // el plató: un bagul de material negre amb cantoneres de metall i ratlles d'avís
+    static void FlightCase(PixelCanvas c)
+    {
+        int w = c.w, h = c.h;
+        c.Rect(0, 0, w, h, new Color(0.14f, 0.13f, 0.15f));
+        for (int x = 0; x < w; x++)                                              // la franja groga i negra
+            for (int y = h / 2 - 3; y < h / 2 + 3; y++)
+                c.Set(x, y, ((x + y) / 4) % 2 == 0 ? new Color(0.95f, 0.78f, 0.15f) : new Color(0.1f, 0.1f, 0.1f));
+        foreach (Vector2Int p in new[] { new Vector2Int(0, 0), new Vector2Int(w - 6, 0), new Vector2Int(0, h - 6), new Vector2Int(w - 6, h - 6) })
+            c.Rect(p.x, p.y, 6, 6, Metal);                                       // cantoneres
+        c.Rect(w / 2 - 4, h - 4, 8, 3, MetalDark);                               // la nansa
+        c.Rect(4, 3, 4, 2, MetalDark); c.Rect(w - 8, 3, 4, 2, MetalDark);        // tancaments
     }
 
     static void Crate(PixelCanvas c)
