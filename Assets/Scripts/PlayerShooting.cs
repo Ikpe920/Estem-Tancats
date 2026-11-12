@@ -157,7 +157,9 @@ public class PlayerShooting : MonoBehaviour
     }
 
     // un tret extra (ganivets, cercle de la paella): com un tret normal, sense crític
-    void FireExtra(float angle)
+    static Sprite knifeSprite;
+
+    void FireExtra(float angle, Sprite sprite = null)
     {
         Vector2 dir = new Vector2(Mathf.Cos(angle * Mathf.Deg2Rad), Mathf.Sin(angle * Mathf.Deg2Rad));
         GameObject prefab = projectilePrefabs[Random.Range(0, projectilePrefabs.Length)];
@@ -171,6 +173,7 @@ public class PlayerShooting : MonoBehaviour
         proj.slowDuration = slowDuration;
         proj.knockback = knockback;
         if (projectileScale != 1f) proj.transform.localScale *= projectileScale;
+        if (sprite != null) proj.SetSprite(sprite);
         proj.Launch(dir * projectileSpeed);
     }
 
@@ -238,11 +241,12 @@ public class PlayerShooting : MonoBehaviour
         int backs = backShots + (backShots > 0 && SetBonuses.Has(SetId.PicaPica) ? 1 : 0); // conjunt Pica-pica
         if (backs > 0)
         {
+            if (knifeSprite == null) knifeSprite = Resources.Load<Sprite>("Projectiles/Ganivet");
             for (int k = 0; k < backs; k++)
             {
                 float off = (k - (backs - 1) / 2f) * 14f;
-                FireExtra(baseAngle + 180f + off);
-                if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off); FireExtra(baseAngle - 90f + off); }
+                FireExtra(baseAngle + 180f + off, knifeSprite);
+                if (Evo.Has(EvoId.PernilDeGla)) { FireExtra(baseAngle + 90f + off, knifeSprite); FireExtra(baseAngle - 90f + off, knifeSprite); }
             }
         }
         // Paella gegant: cada 3 trets, un cercle sencer

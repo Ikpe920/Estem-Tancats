@@ -291,6 +291,21 @@ public class Fx : MonoBehaviour
         if (Random.value < 0.03f * amount) Scorch(from + dir * range * Random.Range(0.5f, 0.95f), range * 0.25f, 1f);
     }
 
+    // bombolles de cava (Resources/DishFx/Bombolla) que surten i pugen
+    static Sprite bubble;
+    public static void Bubbles(Vector2 pos, float radius, int n)
+    {
+        if (bubble == null) bubble = Resources.Load<Sprite>("DishFx/Bombolla");
+        Sprite sp = bubble != null ? bubble : Ring();
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 d = Random.insideUnitCircle;
+            float sz = Random.Range(0.18f, 0.42f);
+            Emit(sp, pos + d * radius * 0.3f, d * radius * 2.2f + Vector2.up * 0.5f, Random.Range(0.5f, 0.9f), sz * 0.4f, sz,
+                 new Color(1f, 1f, 1f, 0.95f), new Color(1f, 1f, 0.9f, 0f), 8, 3.5f, 1.2f);
+        }
+    }
+
     // ---------- ELS DIBUIXOS DEL FOC (Tools/SpriteGen/fire.py) ----------
     static Sprite[] flameFrames;
     static bool flamesLoaded;
