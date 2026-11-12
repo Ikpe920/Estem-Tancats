@@ -357,6 +357,7 @@ public class BoonManager : MonoBehaviour
         RollShiny(picked);
 
         currentOffer = picked;
+        offerUnlockAt = Time.unscaledTime + 0.55f;
 
         BuildCards(picked);
         BuildTitle();
@@ -513,9 +514,48 @@ public class BoonManager : MonoBehaviour
         offering = true;
         pendingLevels--;
         offerTitle = "NIVELL " + (ChefLevel + 1 - pendingLevels) + "!  Tria un plat";
+        yield return LevelUpWarning(ChefLevel + 1 - pendingLevels);
+        if (PlayerHealth.IsDying) { offering = false; yield break; }
         yield return OfferBoons();
         offerTitle = null;
         offering = false;
+    }
+
+    // l'avís de pujar de nivell: càmera lenta, un rètol gran i un so, abans que surtin les cartes
+    // (així no apareixen de cop enmig del combat)
+    IEnumerator LevelUpWarning(int level)
+    {
+        AudioManager.Play("set", 0.8f, 1.2f);
+        if (health != null)
+        {
+            Fx.Shockwave(health.transform.position, 2f, new Color(1f, 0.85f, 0.35f));
+            Fx.Sparkles(health.transform.position, new Color(1f, 0.85f, 0.35f), 10, 1.2f);
+        }
+        GameObject go = new GameObject("AvisNivell", typeof(Canvas), typeof(CanvasScaler));
+        Canvas c = go.GetComponent<Canvas>();
+        c.renderMode = RenderMode.ScreenSpaceOverlay;
+        c.sortingOrder = 250;
+        CanvasScaler cs = go.GetComponent<CanvasScaler>();
+        cs.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        cs.referenceResolution = new Vector2(1920f, 1080f);
+        cs.matchWidthOrHeight = 0.5f;
+        TextMeshProUGUI t = MenuScreens.Text(go.transform, "PUJA DE NIVELL!\n<size=60%>NIVELL " + level + " · ARA TRIARÀS UN PLAT</size>", 90f,
+            new Vector2(0.5f, 0.62f), Vector2.zero, new Vector2(1600f, 220f), Gold, true);
+        UIStyle.Outline(t, 0.25f);
+        const float dur = 1.1f;
+        for (float k = 0f; k < dur; k += Time.unscaledDeltaTime)
+        {
+            if (PauseMenu.IsOpen) { yield return null; continue; }
+            float p = k / dur;
+            // el joc es va alentint fins gairebé aturar-se
+            Time.timeScale = Mathf.Lerp(1f, 0.15f, Mathf.Clamp01(p * 2f));
+            float pop = p < 0.15f ? Mathf.Lerp(1.8f, 1f, p / 0.15f) : 1f;
+            t.transform.localScale = Vector3.one * pop;
+            t.alpha = p < 0.8f ? 1f : 1f - (p - 0.8f) / 0.2f;
+            yield return null;
+        }
+        Destroy(go);
+        if (!PauseMenu.IsOpen) Time.timeScale = 1f;
     }
 
     // el cofre dels caps: dos plats de regal
@@ -814,9 +854,12 @@ public class BoonManager : MonoBehaviour
                 "PLAT ESTRELLA! " + star.name + "\n<size=65%>" + star.description + "</size>", new Color(1f, 0.8f, 0.25f), 2.6f);
     }
 
+    private float offerUnlockAt;
+
     void Choose(Boon boon)
     {
         if (picking) return;
+        if (Time.unscaledTime < offerUnlockAt) return; // acaben de sortir: encara no es poden triar
         picking = true;
         if (restBoons.Contains(boon))
         {
@@ -2159,8 +2202,9 @@ public class BoonManager : MonoBehaviour
         if (xpFill == null) return;
         float k = Mathf.Clamp01(Xp / XpToNext);
         xpFill.anchorMax = new Vector2(Mathf.MoveTowards(xpFill.anchorMax.x, k, Time.unscaledDeltaTime * 2f), 1f);
-        if (xpLabel != null) xpLabel.text = "NIVELL " + (ChefLevel + 1);
+        if (xpLabel != null && shownLevel != ChefLevel) { shownLevel = ChefLevel; xpLabel.text = "NIVELL " + (ChefLevel + 1); } // només quan canvia
     }
+    private int shownLevel = -1;
 
     void RefreshCounter()
     {

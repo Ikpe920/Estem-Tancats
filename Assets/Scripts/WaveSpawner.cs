@@ -230,6 +230,7 @@ public class WaveSpawner : MonoBehaviour
             }
 
             yield return StartCoroutine(WaitForWaveCleared());
+            BossBrain.ClearBattlefield(); // cap tret ni toll de l'onada passa a la següent
 
             inWave = false;
             WaveEvents.End();

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -11,7 +12,7 @@ using TMPro;
 //   EL CARNISSER  GANIVETADA       un cop de ganivet a terra davant teu: mal crític enorme i deixa els clients glaçats
 //   EL PASTISSER  GLASSA           glaça tots els clients del voltant i deixa el terra gelat
 //   EL SUSHIMAN   TALL DE KATANA   travessa la sala d'una estrebada i talla tot el que troba
-//   EL PIZZER     FORN DE LLENYA   un anell de foc et segueix uns segons i crema els clients que s'hi acosten
+//   EL PIZZER     FORN DE LLENYA   un anell de flames et segueix: la vora crema i empeny cap enfora, i acaba en fogonada
 // Fa més mal com més nivell tens (experiència). El rellotge de recàrrega surt a baix a l'esquerra.
 public class ChefAbility : MonoBehaviour
 {
@@ -30,7 +31,7 @@ public class ChefAbility : MonoBehaviour
         new Def("GANIVETADA", "Cop de ganivet a terra: mal crític enorme i glaça", 9f, new Color(0.9f, 0.3f, 0.3f)),
         new Def("GLASSA", "Glaça els clients del voltant i el terra", 13f, new Color(0.6f, 0.88f, 1f)),
         new Def("TALL DE KATANA", "Travessa la sala d'una estrebada tallant-ho tot", 8f, new Color(0.5f, 0.6f, 1f)),
-        new Def("FORN DE LLENYA", "Un anell de foc et segueix i crema els clients", 14f, new Color(1f, 0.4f, 0.15f)),
+        new Def("FORN DE LLENYA", "Un anell de foc et segueix: la vora crema i empeny els clients, i acaba en fogonada", 14f, new Color(1f, 0.4f, 0.15f)),
     };
 
     public static Def For(int chef) { return Defs[Mathf.Clamp(chef, 0, Defs.Length - 1)]; }
@@ -237,28 +238,92 @@ public class ChefAbility : MonoBehaviour
             }
     }
 
+    // EL FORN DE LLENYA: un anell de flames que s'encén al teu voltant i et segueix.
+    // - La vora és un mur de foc: els clients que la travessen es cremen i surten empesos cap enfora.
+    // - A dins, el caliu també crema (menys).
+    // - En acabar, l'anell esclata cap enfora en una fogonada.
     IEnumerator Forn()
     {
-        AudioManager.Play("explosion", 0.4f, 0.7f);
+        const float Dur = 4.5f;
+        const int Points = 12;
         float r = 2.8f * DishArea.Mul;
-        SpriteRenderer glow = HazardFx.MakeCircle(transform.position, r, new Color(1f, 0.45f, 0.1f, 0.18f), -2);
-        Destroy(glow.gameObject, 4.6f);
-        float spin = 0f;
-        for (int tick = 0; tick < 30; tick++)
+        int ringDmg = 3 + Level / 2 + DishUtil.Bonus;     // la vora (el mur de foc)
+        int coreDmg = 1 + Level / 4 + DishUtil.Bonus / 2; // el caliu de dins
+
+        AudioManager.Play("explosion", 0.45f, 0.65f);
+        AudioManager.Play("fuse", 0.8f, 0.8f);
+        Fx.Shockwave(transform.position, r, new Color(1f, 0.55f, 0.15f));
+
+        // el terra: el caliu a dins i una vora més encesa
+        SpriteRenderer edge = HazardFx.MakeCircle(transform.position, r, new Color(1f, 0.4f, 0.08f, 0.28f), -3);
+        SpriteRenderer core = HazardFx.MakeCircle(transform.position, r * 0.88f, new Color(0.35f, 0.12f, 0.04f, 0.22f), -2);
+        Destroy(edge.gameObject, Dur + 1f);
+        Destroy(core.gameObject, Dur + 1f);
+
+        var nextHit = new Dictionary<Enemy, float>();
+        float spin = Random.Range(0f, 360f);
+        float nextFx = 0f, nextDmg = 0f;
+        for (float t = 0f; t < Dur; t += Time.deltaTime)
         {
             Vector2 p = transform.position;
-            if (glow != null) glow.transform.position = p;
-            spin += 40f;
-            for (int i = 0; i < 4; i++)
+            // s'encén: l'anell creix de dins cap enfora durant 0,3 s
+            float grow = Mathf.Clamp01(t / 0.3f);
+            float rr = r * Mathf.Lerp(0.3f, 1f, 1f - (1f - grow) * (1f - grow));
+            float pulse = 1f + 0.04f * Mathf.Sin(t * 12f);
+            if (edge != null) { edge.transform.position = p; edge.transform.localScale = Vector3.one * rr * 2f * pulse; edge.color = new Color(1f, 0.4f, 0.08f, 0.22f + 0.08f * Mathf.Sin(t * 9f)); }
+            if (core != null) { core.transform.position = p; core.transform.localScale = Vector3.one * rr * 1.76f; }
+
+            // les flames de la vora, que giren a poc a poc
+            spin += 70f * Time.deltaTime;
+            if (t >= nextFx)
             {
-                float a = (spin + i * 90f) * Mathf.Deg2Rad;
-                Fx.Flames(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r * 0.85f, 0.35f, 0.5f);
+                nextFx = t + 0.09f;
+                for (int i = 0; i < Points; i++)
+                {
+                    float a = (spin + i * 360f / Points) * Mathf.Deg2Rad;
+                    Fx.Flames(p + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.22f, 0.7f);
+                }
+                if (Random.value < 0.5f) Fx.Flames(p + Random.insideUnitCircle * rr * 0.6f, 0.2f, 0.3f); // el caliu de dins
             }
-            if (tick % 3 == 0)
-                DishUtil.HitCircle(p, r, 2 + Level / 2 + DishUtil.Bonus, 0f, DmgKind.Fire);
-            yield return new WaitForSeconds(0.15f);
+
+            // el mal: cada client, com a molt cada 0,3 s
+            if (t >= nextDmg && grow >= 1f)
+            {
+                nextDmg = t + 0.1f;
+                List<Collider2D> hits = Phys.Circle(p, rr + 0.5f);
+                for (int i = 0; i < hits.Count; i++)
+                {
+                    Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
+                    if (e == null || e.IsDead) continue;
+                    float when;
+                    if (nextHit.TryGetValue(e, out when) && t < when) continue;
+                    nextHit[e] = t + 0.3f;
+                    Vector2 out_ = (Vector2)e.transform.position - p;
+                    float d = out_.magnitude;
+                    bool onRing = d > rr - 0.7f; // a la vora: el mur de foc
+                    DamageKind.Hit(e, onRing ? ringDmg : coreDmg, DmgKind.Fire);
+                    if (onRing && !e.IsDead && !e.isBoss) e.Knockback(d > 0.01f ? out_ : Random.insideUnitCircle, 9f, 0.18f);
+                }
+                Phys.Release(hits);
+            }
+            yield return null;
         }
-        if (glow != null) Destroy(glow.gameObject);
+
+        // la fogonada final: l'anell esclata cap enfora
+        Vector2 end = transform.position;
+        for (int i = 0; i < 8; i++)
+        {
+            float a = i * 45f * Mathf.Deg2Rad;
+            Vector2 dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+            for (int k = 0; k < 3; k++) Fx.FlameJet(end + dir * r * 0.7f, dir, 2f, 12f, 1f);
+        }
+        Fx.Shockwave(end, r * 1.3f, new Color(1f, 0.5f, 0.12f));
+        Fx.Scorch(end, r, 1f);
+        CameraFX.Shake(0.2f, 0.18f);
+        AudioManager.Play("explosion", 0.6f, 0.9f);
+        DishUtil.HitCircle(end, r + 1f, ringDmg + 2, 8f, DmgKind.Fire);
+        if (edge != null) Destroy(edge.gameObject);
+        if (core != null) Destroy(core.gameObject);
     }
 
     // ---------- EL RELLOTGE (a baix a l'esquerra) ----------

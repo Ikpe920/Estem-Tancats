@@ -327,7 +327,25 @@ public abstract class BossBrain : MonoBehaviour
         if (record) { PlayerPrefs.SetFloat(key, time); PlayerPrefs.Save(); }
         HazardFx.Popup(Pos + Vector2.up * 3f, (record ? "NOU RÈCORD! " : "TEMPS: ") + BossRush.Clock(time),
                        record ? new Color(1f, 0.85f, 0.3f) : new Color(1f, 0.95f, 0.85f), 2f);
+        // si no queda cap altre cap viu, fora els seus trets i tolls (no et poden fer mal després de guanyar)
+        bool otherBoss = false;
+        foreach (Enemy o in Enemy.All) if (o != null && o != e && o.isBoss && !o.IsDead) { otherBoss = true; break; }
+        if (!otherBoss) ClearBattlefield();
         AudioManager.SetBossPhase2(false);
+    }
+
+    // treu tots els trets dels enemics i els tolls dels caps (amb un "puf")
+    public static void ClearBattlefield()
+    {
+        int n = 0;
+        foreach (EnemyProjectile ep in Object.FindObjectsByType<EnemyProjectile>(FindObjectsSortMode.None))
+        {
+            if (ep == null) continue;
+            if (n++ < 25) Fx.Poof(ep.transform.position);
+            Object.Destroy(ep.gameObject);
+        }
+        foreach (BossPuddle p in Object.FindObjectsByType<BossPuddle>(FindObjectsSortMode.None))
+            if (p != null) Object.Destroy(p.gameObject);
     }
 
     public static float BestTime(string clientKey) { return PlayerPrefs.GetFloat("boss_time_" + clientKey, 0f); }

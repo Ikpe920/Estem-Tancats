@@ -25,13 +25,15 @@ static class RoomHazardUtil
 
     public static void HurtEnemiesIn(Vector2 pos, float r, int dmg, DmgKind kind, float push = 0f)
     {
-        foreach (Collider2D h in Physics2D.OverlapCircleAll(pos, r))
+        List<Collider2D> hits = Phys.Circle(pos, r);
+        for (int i = 0; i < hits.Count; i++)
         {
-            Enemy e = h.GetComponentInParent<Enemy>();
+            Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
             if (e == null || e.IsDead) continue;
             DamageKind.Hit(e, dmg, kind);
             if (push > 0f && !e.IsDead) e.Knockback((Vector2)e.transform.position - pos, push, 0.15f);
         }
+        Phys.Release(hits);
     }
 }
 
@@ -226,6 +228,7 @@ public class LiveSpotHazard : MonoBehaviour
     Vector2 target;
     float nextTarget, nextText;
     readonly HashSet<Enemy> boosted = new HashSet<Enemy>();
+    readonly HashSet<Enemy> inside = new HashSet<Enemy>();
 
     void Start()
     {
@@ -244,7 +247,8 @@ public class LiveSpotHazard : MonoBehaviour
         if (Random.value < Time.deltaTime * 5f) Fx.Sparkle(pos + Random.insideUnitCircle * R, new Color(1f, 0.95f, 0.6f));
 
         // els clients a dins: més mal (i tornen al normal quan surten)
-        HashSet<Enemy> now = new HashSet<Enemy>();
+        HashSet<Enemy> now = inside;
+        now.Clear();
         foreach (Enemy e in Enemy.All)
             if (e != null && !e.IsDead && !e.isBoss && Vector2.Distance(e.transform.position, pos) <= R) now.Add(e);
         foreach (Enemy e in boosted) if (e != null && !now.Contains(e)) e.damageMultiplier = 1f;
@@ -404,13 +408,24 @@ public class RoomClient : MonoBehaviour
         }
     }
 
+    // una sola subscripció per a tots els clients de sala (abans cada client rebia totes les morts)
+    static readonly Dictionary<Enemy, RoomClient> map = new Dictionary<Enemy, RoomClient>();
+    static bool hooked;
+
+    static void OnAnyKilled(Enemy e)
+    {
+        RoomClient rc;
+        if (e != null && map.TryGetValue(e, out rc) && rc != null) rc.OnKilled(e);
+    }
+
     void Start()
     {
-        Enemy.OnKilled += OnKilled;
+        if (!hooked) { hooked = true; Enemy.OnKilled += OnAnyKilled; }
+        if (enemy != null) map[enemy] = this;
         nextHic = Time.time + Random.Range(2f, 6f);
     }
 
-    void OnDestroy() { Enemy.OnKilled -= OnKilled; }
+    void OnDestroy() { if (enemy != null) map.Remove(enemy); }
 
     void Update()
     {
