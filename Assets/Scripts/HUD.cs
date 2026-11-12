@@ -213,9 +213,18 @@ public class HUD : MonoBehaviour
             {
                 shownWave = spawner.currentWave;
                 shownAct = act;
-                waveText.text = "ONADA " + shownWave;
-                if (actText != null) actText.text = act;
-                else if (act.Length > 0) waveText.text += " · " + act;
+                if (BossRush.Active)
+                {
+                    // menú degustació: no hi ha onades, només el nom de la sala
+                    waveText.text = act.Length > 0 ? act : "MENÚ DEGUSTACIÓ";
+                    if (actText != null) actText.text = "";
+                }
+                else
+                {
+                    waveText.text = "ONADA " + shownWave;
+                    if (actText != null) actText.text = act;
+                    else if (act.Length > 0) waveText.text += " · " + act;
+                }
             }
         }
     }

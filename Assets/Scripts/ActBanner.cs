@@ -107,9 +107,9 @@ public class ActBanner : MonoBehaviour
         inner.rectTransform.offsetMin = new Vector2(14f, 14f);
         inner.rectTransform.offsetMax = new Vector2(-14f, -14f);
 
-        TextMeshProUGUI main = MenuScreens.Text(stamp, perfect ? "SERVEI PERFECTE!" : "ONADA " + wave + " SUPERADA!", 70f,
+        TextMeshProUGUI main = MenuScreens.Text(stamp, perfect ? "SERVEI PERFECTE!" : BossRush.Active ? "PLAT " + wave + " SERVIT!" : "ONADA " + wave + " SUPERADA!", 70f,
             new Vector2(0.5f, 0.5f), new Vector2(0f, 18f), new Vector2(780f, 90f), col, true);
-        TextMeshProUGUI small = MenuScreens.Text(stamp, perfect ? "Onada " + wave + " sense cap cop" : "Bona feina, xef", 30f,
+        TextMeshProUGUI small = MenuScreens.Text(stamp, perfect ? (BossRush.Active ? "Plat " : "Onada ") + wave + " sense cap cop" : "Bona feina, xef", 30f,
             new Vector2(0.5f, 0.5f), new Vector2(0f, -45f), new Vector2(700f, 44f), new Color(1f, 0.95f, 0.85f), false);
         TextMeshProUGUI next = MenuScreens.Text(root, "Prepara't per als plats...", 30f, new Vector2(0.5f, 0.5f),
             new Vector2(0f, 0f), new Vector2(900f, 50f), new Color(1f, 0.9f, 0.75f), false);
