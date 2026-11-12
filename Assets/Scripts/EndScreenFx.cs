@@ -46,10 +46,23 @@ public class EndScreenFx : MonoBehaviour
 
     void Create(RectTransform canvasRt)
     {
-        root = MenuScreens.Rect(canvasRt, "PantallaFinal", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        root.SetSiblingIndex(1); // per sobre del fons de l'escena, per sota dels botons
+        // el fons nou: la façana del restaurant (Tools/SpriteGen/backgrounds.py), tapa la imatge vella de l'escena
+        Sprite bgSprite = Resources.Load<Sprite>(win ? "Backgrounds/Win" : "Backgrounds/GameOver");
+        if (bgSprite != null)
+        {
+            RectTransform bgRt = MenuScreens.Rect(canvasRt, "FonsFinal", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            bgRt.SetSiblingIndex(1);
+            Image bgImg = bgRt.gameObject.AddComponent<Image>();
+            bgImg.sprite = bgSprite;
+            bgImg.raycastTarget = false;
+        }
 
-        Color tint = win ? new Color(0.25f, 0.17f, 0.05f, 0.78f) : new Color(0.22f, 0.04f, 0.06f, 0.8f);
+        root = MenuScreens.Rect(canvasRt, "PantallaFinal", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        root.SetSiblingIndex(bgSprite != null ? 2 : 1); // per sobre del fons, per sota dels botons
+
+        // amb el fons nou, el vel és més suau perquè es vegi la façana
+        float veil = bgSprite != null ? 0.5f : 0.8f;
+        Color tint = win ? new Color(0.25f, 0.17f, 0.05f, veil) : new Color(0.22f, 0.04f, 0.06f, veil);
         Image dim = root.gameObject.AddComponent<Image>();
         dim.color = tint;
         dim.raycastTarget = false;

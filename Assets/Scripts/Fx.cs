@@ -31,6 +31,7 @@ public class Fx : MonoBehaviour
         public bool stretch;               // s'allarga en la direcció del moviment (espurnes)
         public bool flame;                 // flama de dibuix animat: fotogrames, creix i s'encongeix, balla
         public float frame0;               // el fotograma on comença (perquè no vagin totes igual)
+        public Sprite[] seq;               // fotogrames que es reprodueixen un cop al llarg de la vida (explosió, gel)
     }
 
     static Fx instance;
@@ -51,6 +52,48 @@ public class Fx : MonoBehaviour
     }
 
     // ---------- EMISSIÓ ----------
+
+    // fotogrames que es reprodueixen un cop (Boom_0..5, IceSpike_0..3); false si no hi són
+    static bool EmitSeq(Sprite[] seq, Vector2 pos, float life, float size0, float size1, int order, float rotation)
+    {
+        if (seq == null) return false;
+        Emit(seq[0], pos, Vector2.zero, life, size0, size1, Color.white, new Color(1f, 1f, 1f, 0f), order);
+        Fx f = I;
+        int i = (f.cursor + Max - 1) % Max;
+        P p = f.ps[i];
+        p.seq = seq;
+        p.rot = rotation;
+        f.ps[i] = p;
+        f.Apply(i);
+        return true;
+    }
+
+    static readonly Dictionary<string, Sprite[]> seqs = new Dictionary<string, Sprite[]>();
+    static Sprite[] Seq(string prefix, int n)
+    {
+        Sprite[] r;
+        if (seqs.TryGetValue(prefix, out r)) return r;
+        var list = new List<Sprite>();
+        for (int i = 0; i < n; i++)
+        {
+            Sprite sp = Resources.Load<Sprite>("Fx/" + prefix + i);
+            if (sp == null) break;
+            list.Add(sp);
+        }
+        r = list.Count == n ? list.ToArray() : null;
+        seqs[prefix] = r;
+        return r;
+    }
+
+    static readonly Dictionary<string, Sprite> singles = new Dictionary<string, Sprite>();
+    static Sprite One(string name, Sprite fallback)
+    {
+        Sprite sp;
+        if (!singles.TryGetValue(name, out sp)) { sp = Resources.Load<Sprite>("Fx/" + name); singles[name] = sp; }
+        return sp != null ? sp : fallback;
+    }
+
+    static float nextBum;
 
     static void EmitFlame(Vector2 pos, Vector2 vel, float life, float size0, float size1, int order = 4, float drag = 0f, float rise = 0.6f)
     {
@@ -134,6 +177,14 @@ public class Fx : MonoBehaviour
             srs[i].color = Color.Lerp(p.c0, p.c1, Mathf.Clamp01((k - 0.8f) / 0.2f)); // opaca fins al final (si no, es veu desteixida)
             return;
         }
+        if (p.seq != null)
+        {
+            srs[i].sprite = p.seq[Mathf.Min(p.seq.Length - 1, (int)(k * p.seq.Length))];
+            t.rotation = Quaternion.Euler(0f, 0f, p.rot);
+            t.localScale = new Vector3(s, s, 1f);
+            srs[i].color = Color.Lerp(p.c0, p.c1, Mathf.Clamp01((k - 0.75f) / 0.25f));
+            return;
+        }
         if (p.stretch && p.vel.sqrMagnitude > 0.01f)
         {
             t.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(p.vel.y, p.vel.x) * Mathf.Rad2Deg);
@@ -152,27 +203,38 @@ public class Fx : MonoBehaviour
     public static void Explosion(Vector2 pos, float radius, float strength = 1f)
     {
         radius = Mathf.Max(0.4f, radius);
-        // flaix i ona expansiva
-        Emit(Soft(), pos, Vector2.zero, 0.12f, radius * 2.2f, radius * 2.7f, new Color(1f, 1f, 0.85f, 0.9f), new Color(1f, 0.7f, 0.2f, 0f), 7);
+        // ona expansiva
         Emit(Ring(), pos, Vector2.zero, 0.28f, radius * 0.4f, radius * 2.4f, new Color(1f, 0.9f, 0.5f, 0.9f), new Color(1f, 0.5f, 0.1f, 0f), 7);
-        // bola de foc
-        int n = Mathf.RoundToInt(6 * strength);
-        for (int i = 0; i < n; i++)
+        // l'explosió de dibuix animat: flaix, bola de foc punxeguda, foc i fum (Tools/SpriteGen/ice_boom.py)
+        if (!EmitSeq(Seq("Boom_", 6), pos, 0.6f, radius * 1.7f, radius * 2.5f, 8, Random.Range(-15f, 15f)))
         {
-            Vector2 o = Random.insideUnitCircle * radius * 0.5f;
-            Emit(Soft(), pos + o, o * 2f, Random.Range(0.25f, 0.45f), radius * 0.5f, radius * 1.1f,
-                 new Color(1f, Random.Range(0.55f, 0.8f), 0.2f, 0.95f), new Color(0.6f, 0.15f, 0.05f, 0f), 6, 3f, 1f);
+            Emit(Soft(), pos, Vector2.zero, 0.12f, radius * 2.2f, radius * 2.7f, new Color(1f, 1f, 0.85f, 0.9f), new Color(1f, 0.7f, 0.2f, 0f), 7);
+            for (int i = 0; i < Mathf.RoundToInt(6 * strength); i++)
+            {
+                Vector2 o = Random.insideUnitCircle * radius * 0.5f;
+                Emit(Soft(), pos + o, o * 2f, Random.Range(0.25f, 0.45f), radius * 0.5f, radius * 1.1f,
+                     new Color(1f, Random.Range(0.55f, 0.8f), 0.2f, 0.95f), new Color(0.6f, 0.15f, 0.05f, 0f), 6, 3f, 1f);
+            }
         }
-        // espurnes
-        for (int i = 0; i < Mathf.RoundToInt(14 * strength); i++)
+        // les explosions grans: el rètol "BUM!" (no gaire sovint)
+        if (radius >= 1.4f && Time.time >= nextBum)
         {
-            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(5f, 12f) * Mathf.Sqrt(radius);
-            Emit(Spark(), pos, d, Random.Range(0.25f, 0.5f), 0.22f, 0.05f, new Color(1f, 0.95f, 0.6f, 1f), new Color(1f, 0.35f, 0.1f, 0.6f), 8, 4f, 0f, true);
+            nextBum = Time.time + 0.6f;
+            Sprite bum = One("Bum", null);
+            if (bum != null)
+                Emit(bum, pos + new Vector2(Random.Range(-0.4f, 0.4f), radius * 0.6f + 0.5f), Vector2.up * 0.8f, 0.6f, 0.4f, Mathf.Clamp(radius * 0.7f, 0.9f, 1.6f),
+                     Color.white, new Color(1f, 1f, 1f, 0f), 12, 3f, 0f, false, 0f);
         }
-        // fum que puja a poc a poc
-        for (int i = 0; i < Mathf.RoundToInt(5 * strength); i++)
-            Emit(Soft(), pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.6f, Random.Range(0.8f, 1.3f),
-                 radius * 0.6f, radius * 1.4f, new Color(0.35f, 0.32f, 0.3f, 0.45f), new Color(0.2f, 0.2f, 0.2f, 0f), 5, 1f, 1.2f);
+        // estrelletes que surten disparades
+        for (int i = 0; i < Mathf.RoundToInt(10 * strength); i++)
+        {
+            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(5f, 11f) * Mathf.Sqrt(radius);
+            Emit(EmberSprite(), pos, d, Random.Range(0.25f, 0.5f), 0.26f, 0.08f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 9, 4f, 0f, false, Random.Range(-500f, 500f));
+        }
+        // fum amb contorn que puja a poc a poc
+        for (int i = 0; i < Mathf.RoundToInt(3 * strength); i++)
+            Emit(SmokeSprite(), pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.6f + Vector2.up * 0.4f, Random.Range(0.8f, 1.2f),
+                 radius * 0.5f, radius * 1.1f, new Color(0.5f, 0.46f, 0.44f, 0.8f), new Color(0.35f, 0.33f, 0.32f, 0f), 7, 1f, 0.8f, false, Random.Range(-40f, 40f));
         // unes quantes flames de dibuix animat que queden cremant
         for (int i = 0; i < Mathf.RoundToInt(2 * strength); i++)
         {
@@ -186,16 +248,29 @@ public class Fx : MonoBehaviour
     public static void FrostBurst(Vector2 pos, float radius)
     {
         radius = Mathf.Max(0.4f, radius);
-        Emit(Soft(), pos, Vector2.zero, 0.15f, radius * 2f, radius * 2.4f, new Color(0.85f, 0.97f, 1f, 0.8f), new Color(0.5f, 0.85f, 1f, 0f), 7);
         Emit(Ring(), pos, Vector2.zero, 0.3f, radius * 0.4f, radius * 2.3f, new Color(0.8f, 0.95f, 1f, 0.9f), new Color(0.4f, 0.8f, 1f, 0f), 7);
-        for (int i = 0; i < 14; i++) // estelles de gel
+        // vidres de gel que surten de terra i s'esquerden (Tools/SpriteGen/ice_boom.py)
+        Sprite[] spikes = Seq("IceSpike_", 4);
+        if (spikes != null)
+        {
+            EmitSeq(spikes, pos + Vector2.up * radius * 0.25f, 0.7f, radius * 1.3f, radius * 1.35f, 6, 0f);
+            for (int i = 0; i < 3; i++) // i uns quants de petits al voltant
+            {
+                Vector2 o = Random.insideUnitCircle.normalized * radius * Random.Range(0.55f, 0.9f);
+                EmitSeq(spikes, pos + o, Random.Range(0.5f, 0.7f), radius * 0.55f, radius * 0.6f, 6, Random.Range(-10f, 10f));
+            }
+        }
+        else Emit(Soft(), pos, Vector2.zero, 0.15f, radius * 2f, radius * 2.4f, new Color(0.85f, 0.97f, 1f, 0.8f), new Color(0.5f, 0.85f, 1f, 0f), 7);
+        Sprite shard = One("IceShard", Spark());
+        for (int i = 0; i < 12; i++) // estelles de gel
         {
             Vector2 d = Random.insideUnitCircle.normalized * Random.Range(4f, 9f) * Mathf.Sqrt(radius);
-            Emit(Spark(), pos, d, Random.Range(0.3f, 0.55f), 0.28f, 0.08f, new Color(0.9f, 1f, 1f, 1f), new Color(0.5f, 0.85f, 1f, 0.5f), 8, 5f, 0f, true);
+            Emit(shard, pos, d, Random.Range(0.3f, 0.55f), 0.3f, 0.12f, Color.white, new Color(0.8f, 0.95f, 1f, 0f), 8, 5f, 0f, true);
         }
-        for (int i = 0; i < 10; i++) // flocs que queden surant
-            Emit(Flake(), pos + Random.insideUnitCircle * radius, Random.insideUnitCircle * 0.8f, Random.Range(0.6f, 1.1f), 0.22f, 0.05f,
-                 new Color(1f, 1f, 1f, 0.95f), new Color(0.7f, 0.9f, 1f, 0f), 8, 2f, -0.3f, false, Random.Range(-180f, 180f));
+        Sprite snow = One("Snow", Flake());
+        for (int i = 0; i < 8; i++) // flocs que queden surant
+            Emit(snow, pos + Random.insideUnitCircle * radius, Random.insideUnitCircle * 0.8f, Random.Range(0.6f, 1.1f), 0.26f, 0.08f,
+                 Color.white, new Color(0.8f, 0.95f, 1f, 0f), 8, 2f, -0.3f, false, Random.Range(-180f, 180f));
     }
 
     public static void Hit(Vector2 pos, Vector2 dir, bool crit)
@@ -351,8 +426,8 @@ public class Fx : MonoBehaviour
 
     public static void Snowflake(Vector2 pos)
     {
-        Emit(Flake(), pos, new Vector2(Random.Range(-0.4f, 0.4f), -0.6f), Random.Range(0.5f, 0.8f), 0.16f, 0.06f,
-             new Color(0.9f, 0.98f, 1f, 0.95f), new Color(0.6f, 0.85f, 1f, 0f), 8, 0f, 0f, false, Random.Range(-120f, 120f));
+        Emit(One("Snow", Flake()), pos, new Vector2(Random.Range(-0.4f, 0.4f), -0.6f), Random.Range(0.5f, 0.8f), 0.2f, 0.08f,
+             Color.white, new Color(0.7f, 0.9f, 1f, 0f), 8, 0f, 0f, false, Random.Range(-120f, 120f));
     }
 
     // una onada petita en un bassal
