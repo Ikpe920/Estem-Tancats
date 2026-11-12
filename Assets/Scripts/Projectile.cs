@@ -372,9 +372,11 @@ public class Projectile : MonoBehaviour
 
         if (push) Push(center, origin, forward);
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(origin, radius);
-        foreach (Collider2D h in hits)
+        List<Collider2D> hits = Phys.Circle(origin, radius); // sense crear llistes noves
+        for (int hi = 0; hi < hits.Count; hi++)
         {
+            Collider2D h = hits[hi];
+            if (h == null) continue;
             Enemy e = h.GetComponent<Enemy>();
             if (e == null) e = h.GetComponentInParent<Enemy>(); // igual que a l'impacte directe
             if (e == null || e == center || alreadyHit.Contains(e)) continue;
@@ -382,6 +384,7 @@ public class Projectile : MonoBehaviour
             HitEnemy(e);
             if (push) Push(e, origin, forward);
         }
+        Phys.Release(hits);
         SpawnExplosionFx(radius);
 
         // Calçotada (plat estrella): la meitat de les vegades, l'explosió en fa esclatar una altra en un client tocat

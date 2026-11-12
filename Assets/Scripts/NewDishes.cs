@@ -95,14 +95,16 @@ static class DishUtil
     public static int HitCircle(Vector2 pos, float radius, int damage, float push = 0f, DmgKind kind = DmgKind.None)
     {
         int n = 0;
-        foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, radius))
+        List<Collider2D> hits = Phys.Circle(pos, radius); // sense crear llistes noves
+        for (int i = 0; i < hits.Count; i++)
         {
-            Enemy e = c.GetComponentInParent<Enemy>();
+            Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
             if (e == null || e.IsDead) continue;
             DamageKind.Hit(e, damage, kind);
             if (push > 0f && !e.IsDead) e.Knockback((Vector2)e.transform.position - pos, push, 0.15f);
             n++;
         }
+        Phys.Release(hits);
         return n;
     }
 
@@ -344,14 +346,16 @@ public class Flamethrower : MonoBehaviour
         next = Time.time + 0.35f;
         int dmg = 1 + (level - 1) / 2 + DishUtil.Bonus / 2;
         if (SetBonuses.Has(SetId.Barbacoa)) dmg *= 2; // conjunt Barbacoa: les flames fan el doble de mal
-        foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, range))
+        List<Collider2D> hits = Phys.Circle(pos, range);
+        for (int i = 0; i < hits.Count; i++)
         {
-            Enemy e = c.GetComponentInParent<Enemy>();
+            Enemy e = hits[i] != null ? hits[i].GetComponentInParent<Enemy>() : null;
             if (e == null || e.IsDead) continue;
             Vector2 to = (Vector2)e.transform.position - pos;
             if (Vector2.Angle(aim, to) > half) continue;
             DamageKind.Hit(e, dmg, DmgKind.Fire);
         }
+        Phys.Release(hits);
     }
 }
 

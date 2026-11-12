@@ -147,6 +147,7 @@ public class Fx : MonoBehaviour
 
     void Update()
     {
+        if (aliveCount <= 0) return; // cap partícula viva: res a moure
         float dt = Time.deltaTime;
         for (int i = 0; i < Max; i++)
         {
