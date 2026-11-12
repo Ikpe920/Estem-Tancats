@@ -566,7 +566,7 @@ public abstract class BossBrain : MonoBehaviour
             foreach (SpriteRenderer r in rings)
                 if (r != null)
                 {
-                    r.color = new Color(color.r, color.g, color.b, Mathf.Lerp(0.1f, 0.45f, k) * (0.8f + 0.2f * Mathf.Sin(t * 28f)));
+                    r.color = new Color(color.r, color.g, color.b, Mathf.Lerp(Accessibility.StrongWarnings ? 0.3f : 0.1f, Accessibility.StrongWarnings ? 0.75f : 0.45f, k) * (0.8f + 0.2f * Mathf.Sin(t * 28f)));
                     r.transform.localScale = Vector3.one * radius * 2f * Mathf.Lerp(0.6f, 1f, Mathf.Min(1f, k * 2f));
                 }
             yield return null;

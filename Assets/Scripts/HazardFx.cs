@@ -49,7 +49,7 @@ public static class HazardFx
         TMPro.TextMeshPro tmp = go.AddComponent<TMPro.TextMeshPro>();
         if (TMPro.TMP_Settings.defaultFontAsset != null) tmp.font = TMPro.TMP_Settings.defaultFontAsset;
         tmp.text = text;
-        tmp.fontSize = 4f;
+        tmp.fontSize = 4f * Accessibility.TextMul;
         tmp.alignment = TMPro.TextAlignmentOptions.Center;
         tmp.color = color;
         tmp.sortingOrder = 60;

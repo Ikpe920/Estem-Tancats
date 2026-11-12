@@ -41,6 +41,40 @@ public static class GameSettings
     }
 }
 
+// ---------- ACCESSIBILITAT ----------
+public static class Accessibility
+{
+    // sacseig de pantalla: 0 = normal, 1 = la meitat, 2 = cap
+    public static int ShakeLevel
+    {
+        get { return PlayerPrefs.GetInt("acc_shake", 0); }
+        set { PlayerPrefs.SetInt("acc_shake", Mathf.Clamp(value, 0, 2)); PlayerPrefs.Save(); }
+    }
+    public static float ShakeMul => ShakeLevel == 0 ? 1f : ShakeLevel == 1 ? 0.5f : 0f;
+
+    // flaixos de pantalla (els focus de la Crítica, el flaix de la càmera...): si no, molt més suaus
+    public static bool Flashes
+    {
+        get { return PlayerPrefs.GetInt("acc_flash", 1) == 1; }
+        set { PlayerPrefs.SetInt("acc_flash", value ? 1 : 0); PlayerPrefs.Save(); }
+    }
+
+    // textos flotants (avisos, frases dels caps, números de mal) més grans
+    public static bool BigText
+    {
+        get { return PlayerPrefs.GetInt("acc_bigtext", 0) == 1; }
+        set { PlayerPrefs.SetInt("acc_bigtext", value ? 1 : 0); PlayerPrefs.Save(); }
+    }
+    public static float TextMul => BigText ? 1.35f : 1f;
+
+    // els cercles d'avís dels atacs, més marcats
+    public static bool StrongWarnings
+    {
+        get { return PlayerPrefs.GetInt("acc_warn", 0) == 1; }
+        set { PlayerPrefs.SetInt("acc_warn", value ? 1 : 0); PlayerPrefs.Save(); }
+    }
+}
+
 public class OptionsScreen : MonoBehaviour
 {
     public static bool IsOpen { get; private set; }
@@ -51,7 +85,8 @@ public class OptionsScreen : MonoBehaviour
     static readonly Color BtnGold = new Color(0.55f, 0.40f, 0.15f);
 
     private RectTransform root;
-    private GameObject mainPage, controlsPage, creditsPage;
+    private GameObject mainPage, controlsPage, creditsPage, accessPage;
+    private Button shakeButton, flashButton, bigTextButton, warnButton;
     private TextMeshProUGUI masterText, musicText, sfxText;
     private Button filmButton, vibrationButton, fullscreenButton, difficultyButton, tutorialButton, firstButton;
     private GameObject lastSelected;
@@ -92,9 +127,11 @@ public class OptionsScreen : MonoBehaviour
         mainPage = Page("Opcions");
         controlsPage = Page("Controls");
         creditsPage = Page("Credits");
+        accessPage = Page("Accessibilitat");
         BuildMain(mainPage.transform);
         BuildControls(controlsPage.transform);
         BuildCredits(creditsPage.transform);
+        BuildAccess(accessPage.transform);
         Show(mainPage);
         RefreshAll();
     }
@@ -114,6 +151,7 @@ public class OptionsScreen : MonoBehaviour
         mainPage.SetActive(page == mainPage);
         controlsPage.SetActive(page == controlsPage);
         creditsPage.SetActive(page == creditsPage);
+        accessPage.SetActive(page == accessPage);
         // perquè es pugui navegar amb el comandament
         Button first = page.GetComponentInChildren<Button>();
         if (page == mainPage && firstButton != null) first = firstButton;
@@ -147,9 +185,26 @@ public class OptionsScreen : MonoBehaviour
         tutorialButton = ToggleRow(p, "Tutorial", y, () => { TutorialHints.Done = !TutorialHints.Done; RefreshAll(); }); y -= dy;
 
         Vector2 size = new Vector2(300f, 72f);
-        EndScreenUI.CreateButton(p, "Controls", new Vector2(0.32f, 0.1f), size, BtnGold, () => Show(controlsPage));
-        EndScreenUI.CreateButton(p, "Crèdits", new Vector2(0.5f, 0.1f), size, BtnGold, () => Show(creditsPage));
-        EndScreenUI.CreateButton(p, "Tornar", new Vector2(0.68f, 0.1f), size, new Color(0.20f, 0.45f, 0.25f), Close);
+        EndScreenUI.CreateButton(p, "Controls", new Vector2(0.23f, 0.1f), size, BtnGold, () => Show(controlsPage));
+        EndScreenUI.CreateButton(p, "Accessibilitat", new Vector2(0.41f, 0.1f), size, BtnGold, () => Show(accessPage));
+        EndScreenUI.CreateButton(p, "Crèdits", new Vector2(0.59f, 0.1f), size, BtnGold, () => Show(creditsPage));
+        EndScreenUI.CreateButton(p, "Tornar", new Vector2(0.77f, 0.1f), size, new Color(0.20f, 0.45f, 0.25f), Close);
+    }
+
+    // ---------- ACCESSIBILITAT ----------
+
+    void BuildAccess(Transform p)
+    {
+        Title(p, "ACCESSIBILITAT");
+        float y = 0.7f, dy = 0.1f;
+        shakeButton = ToggleRow(p, "Sacseig de pantalla", y, () => { Accessibility.ShakeLevel = (Accessibility.ShakeLevel + 1) % 3; RefreshAll(); }); y -= dy;
+        flashButton = ToggleRow(p, "Flaixos de pantalla", y, () => { Accessibility.Flashes = !Accessibility.Flashes; RefreshAll(); }); y -= dy;
+        bigTextButton = ToggleRow(p, "Textos flotants grans", y, () => { Accessibility.BigText = !Accessibility.BigText; RefreshAll(); }); y -= dy;
+        warnButton = ToggleRow(p, "Avisos dels atacs més marcats", y, () => { Accessibility.StrongWarnings = !Accessibility.StrongWarnings; RefreshAll(); }); y -= dy;
+        TextMeshProUGUI note = EndScreenUI.CreateText(p, "Nota", "El filtre de pel·lícula antiga (gra i ratlles) es treu a la pàgina principal d'Opcions.",
+            26f, new Vector2(0.5f, y - 0.02f), new Vector2(1300f, 50f), new Color(1f, 0.85f, 0.6f));
+        note.raycastTarget = false;
+        EndScreenUI.CreateButton(p, "Tornar", new Vector2(0.5f, 0.1f), new Vector2(300f, 72f), new Color(0.20f, 0.45f, 0.25f), () => Show(mainPage));
     }
 
     TextMeshProUGUI VolumeRow(Transform p, string label, float y, System.Action<float> change, out Button minus)
@@ -192,6 +247,10 @@ public class OptionsScreen : MonoBehaviour
         SetText(fullscreenButton, Screen.fullScreen ? "Sí" : "No");
         SetText(difficultyButton, Progression.DifficultyName(Progression.Difficulty));
         SetText(tutorialButton, TutorialHints.Done ? "Ja vist (tornar-lo a veure)" : "Activat");
+        SetText(shakeButton, Accessibility.ShakeLevel == 0 ? "Normal" : Accessibility.ShakeLevel == 1 ? "La meitat" : "Cap");
+        SetText(flashButton, Accessibility.Flashes ? "Sí" : "Suaus");
+        SetText(bigTextButton, Accessibility.BigText ? "Sí" : "No");
+        SetText(warnButton, Accessibility.StrongWarnings ? "Sí" : "No");
     }
 
     static void SetText(Button b, string text)

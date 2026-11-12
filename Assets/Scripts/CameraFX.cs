@@ -7,6 +7,9 @@ public static class CameraFX
     public static void Shake(float duration, float magnitude)
     {
         if (CameraFollow.Instance != null)
-            CameraFollow.Instance.Shake(duration, magnitude);
+        {
+            if (Accessibility.ShakeMul <= 0f) return; // accessibilitat: sense sacseig
+            CameraFollow.Instance.Shake(duration, magnitude * Accessibility.ShakeMul);
+        }
     }
 }
