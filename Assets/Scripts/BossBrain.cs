@@ -95,9 +95,9 @@ public class EnemyBurn : MonoBehaviour
     {
         if (Time.time >= until) { Destroy(this); return; }
         if (Time.time < next) return;
-        next = Time.time + 0.09f;
-        float size = Mathf.Clamp(transform.localScale.x * 0.35f, 0.25f, 1f);
-        Fx.Flames((Vector2)transform.position + Vector2.up * 0.2f * transform.localScale.y, size, 0.55f);
+        next = Time.time + 0.15f;
+        float size = Mathf.Clamp(transform.localScale.x * 0.25f, 0.2f, 0.6f);
+        Fx.Flames((Vector2)transform.position + Vector2.up * 0.2f * transform.localScale.y, size, 0.4f);
     }
 }
 
@@ -760,12 +760,6 @@ public class BossChefBrain : BossBrain
         {
             aim = Vector3.RotateTowards(aim, ToPlayer, (phase2 ? 1.3f : 0.8f) * Time.deltaTime, 0f);
             Fx.FlameJet(Pos, aim, range, halfA, 1f); // el mateix raig que el lanxa-flames del jugador
-            if (t >= nextFx)
-            {
-                nextFx = t + 0.12f;
-                float d = Random.Range(1f, range);
-                Fx.Flames(Pos + Dir(Angle(aim) + Random.Range(-halfA, halfA) * d / range) * d, 0.4f + d * 0.08f, 0.4f);
-            }
             if (PlayerInCone(Pos, aim, range, halfA))
             {
                 PlayerMovement pm = PlayerRef.Movement;

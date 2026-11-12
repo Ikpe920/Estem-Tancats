@@ -131,7 +131,7 @@ public class Fx : MonoBehaviour
             t.position = p.pos + Vector2.up * s * 0.35f; // el peu de la flama a terra
             t.rotation = Quaternion.Euler(0f, 0f, Mathf.Sin(p.age * 9f + p.frame0) * 6f);
             t.localScale = new Vector3(s * (1f + 0.08f * Mathf.Sin(p.age * 17f + p.frame0)), s, 1f);
-            srs[i].color = Color.Lerp(p.c0, p.c1, Mathf.Clamp01((k - 0.65f) / 0.35f));
+            srs[i].color = Color.Lerp(p.c0, p.c1, Mathf.Clamp01((k - 0.8f) / 0.2f)); // opaca fins al final (si no, es veu desteixida)
             return;
         }
         if (p.stretch && p.vel.sqrMagnitude > 0.01f)
@@ -174,9 +174,9 @@ public class Fx : MonoBehaviour
             Emit(Soft(), pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.6f, Random.Range(0.8f, 1.3f),
                  radius * 0.6f, radius * 1.4f, new Color(0.35f, 0.32f, 0.3f, 0.45f), new Color(0.2f, 0.2f, 0.2f, 0f), 5, 1f, 1.2f);
         // unes quantes flames de dibuix animat que queden cremant
-        for (int i = 0; i < Mathf.RoundToInt(4 * strength); i++)
+        for (int i = 0; i < Mathf.RoundToInt(2 * strength); i++)
         {
-            float sz = Mathf.Clamp(radius * 0.5f, 0.35f, 1.2f) * Random.Range(0.8f, 1.2f);
+            float sz = Mathf.Clamp(radius * 0.4f, 0.3f, 0.9f) * Random.Range(0.8f, 1.2f);
             EmitFlame(pos + Random.insideUnitCircle * radius * 0.6f, Random.insideUnitCircle * 0.5f, Random.Range(0.5f, 0.8f), sz, sz * 0.2f, 6);
         }
         // marca de cremat a terra
@@ -242,17 +242,17 @@ public class Fx : MonoBehaviour
     // flames de dibuix animat (Resources/Fx/Flame_0..5), estrelletes, fum amb contorn i cremat a terra
     public static void Flames(Vector2 pos, float radius, float amount = 1f)
     {
-        float size = Mathf.Clamp(radius * 0.9f, 0.3f, 1.3f);
-        if (Random.value < 0.9f * amount)
+        float size = Mathf.Clamp(radius * 0.7f, 0.25f, 0.9f);
+        if (Random.value < 0.5f * amount)
         {
             Vector2 o = Random.insideUnitCircle * radius * 0.8f;
             float sz = size * Random.Range(0.7f, 1.1f);
             EmitFlame(pos + o, new Vector2(Random.Range(-0.2f, 0.2f), Random.Range(0.3f, 0.7f)), Random.Range(0.45f, 0.75f), sz, sz * 0.25f);
         }
-        if (Random.value < 0.22f * amount)
+        if (Random.value < 0.12f * amount)
             Emit(EmberSprite(), pos + Random.insideUnitCircle * radius * 0.7f, new Vector2(Random.Range(-0.8f, 0.8f), Random.Range(2f, 3.5f)), Random.Range(0.4f, 0.8f),
                  0.2f, 0.05f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 5, 1f, 0f, false, Random.Range(-360f, 360f));
-        if (Random.value < 0.05f * amount)
+        if (Random.value < 0.03f * amount)
             Emit(SmokeSprite(), pos + Random.insideUnitCircle * radius * 0.5f + Vector2.up * (0.4f + size * 0.6f), new Vector2(Random.Range(-0.2f, 0.2f), 0.7f),
                  Random.Range(0.9f, 1.4f), 0.35f, 0.9f, new Color(0.55f, 0.5f, 0.48f, 0.75f), new Color(0.35f, 0.33f, 0.32f, 0f), 5, 0.5f, 0.5f, false, Random.Range(-30f, 30f));
         Scorch(pos, radius, amount);
@@ -276,20 +276,19 @@ public class Fx : MonoBehaviour
     {
         if (dir.sqrMagnitude < 0.01f) return;
         dir.Normalize();
-        int n = Random.value < amount ? (Random.value < amount * 0.5f ? 2 : 1) : 0;
-        for (int i = 0; i < n; i++)
+        if (Random.value < amount * 0.45f)
         {
             Vector2 d = Quaternion.Euler(0f, 0f, Random.Range(-halfAngle, halfAngle) * 0.8f) * dir;
-            float life = Random.Range(0.3f, 0.42f);
-            float speed = range / life * Random.Range(0.75f, 1f);
-            EmitFlame(from + dir * 0.5f, d * speed, life, Random.Range(0.25f, 0.35f), Mathf.Clamp(range * 0.28f, 0.5f, 1.3f), 6, 1.5f, 0.3f);
+            float life = Random.Range(0.25f, 0.35f);
+            float speed = range / life * Random.Range(0.8f, 1.05f);
+            EmitFlame(from + dir * 0.5f, d * speed, life, 0.2f, Mathf.Clamp(range * 0.17f, 0.35f, 0.7f), 6, 0.6f, 0.2f);
         }
-        if (Random.value < 0.15f * amount)
+        if (Random.value < 0.08f * amount)
         {
             Vector2 d = Quaternion.Euler(0f, 0f, Random.Range(-halfAngle, halfAngle)) * dir;
             Emit(EmberSprite(), from + dir * 0.5f, d * range * 3f, Random.Range(0.3f, 0.5f), 0.18f, 0.05f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 7, 2f, 0f, false, 300f);
         }
-        if (Random.value < 0.06f * amount) Scorch(from + dir * range * Random.Range(0.5f, 0.95f), range * 0.25f, 1f);
+        if (Random.value < 0.03f * amount) Scorch(from + dir * range * Random.Range(0.5f, 0.95f), range * 0.25f, 1f);
     }
 
     // ---------- ELS DIBUIXOS DEL FOC (Tools/SpriteGen/fire.py) ----------

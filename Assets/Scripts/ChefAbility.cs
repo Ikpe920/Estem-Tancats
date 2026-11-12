@@ -278,7 +278,7 @@ public class ChefAbility : MonoBehaviour
         hudRoot.SetParent(go.transform, false);
         hudRoot.anchorMin = hudRoot.anchorMax = new Vector2(0f, 0f);
         hudRoot.sizeDelta = new Vector2(96f, 96f);
-        hudRoot.anchoredPosition = new Vector2(80f, 160f);
+        hudRoot.anchoredPosition = new Vector2(120f, 160f);
         ring = r.GetComponent<Image>();
         ring.sprite = HazardFx.Circle();
         ring.color = new Color(0.12f, 0.08f, 0.09f, 0.9f);
@@ -297,7 +297,7 @@ public class ChefAbility : MonoBehaviour
         fill.raycastTarget = false;
 
         keyText = Text(hudRoot, 34f, Vector2.zero, new Vector2(96f, 96f));
-        nameText = Text(hudRoot, 20f, new Vector2(0f, -66f), new Vector2(260f, 30f));
+        nameText = Text(hudRoot, 18f, new Vector2(0f, -64f), new Vector2(220f, 28f));
         nameText.text = def.name;
         nameText.color = UIStyle.Gold;
     }
