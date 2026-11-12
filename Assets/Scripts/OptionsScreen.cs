@@ -216,6 +216,7 @@ public class OptionsScreen : MonoBehaviour
             "Apuntar:  <b>ratolí</b>\n" +
             "Llançar plats:  <b>clic esquerre</b> (mantenir)\n" +
             "Dash:  <b>Espai</b>\n" +
+            "Habilitat del xef:  <b>Q</b> o <b>clic dret</b>\n" +
             "Bolcar una taula:  <b>E</b>\n" +
             "Veure els teus plats:  <b>Tab</b> (mantenir)\n" +
             "Pausa:  <b>Esc</b>";
@@ -224,6 +225,7 @@ public class OptionsScreen : MonoBehaviour
             "Moure-se:  <b>joystick esquerre</b>\n" +
             "Apuntar i llançar:  <b>joystick dret</b> (o <b>gallet dret</b>)\n" +
             "Dash:  <b>botó superior dret</b>\n" +
+            "Habilitat del xef:  <b>botó superior esquerre</b>\n" +
             "Bolcar una taula:  <b>" + GamepadInput.West() + "</b>\n" +
             "Veure els teus plats:  <b>" + GamepadInput.SelectButton() + "</b> (mantenir)\n" +
             "Pausa:  <b>" + GamepadInput.StartButton() + "</b>";
