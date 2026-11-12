@@ -27,6 +27,7 @@ public static class DamageKind
         Current = kind;
         try { e.TakeDamage(damage, crit); }
         finally { Current = prev; }
+        if (kind == DmgKind.Fire && e != null && !e.IsDead) EnemyBurn.Apply(e, 1.6f); // el client crema una estona
     }
 
     public static void ShowWeak(Enemy e)
@@ -75,6 +76,28 @@ public static class DamageKind
             case BossType.TvCritic: return DmgKind.Explosion;
         }
         return DmgKind.None;
+    }
+}
+
+// ---------- UN CLIENT QUE CREMA (només es veu: flametes i fum a sobre) ----------
+public class EnemyBurn : MonoBehaviour
+{
+    float until, next;
+
+    public static void Apply(Enemy e, float seconds)
+    {
+        EnemyBurn b = e.GetComponent<EnemyBurn>();
+        if (b == null) b = e.gameObject.AddComponent<EnemyBurn>();
+        b.until = Mathf.Max(b.until, Time.time + seconds);
+    }
+
+    void Update()
+    {
+        if (Time.time >= until) { Destroy(this); return; }
+        if (Time.time < next) return;
+        next = Time.time + 0.09f;
+        float size = Mathf.Clamp(transform.localScale.x * 0.35f, 0.25f, 1f);
+        Fx.Flames((Vector2)transform.position + Vector2.up * 0.2f * transform.localScale.y, size, 0.55f);
     }
 }
 
@@ -736,11 +759,12 @@ public class BossChefBrain : BossBrain
         for (float t = 0f; t < burn && Alive; t += Time.deltaTime)
         {
             aim = Vector3.RotateTowards(aim, ToPlayer, (phase2 ? 1.3f : 0.8f) * Time.deltaTime, 0f);
+            Fx.FlameJet(Pos, aim, range, halfA, 1f); // el mateix raig que el lanxa-flames del jugador
             if (t >= nextFx)
             {
-                nextFx = t + 0.05f;
+                nextFx = t + 0.12f;
                 float d = Random.Range(1f, range);
-                Fx.Flames(Pos + Dir(Angle(aim) + Random.Range(-halfA, halfA) * d / range) * d, 0.4f + d * 0.08f, 0.6f);
+                Fx.Flames(Pos + Dir(Angle(aim) + Random.Range(-halfA, halfA) * d / range) * d, 0.4f + d * 0.08f, 0.4f);
             }
             if (PlayerInCone(Pos, aim, range, halfA))
             {

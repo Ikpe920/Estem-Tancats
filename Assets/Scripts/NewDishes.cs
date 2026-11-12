@@ -284,8 +284,7 @@ public class Flamethrower : MonoBehaviour
 
     void Update()
     {
-        if (!DishUtil.Active || Time.time < next) return;
-        next = Time.time + 0.35f;
+        if (!DishUtil.Active) return;
         PlayerShooting s = PlayerRef.Shooting;
         Vector2 aim = s != null ? s.LastAim : Vector2.right;
         if (aim.sqrMagnitude < 0.01f) aim = Vector2.right;
@@ -294,7 +293,10 @@ public class Flamethrower : MonoBehaviour
         float range = (2.4f + 0.35f * (level - 1)) * DishArea.Mul * (evo ? 1.5f : 1f);
         float half = evo ? 32f : 20f;
         Vector2 pos = transform.position;
-        Fx.Flames(pos + aim * range * 0.55f, range * 0.35f, 0.6f);
+        Fx.FlameJet(pos, aim, range, half, 0.8f); // el raig de flames, a cada fotograma
+
+        if (Time.time < next) return;
+        next = Time.time + 0.35f;
         int dmg = 1 + (level - 1) / 2 + DishUtil.Bonus / 2;
         if (SetBonuses.Has(SetId.Barbacoa)) dmg *= 2; // conjunt Barbacoa: les flames fan el doble de mal
         foreach (Collider2D c in Physics2D.OverlapCircleAll(pos, range))
