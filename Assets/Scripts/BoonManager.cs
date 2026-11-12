@@ -156,6 +156,7 @@ public class BoonManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        DamageKind.FireMul = 1f; // el safrà es torna a guanyar a cada partida
         if (shooting == null) shooting = PlayerRef.Shooting;
         if (movement == null) movement = PlayerRef.Movement;
         if (health == null) health = PlayerRef.Health;
@@ -244,7 +245,6 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Cafè sol", "Llances un 20% més ràpid", BoonType.FireRate, 0.2f, new Color(0.65f, 0.45f, 0.3f), 12, 4),
             MakeBoon("Macarrons amb tomàquet", "Camines més ràpid", BoonType.MoveSpeed, 0.6f, new Color(0.95f, 0.6f, 0.4f), 12, 3),
             MakeBoon("Escudella i carn d'olla", "+1 cor màxim (i el deixes ple)", BoonType.MaxLives, 1f, new Color(0.95f, 0.45f, 0.6f), 5, 2),
-            MakeBoon("Gaspatxo fresquet", "Cures 1 cor", BoonType.Heal, 1f, new Color(0.5f, 0.9f, 0.55f), 8),
             MakeBoon("Croquetes cruixents", "+0,3 s d'invulnerabilitat", BoonType.Invulnerability, 0.3f, new Color(0.9f, 0.75f, 0.45f), 8, 3),
             MakeBoon("Xurros amb xocolata", "-0,2 s de recàrrega del dash", BoonType.DashCooldown, 0.2f, new Color(0.7f, 0.45f, 0.35f), 8, 3),
             MakeBoon("Pa amb tomàquet", "Els projectils van més ràpids", BoonType.ProjectileSpeed, 3f, new Color(0.95f, 0.55f, 0.4f), 8, 3),
@@ -266,10 +266,8 @@ public class BoonManager : MonoBehaviour
             MakeBoon("Panellets", "En fer el dash, llences panellets en cercle (6, i 3 més a cada nivell)", BoonType.DashRing, 6f, new Color(0.92f, 0.8f, 0.55f), 5, 4),
             MakeBoon("Coca de recapte", "Els clients poden esclatar en morir (30%, 45%, 60%, 75%)", BoonType.KillBurst, 1f, new Color(0.85f, 0.6f, 0.35f), 5, 4),
 
-            // ---- plats de punts ----
-            MakeBoon("Safrà", "Guanyes un 25% més de punts", BoonType.ScoreBoost, 0.25f, new Color(0.98f, 0.7f, 0.2f), 6, 4),
-            MakeBoon("Torrons de Xixona", "+150 punts ara mateix", BoonType.Score, 150f, new Color(0.9f, 0.8f, 0.6f), 5),
-            MakeBoon("Menú del dia", "Cures 1 cor i +75 punts", BoonType.Heal, 1f, new Color(0.4f, 0.6f, 0.45f), 5, 0, BoonType.Score, 75f),
+            // ---- el safrà: el foc fa més mal (abans donava punts) ----
+            MakeBoon("Safrà", "El foc fa un 30% més de mal (i un 30% més a cada nivell)", BoonType.ScoreBoost, 0.3f, new Color(0.98f, 0.7f, 0.2f), 6, 4),
 
             // ---- plats amb risc i recompensa ----
             MakeBoon("Xili amb carn", "+2 de dany, però els clients van un 15% més ràpids", BoonType.Damage, 2f, new Color(0.85f, 0.25f, 0.2f), 6, 2, BoonType.SlowEnemies, -0.15f),
@@ -346,7 +344,17 @@ public class BoonManager : MonoBehaviour
     public IEnumerator OfferBoons()
     {
         Boon[] picked = PickBoons(optionsPerOffer);
-        if (picked == null || picked.Length == 0) yield break;
+        if (picked == null || picked.Length == 0)
+        {
+            // ja ho tens tot al màxim: les postres (curar-te), si et serveixen de res
+            picked = RestCards();
+            if (picked == null)
+            {
+                if (health != null) HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.6f, "TOT AL MÀXIM!", new Color(1f, 0.85f, 0.35f), 1.2f);
+                yield break;
+            }
+        }
+        RollShiny(picked);
 
         currentOffer = picked;
 
@@ -668,7 +676,7 @@ public class BoonManager : MonoBehaviour
     // pes real d'un plat al sorteig: el que ja ha sortit fa poc pesa menys, les sinergies pesen més
     float EffectiveWeight(Boon b)
     {
-        float w = Mathf.Max(1, b.weight);
+        float w = RarityWeight(RarityOf(b)); // comuns, poc comuns, rars i llegendaris
 
         if (previousOffer != null && System.Array.IndexOf(previousOffer, b) >= 0) w *= 0.25f;
         if (taken.ContainsKey(b) && !IsConsumable(b)) w *= 1.4f; // pujar de nivell el que ja tens
@@ -810,6 +818,15 @@ public class BoonManager : MonoBehaviour
     {
         if (picking) return;
         picking = true;
+        if (restBoons.Contains(boon))
+        {
+            // les postres: no ocupen lloc ni compten com a plat
+            AudioManager.Play("heal");
+            if (boon.type == BoonType.MaxLives) restMaxLivesGiven++;
+            ApplyEffect(boon.type, boon.amount);
+            RefreshTakenText();
+            return;
+        }
         if (boon.type == BoonType.Evolution)
         {
             ChooseEvolution(boon);
@@ -822,6 +839,15 @@ public class BoonManager : MonoBehaviour
         taken[boon] = (taken.ContainsKey(boon) ? taken[boon] : 0) + 1;
         Codex.DiscoverDish(boon);
         Apply(boon);
+        if (shiny.Contains(boon) && taken[boon] < MaxLevel(boon))
+        {
+            // carta brillant: un nivell de regal
+            taken[boon]++;
+            Apply(boon);
+            if (health != null) HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.8f, "BRILLANT! +2 NIVELLS", new Color(1f, 0.9f, 0.4f), 1.2f);
+            AudioManager.Play("set", 0.7f, 1.3f);
+        }
+        shiny.Clear();
         CheckSets();
         RefreshTakenText();
         Debug.Log("Plats: " + boon.name + " (" + boon.description + ")");
@@ -913,6 +939,93 @@ public class BoonManager : MonoBehaviour
         if (boon.type2 != BoonType.None) ApplyEffect(boon.type2, boon.amount2, level);
     }
 
+    // ---------- RARESA (comuns, poc comuns, rars i llegendaris) ----------
+    public enum Rarity { Comu, PocComu, Rar, Llegendari }
+
+    static readonly string[] Rars = { "Pollastre al curri", "Olives farcides", "Romesco", "Panellets", "Coca de recapte",
+        "Pernil tallat a ganivet", "Escalivada", "Bombes de la Barceloneta", "Botifarra amb mongetes", "Menú de degustació" };
+    static readonly string[] PocComuns = { "Ratafia", "Escudella i carn d'olla", "Xili amb carn", "Fondue de formatge", "Fideuà picant",
+        "Calamars a la romana", "Mandonguilles", "Bunyols de bacallà", "Sorbet de llimona", "Cireres", "Mel i mató", "Crema catalana",
+        "Sopa de galets", "Fuet", "Truita de patates", "Cava", "Pastís de nata", "Safrà" };
+
+    public static Rarity RarityOf(Boon b)
+    {
+        if (b == null) return Rarity.Comu;
+        if (b.name == "Paella mixta" || b.name == "Calçots amb salvitxada") return Rarity.Llegendari;
+        if (System.Array.IndexOf(Rars, b.name) >= 0) return Rarity.Rar;
+        if (System.Array.IndexOf(PocComuns, b.name) >= 0) return Rarity.PocComu;
+        return Rarity.Comu;
+    }
+
+    static float RarityWeight(Rarity r)
+    {
+        switch (r)
+        {
+            case Rarity.PocComu: return 8f;
+            case Rarity.Rar: return 4.5f;
+            case Rarity.Llegendari: return 2f;
+        }
+        return 12f;
+    }
+
+    public static string RarityName(Rarity r)
+    {
+        switch (r)
+        {
+            case Rarity.PocComu: return "POC COMÚ";
+            case Rarity.Rar: return "RAR";
+            case Rarity.Llegendari: return "LLEGENDARI";
+        }
+        return "COMÚ";
+    }
+
+    public static Color RarityColor(Rarity r)
+    {
+        switch (r)
+        {
+            case Rarity.PocComu: return new Color(0.35f, 0.75f, 0.35f);
+            case Rarity.Rar: return new Color(0.30f, 0.55f, 0.95f);
+            case Rarity.Llegendari: return new Color(1f, 0.75f, 0.15f);
+        }
+        return new Color(0.85f, 0.82f, 0.78f);
+    }
+
+    // ---------- CARTES BRILLANTS: de tant en tant, una carta dona 2 nivells de cop ----------
+    private readonly HashSet<Boon> shiny = new HashSet<Boon>();
+
+    void RollShiny(Boon[] offer)
+    {
+        shiny.Clear();
+        foreach (Boon b in offer)
+        {
+            if (b == null || b.type == BoonType.Evolution || restBoons.Contains(b)) continue;
+            int have = taken.ContainsKey(b) ? taken[b] : 0;
+            if (MaxLevel(b) - have >= 2 && Random.value < 0.08f) shiny.Add(b);
+        }
+    }
+
+    // ---------- LES POSTRES: quan ja ho tens tot al màxim ----------
+    // Només curar-se, i amb mesura: 1 cor si no tens la vida plena, o +1 cor màxim (com a molt 2 cops per partida).
+    // Si no et serveix res d'això, no surt cap carta.
+    private readonly HashSet<Boon> restBoons = new HashSet<Boon>();
+    private Boon restHeal, restMax;
+    private int restMaxLivesGiven;
+
+    Boon[] RestCards()
+    {
+        if (restHeal == null)
+        {
+            restHeal = MakeBoon("Plat de cullera", "Postres: cures 1 cor", BoonType.Heal, 1f, new Color(0.55f, 0.85f, 0.55f), 1);
+            restMax = MakeBoon("Escudella i carn d'olla", "Postres: +1 cor màxim (i el deixes ple). Com a molt 2 cops per partida", BoonType.MaxLives, 1f, new Color(0.95f, 0.45f, 0.6f), 1);
+            restBoons.Add(restHeal);
+            restBoons.Add(restMax);
+        }
+        List<Boon> list = new List<Boon>();
+        if (health != null && health.CurrentLives < health.maxLives) list.Add(restHeal);
+        if (health != null && restMaxLivesGiven < 2 && health.maxLives < PlayerHealth.MaxLivesCap) list.Add(restMax);
+        return list.Count > 0 ? list.ToArray() : null;
+    }
+
     // la quantitat d'un nivell: el primer fa 'amount', i els següents 'levelAmount' (si en té)
     static float AmountFor(Boon b, int level)
     {
@@ -982,8 +1095,8 @@ public class BoonManager : MonoBehaviour
                 if (ScoreManager.Instance != null) ScoreManager.Instance.AddScore(Mathf.RoundToInt(amount));
                 break;
 
-            case BoonType.ScoreBoost:
-                if (ScoreManager.Instance != null) ScoreManager.Instance.scoreMultiplier += amount;
+            case BoonType.ScoreBoost: // el safrà: el foc fa més mal
+                DamageKind.FireMul += amount;
                 break;
 
             case BoonType.SlowEnemies:
@@ -1342,8 +1455,7 @@ public class BoonManager : MonoBehaviour
                 return "+" + r + " punts";
 
             case BoonType.ScoreBoost:
-                if (ScoreManager.Instance == null) return null;
-                return "Punts ×" + F(ScoreManager.Instance.scoreMultiplier, 2) + " → ×" + F(ScoreManager.Instance.scoreMultiplier + amount, 2);
+                return "Mal del foc ×" + F(DamageKind.FireMul, 2) + " → ×" + F(DamageKind.FireMul + amount, 2);
 
             case BoonType.SlowEnemies:
             {
@@ -1586,7 +1698,12 @@ public class BoonManager : MonoBehaviour
         // ombra dura (desplaçada), marc i paper
         Box(card.transform, "Ombra", new Color(0f, 0f, 0f, 0.5f), Vector2.zero, Vector2.one,
             new Vector2(u * 2f, -u * 2f), new Vector2(u * 2f, -u * 2f));
-        Image frame = Box(card.transform, "Vora", Frame, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+        // el marc, del color de la raresa (les postres i els plats estrella, el de sempre)
+        Rarity rarity = RarityOf(boon);
+        bool showRarity = boon.type != BoonType.Evolution && !restBoons.Contains(boon);
+        Color frameCol = showRarity && rarity != Rarity.Comu ? Color.Lerp(Frame, RarityColor(rarity), 0.85f) : Frame;
+        if (shiny.Contains(boon)) frameCol = new Color(1f, 0.9f, 0.4f);
+        Image frame = Box(card.transform, "Vora", frameCol, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
         Box(card.transform, "Paper", Paper, Vector2.zero, Vector2.one, new Vector2(edge, edge), new Vector2(-edge, -edge));
 
         // capçalera de tovalles de quadres
@@ -1639,9 +1756,23 @@ public class BoonManager : MonoBehaviour
             new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
         Label(tagFace.rectTransform, tag, tagSize, TextAlignmentOptions.Center, Paper, true, false);
 
+        // a baix de la capçalera: la raresa (i si la carta és brillant)
+        if (showRarity && (rarity != Rarity.Comu || shiny.Contains(boon)))
+        {
+            string rtxt = (shiny.Contains(boon) ? "BRILLANT ×2 · " : "") + RarityName(rarity);
+            float rW = rtxt.Length * tagSize * 0.68f + u * 4f;
+            RectTransform rRt = MakeFixed(hdr, "Raresa", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, u * 2f), new Vector2(rW, tagSize * 1.5f + u));
+            Image rFrame = rRt.gameObject.AddComponent<Image>();
+            rFrame.color = Frame;
+            rFrame.raycastTarget = false;
+            Image rFace = Box(rRt, "Fons", shiny.Contains(boon) ? new Color(0.85f, 0.65f, 0.1f) : Color.Lerp(RarityColor(rarity), Color.black, 0.25f), Vector2.zero, Vector2.one,
+                new Vector2(u * 0.5f, u * 0.5f), new Vector2(-u * 0.5f, -u * 0.5f));
+            Label(rFace.rectTransform, rtxt, tagSize, TextAlignmentOptions.Center, Paper, true, false);
+        }
+
         // a dalt a la dreta: NOU, o el nivell al qual el pujaràs
         int have = taken.ContainsKey(boon) ? taken[boon] : 0;
-        if (!IsConsumable(boon))
+        if (!IsConsumable(boon) && !restBoons.Contains(boon))
         {
             int next = have + 1;
             string haveText = have == 0 ? "NOU" : (next >= MaxLevel(boon) ? "NIVELL MÀX" : "NIVELL " + next);

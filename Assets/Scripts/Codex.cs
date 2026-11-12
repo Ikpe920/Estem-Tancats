@@ -223,7 +223,7 @@ public class CodexScreen : MonoBehaviour
             bool seen = Codex.DishSeen(b);
             Sprite icon = BoonManager.DishIcon(b);
             Button cell = Cell(i, cols, Mathf.CeilToInt((dishes.Length + Evo.All.Length) / (float)cols), icon, seen, () =>
-                ShowDetail(icon, seen, seen ? b.name : "???", seen ? b.description + "\n\n<color=#FFCC4D>" + TypeName(b.type) + "</color>" : "Encara no l'has tastat."));
+                ShowDetail(icon, seen, seen ? b.name : "???", seen ? b.description + "\n\n<color=#FFCC4D>" + TypeName(b.type) + "</color>  ·  " + BoonManager.RarityName(BoonManager.RarityOf(b)) : "Encara no l'has tastat."));
             if (first == null) first = cell;
         }
         // els plats estrella, a continuació (amb el fons daurat)
@@ -411,7 +411,8 @@ public class CodexScreen : MonoBehaviour
             case BoonType.Heal: return "curar";
             case BoonType.Invulnerability: return "invulnerabilitat";
             case BoonType.DashCooldown: return "dash";
-            case BoonType.Score: case BoonType.ScoreBoost: return "punts";
+            case BoonType.Score: return "punts";
+            case BoonType.ScoreBoost: return "foc";
             case BoonType.SlowEnemies: return "clients lents";
             case BoonType.MultiShot: return "ventall";
             case BoonType.Pierce: return "travessar";
