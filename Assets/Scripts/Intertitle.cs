@@ -80,7 +80,7 @@ public class Intertitle : MonoBehaviour
 
     public static string WinText()
     {
-        return "I el xef va sobreviure al servei.\nAlmenys fins demà...";
+        return "I per fi, el restaurant va poder tancar.\nAlmenys fins demà...";
     }
 
     // ---------- MOSTRAR ----------

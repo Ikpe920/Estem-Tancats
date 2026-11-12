@@ -197,6 +197,35 @@ crackle = (rng.random(len(t)) < 0.004) * rng.uniform(-1, 1, len(t)) * 3
 S['fuse'] = (hiss * 0.5 + crackle) * np.linspace(0.3, 1, len(t))                          # la metxa que xiuxiueja
 S['heal'] = mix(harp([79, 83, 86, 91], 0.05, 0.7), at(bell(98, 0.6) * 0.5, 0.15))
 
+
+# ---- veus de dibuix animat (els caps parlen fent "bla-bla"): síl·labes curtes que el joc encadena
+def syllable(f, d, vowel):
+    t = t_(d)
+    fr = f * (1 + 0.12 * np.exp(-t * 25)) * (1 + 0.03 * np.sin(2 * np.pi * 7 * t))
+    ph = np.cumsum(fr) / SR
+    y = 2 * (ph % 1) - 1                                   # dent de serra: sona a veu
+    y = onepole_lp(y, vowel) + 0.3 * onepole_lp(y, vowel * 2.6)
+    return y * adsr(len(t), 0.008, 0.03)
+
+
+for i, (f0, v) in enumerate(((180, 900), (210, 1300), (240, 700), (200, 1700))):
+    S['voice_%d' % i] = syllable(f0, 0.085, v) * 0.9
+
+# ---- el jingle de cada cap (sona quan surt el seu cartell)
+S['jingle_0'] = seq(brass_chord([67, 71, 74], 0.12), brass_chord([65, 69, 72], 0.12), brass_chord([64, 67, 72, 76], 0.5))       # Crític: fanfàrria estirada
+S['jingle_1'] = mix(seq(slide_whistle(500, 260, 0.35, vib=0.06), slide_whistle(260, 520, 0.3, vib=0.06), slide_whistle(520, 180, 0.5, vib=0.08)),
+                    *[at(woodblock(600 - i * 60, 0.1) * 0.6, i * 0.29) for i in range(4)])                                         # Borratxo: xiulet que fa tentines
+S['jingle_2'] = mix(*[at(xylo(n, 0.2), i * 0.08) for i, n in enumerate((69, 72, 76, 75, 72, 69, 68, 69))], at(cymbal(0.5) * 0.4, 0.62))  # Xef: xilòfon gitano
+S['jingle_3'] = mix(*[at(bell(n, 0.5) * 0.8, i * 0.09) for i, n in enumerate((84, 88, 91, 96, 91, 96, 100))])                    # Client VIP: dringar de monedes
+S['jingle_4'] = seq(horn(392, 0.1), horn(392, 0.1), horn(392, 0.1), horn(311, 0.5))                                              # Inspectora: ta-ta-ta-TAA
+S['jingle_5'] = mix(harp([67, 71, 74, 79, 83, 86], 0.07, 0.9), at(bell(91, 0.8) * 0.5, 0.45))                                     # Sommelier: arpa elegant
+S['jingle_6'] = mix(*[at(bell(n, 0.4) * 0.7, i * 0.07) for i, n in enumerate((100, 96, 103, 98, 105, 100))], at(cymbal(0.6, 1.4) * 0.3, 0.42))  # Gelater: campanetes glaçades
+S['jingle_7'] = mix(seq(brass_chord([60, 64, 67], 0.15), brass_chord([60, 64, 67], 0.15), brass_chord([65, 69, 72, 77], 0.6)),
+                    at(cymbal(1.0) * 0.5, 0.3), at(kick(), 0.3))                                                                  # Crítica TV: entrada de programa
+S['phase'] = mix(brass_chord([48, 51, 54, 57], 0.6), at(cymbal(1.0) * 0.6, 0.0), thud(60, 0.5))                                   # el cap s'enfada (2a i 3a fase)
+S['jingle_8'] = mix(slide_whistle(300, 600, 1.2, vib=0.05, shape=1.0) * 0.6, *[at(bell(n, 0.9) * 0.5, i * 0.22) for i, n in enumerate((81, 80, 77, 73, 72))])  # Fantasma: uuuuh
+S['recipe'] = mix(harp([72, 79, 84, 88, 91, 96], 0.05, 0.9), at(bell(100, 0.8) * 0.6, 0.3))                                     # recepta perduda
+
 if __name__ == '__main__':
     for k, v in S.items():
         save_wav(os.path.join(OUT, k + '.wav'), norm(v, 0.8))

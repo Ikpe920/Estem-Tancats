@@ -18,12 +18,12 @@ public static class Codex
 {
     // ---------- DESCOBRIMENTS ----------
 
-    public static void DiscoverDish(Boon b) { if (b != null) PlayerPrefs.SetInt("seen_dish_" + BoonManager.DishKey(b), 1); }
+    public static void DiscoverDish(Boon b) { if (b != null) { PlayerPrefs.SetInt("seen_dish_" + BoonManager.DishKey(b), 1); Stats.Add("dishes"); } }
     public static bool DishSeen(Boon b) { return b != null && PlayerPrefs.GetInt("seen_dish_" + BoonManager.DishKey(b), 0) == 1; }
     public static void DiscoverSet(SetId id) { PlayerPrefs.SetInt("seen_set_" + id, 1); }
     public static bool SetSeen(SetId id) { return PlayerPrefs.GetInt("seen_set_" + id, 0) == 1; }
     public static int Kills(string key) { return PlayerPrefs.GetInt("kills_" + key, 0); }
-    public static void DiscoverEvo(EvoId id) { PlayerPrefs.SetInt("seen_evo_" + id, 1); }
+    public static void DiscoverEvo(EvoId id) { PlayerPrefs.SetInt("seen_evo_" + id, 1); Stats.Add("evos"); }
     public static bool EvoSeen(EvoId id) { return PlayerPrefs.GetInt("seen_evo_" + id, 0) == 1; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -52,6 +52,7 @@ public static class Codex
             if (e.GetComponent<BossTvBrain>() != null) return "CriticaTV";
             if (e.GetComponent<BossSommelierBrain>() != null) return "Sommelier";
             if (e.GetComponent<BossGelaterBrain>() != null) return "Gelater";
+            if (e.GetComponent<BossGhostBrain>() != null) return "Fantasma";
             return "Critic";
         }
         if (e.GetComponent<Golafre>() != null) return "Golafre";
@@ -99,6 +100,7 @@ public static class Codex
         list.Add(Boss("Sommelier", "EL SOMMELIER", BossType.Sommelier, 30));
         list.Add(Boss("Gelater", "EL GELATER BOIG", BossType.Gelater, 35));
         list.Add(Boss("CriticaTV", "LA CRÍTICA DE LA TELE", BossType.TvCritic, 40));
+        list.Add(Boss("Fantasma", "EL FANTASMA DEL RESTAURANT", BossType.Ghost, 40));
         return list;
     }
 
@@ -121,7 +123,8 @@ public class CodexScreen : MonoBehaviour
     private GameObject lastSelected;
     private Image detailIcon;
     private TextMeshProUGUI detailName, detailText, countText;
-    private readonly Button[] tabs = new Button[3];
+    const int Tabs = 5;
+    private readonly Button[] tabs = new Button[Tabs];
     private int tab;
     private Boon[] dishes;
 
@@ -157,11 +160,11 @@ public class CodexScreen : MonoBehaviour
         countText = EndScreenUI.CreateText(root, "Compte", "", 28f, new Vector2(0.5f, 0.855f), new Vector2(1400f, 44f), new Color(1f, 0.92f, 0.78f));
         countText.raycastTarget = false;
 
-        string[] names = { "PLATS", "CONJUNTS", "CLIENTS" };
-        for (int i = 0; i < 3; i++)
+        string[] names = { "PLATS", "CONJUNTS", "CLIENTS", "RECEPTES", "XIFRES" };
+        for (int i = 0; i < Tabs; i++)
         {
             int captured = i;
-            tabs[i] = EndScreenUI.CreateButton(root, names[i], new Vector2(0.32f + i * 0.18f, 0.785f), new Vector2(300f, 64f), CellCol, () => ShowTab(captured));
+            tabs[i] = EndScreenUI.CreateButton(root, names[i], new Vector2(0.18f + i * 0.16f, 0.785f), new Vector2(270f, 64f), CellCol, () => ShowTab(captured));
         }
 
         // a l'esquerra la graella, a la dreta el detall
@@ -195,14 +198,16 @@ public class CodexScreen : MonoBehaviour
     void ShowTab(int t)
     {
         tab = t;
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < Tabs; i++)
             if (tabs[i] != null) tabs[i].GetComponent<Image>().color = i == t ? new Color(0.55f, 0.40f, 0.15f) : CellCol;
         for (int i = content.childCount - 1; i >= 0; i--) Destroy(content.GetChild(i).gameObject);
 
         Button first = null;
         if (t == 0) first = BuildDishes();
         else if (t == 1) first = BuildSets();
-        else first = BuildClients();
+        else if (t == 2) first = BuildClients();
+        else if (t == 3) first = BuildRecipes();
+        else first = BuildStats();
         if (EventSystem.current != null && first != null) EventSystem.current.SetSelectedGameObject(first.gameObject);
     }
 
@@ -291,7 +296,7 @@ public class CodexScreen : MonoBehaviour
             bool seen = kills > 0;
             Sprite sp = Resources.Load<Sprite>(c.sprite);
             string text = seen
-                ? c.desc + "\n\n<color=#FFCC4D>Despatxats: " + kills + "</color>" + (c.boss ? "" : "\nSurt a partir de l'onada " + c.firstWave)
+                ? c.desc + "\n\n<color=#FFCC4D>Despatxats: " + kills + "</color>" + (c.boss ? (BossBrain.BestTime(c.key) > 0f ? "\n<color=#FFCC4D>Millor temps: " + BossRush.Clock(BossBrain.BestTime(c.key)) + "</color>" : "") : "\nSurt a partir de l'onada " + c.firstWave)
                 : (c.boss ? "Un cap que encara no has vençut." : "Encara no n'has despatxat cap.") + "\nSurt a partir de l'onada " + c.firstWave + ".";
             Button cell = Cell(i, cols, Mathf.CeilToInt(clients.Count / (float)cols), sp, seen, () => ShowDetail(sp, seen, seen ? c.name : "???", text));
             if (c.boss) cell.GetComponent<Image>().color = new Color(0.32f, 0.14f, 0.14f);
@@ -304,6 +309,46 @@ public class CodexScreen : MonoBehaviour
             ShowDetail(Resources.Load<Sprite>(c0.sprite), s0, s0 ? c0.name : "???", s0 ? c0.desc : "Encara no n'has despatxat cap.");
         }
         return first;
+    }
+
+    // ---------- RECEPTES PERDUDES ----------
+
+    static readonly string[] Rooms = { "la Sala", "la Barra", "la Cuina", "la Terrassa", "la Teulada", "el Celler", "la Cambra frigorífica", "el Plató" };
+
+    Button BuildRecipes()
+    {
+        Button first = null;
+        Sprite sp = Resources.Load<Sprite>("DishFx/Recepta");
+        int n = LostRecipes.All.Length;
+        for (int i = 0; i < n; i++)
+        {
+            LostRecipes.Recipe r = LostRecipes.All[i];
+            bool seen = LostRecipes.Found(i);
+            string room = Rooms[i % Rooms.Length];
+            Button cell = Cell(i, 4, 2, sp, seen, () => ShowDetail(sp, seen, seen ? r.name : "???",
+                seen ? r.lore + "\n\n<color=#FFCC4D>Trobada a " + room + "</color>"
+                     : "Una recepta perduda. Busca-la a " + room + ": apareix uns segons en alguna onada."));
+            if (first == null) first = cell;
+        }
+        ShowDetail(sp, true, "RECEPTES PERDUDES", "Has trobat " + LostRecipes.FoundCount() + " de " + n + ".\n\nSi en una partida d'El Servei en trobes almenys "
+            + LostRecipes.GhostNeeds + ", després de l'onada 40 passa alguna cosa...");
+        return first;
+    }
+
+    // ---------- XIFRES (estadístiques) ----------
+
+    Button BuildStats()
+    {
+        TextMeshProUGUI t = EndScreenUI.CreateText(content, "Xifres", Stats.Text(), 32f, new Vector2(0.5f, 0.5f), new Vector2(1000f, 600f), Color.white);
+        t.alignment = TextAlignmentOptions.TopLeft;
+        t.textWrappingMode = TextWrappingModes.Normal;
+        t.lineSpacing = 12f;
+        t.raycastTarget = false;
+        string bests = "";
+        foreach (Codex.ClientInfo c in Codex.Clients())
+            if (c.boss && BossBrain.BestTime(c.key) > 0f) bests += c.name + ": " + BossRush.Clock(BossBrain.BestTime(c.key)) + "\n";
+        ShowDetail(null, true, "MILLORS TEMPS", bests.Length > 0 ? bests : "Encara no has vençut cap cap.");
+        return tabs[Tabs - 1];
     }
 
     // ---------- PECES ----------
@@ -421,8 +466,8 @@ public class CodexScreen : MonoBehaviour
         // canviar de pestanya: Q / E o els botons superiors del comandament
         bool prev = (Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame) || (GamepadInput.ActivePad != null && GamepadInput.ActivePad.leftShoulder.wasPressedThisFrame);
         bool next = (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) || (GamepadInput.ActivePad != null && GamepadInput.ActivePad.rightShoulder.wasPressedThisFrame);
-        if (prev) { AudioManager.Play("ui_click"); ShowTab((tab + 2) % 3); }
-        if (next) { AudioManager.Play("ui_click"); ShowTab((tab + 1) % 3); }
+        if (prev) { AudioManager.Play("ui_click"); ShowTab((tab + Tabs - 1) % Tabs); }
+        if (next) { AudioManager.Play("ui_click"); ShowTab((tab + 1) % Tabs); }
     }
 
     void Close()

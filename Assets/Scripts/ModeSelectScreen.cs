@@ -64,9 +64,7 @@ public class ModeSelectScreen : MonoBehaviour
 
         string normalRecord = RunStats.BestWave > 0
             ? "Rècord: " + RunStats.BestPoints + " punts · onada " + RunStats.BestWave : "Encara no l'has jugat";
-        string rushRecord = BossRush.BestTime > 0f ? "Millor temps: " + BossRush.Clock(BossRush.BestTime)
-                          : BossRush.BestCount > 0 ? "Rècord: " + BossRush.BestCount + " de " + BossRush.Bosses + " plats"
-                          : "Encara no l'has tastat";
+        string rushRecord = BossRush.RecordLine(BossRush.Menu.Classic) + "\n<size=85%>5 menús per triar</size>";
 
         Button normal = Card(root, new Vector2(0.29f, 0.47f), NormalCol, "Walk/Enemy_Front_1",
             "EL SERVEI",
@@ -75,10 +73,12 @@ public class ModeSelectScreen : MonoBehaviour
         Button rush = Card(root, new Vector2(0.71f, 0.47f), RushCol, "Bosses/Sommelier",
             "MENÚ DEGUSTACIÓ",
             "Vuit plats forts: els 8 caps\nl'un darrere l'altre, sense clients.\nContra rellotge.",
-            rushRecord, () => { Close(false); if (menu != null) menu.PlayBossRush(); });
+            rushRecord, () => ShowMenus());
         cards = new[] { (RectTransform)normal.transform, (RectTransform)rush.transform };
 
         Button back = EndScreenUI.CreateButton(root, "Tornar", new Vector2(0.5f, 0.1f), new Vector2(300f, 72f), new Color(0.30f, 0.30f, 0.35f), () => Close(true));
+        this.root = root;
+        firstPage = new GameObject[] { normal.gameObject, rush.gameObject, back.gameObject };
 
         // navegació amb el comandament només entre aquests tres botons (no els del menú de sota)
         Link(normal, null, rush, null, back);
@@ -86,6 +86,59 @@ public class ModeSelectScreen : MonoBehaviour
         Link(back, null, null, normal, null);
 
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(normal.gameObject);
+    }
+
+    // ---------- ELS MENÚS DEGUSTACIÓ (segona pàgina) ----------
+    private RectTransform root, menusPage;
+    private GameObject[] firstPage;
+
+    void ShowMenus()
+    {
+        foreach (GameObject g in firstPage) g.SetActive(false);
+        menusPage = new GameObject("Menus", typeof(RectTransform)).GetComponent<RectTransform>();
+        menusPage.SetParent(root, false);
+        menusPage.anchorMin = Vector2.zero; menusPage.anchorMax = Vector2.one;
+        menusPage.offsetMin = menusPage.offsetMax = Vector2.zero;
+
+        BossRush.Menu[] menus = { BossRush.Menu.Classic, BossRush.Menu.Chef, BossRush.Menu.Surprise, BossRush.Menu.Infernal, BossRush.Menu.Ghost };
+        Color[] cols = { RushCol, new Color(0.62f, 0.20f, 0.12f), new Color(0.42f, 0.22f, 0.50f), new Color(0.35f, 0.08f, 0.08f), new Color(0.20f, 0.42f, 0.38f) };
+        Button[] buttons = new Button[menus.Length];
+        for (int i = 0; i < menus.Length; i++)
+        {
+            BossRush.Menu m = menus[i];
+            bool locked = m == BossRush.Menu.Ghost && !BossRush.GhostUnlocked;
+            Button b = EndScreenUI.CreateButton(menusPage, "", new Vector2(0.5f, 0.72f - i * 0.12f), new Vector2(1240f, 112f),
+                locked ? new Color(0.25f, 0.25f, 0.28f) : cols[i], () =>
+                {
+                    if (locked) { AudioManager.Play("ui_back"); return; }
+                    Close(false);
+                    if (menu != null) menu.PlayBossRush(m);
+                });
+            TextMeshProUGUI t = b.GetComponentInChildren<TextMeshProUGUI>();
+            if (t != null)
+            {
+                t.enableAutoSizing = true; t.fontSizeMin = 16f; t.fontSizeMax = 30f;
+                t.text = "<b><color=#FFCC4D>" + (locked ? "???" : BossRush.Name(m)) + "</color></b>   " + BossRush.Desc(m)
+                       + "\n<size=80%><i>" + (locked ? "" : BossRush.RecordLine(m)) + "</i></size>";
+            }
+            buttons[i] = b;
+        }
+        Button back = EndScreenUI.CreateButton(menusPage, "Tornar", new Vector2(0.5f, 0.1f), new Vector2(300f, 72f), new Color(0.30f, 0.30f, 0.35f), HideMenus);
+        for (int i = 0; i < buttons.Length; i++)
+            Link(buttons[i], null, null, i > 0 ? buttons[i - 1] : null, i < buttons.Length - 1 ? buttons[i + 1] : back);
+        Link(back, null, null, buttons[buttons.Length - 1], null);
+        cards = new RectTransform[0];
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(buttons[0].gameObject);
+    }
+
+    void HideMenus()
+    {
+        AudioManager.Play("ui_back");
+        if (menusPage != null) Destroy(menusPage.gameObject);
+        menusPage = null;
+        foreach (GameObject g in firstPage) g.SetActive(true);
+        cards = new[] { (RectTransform)firstPage[0].transform, (RectTransform)firstPage[1].transform };
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(firstPage[1]);
     }
 
     static void Link(Button b, Button left, Button right, Button up, Button down)
@@ -151,7 +204,8 @@ public class ModeSelectScreen : MonoBehaviour
         if (Time.unscaledTime - born < 0.15f) return; // el mateix clic de "Jugar" no la tanca
         bool back = (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
                  || (GamepadInput.ActivePad != null && GamepadInput.ActivePad.buttonEast.wasPressedThisFrame);
-        if (back) Close(true);
+        if (back && menusPage != null) HideMenus();
+        else if (back) Close(true);
     }
 
     void Close(bool backToMenu)

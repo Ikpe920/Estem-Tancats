@@ -45,13 +45,30 @@ public class ActBanner : MonoBehaviour
 
     // ---------- ACTE NOU ----------
 
-    public static IEnumerator ActTitle(int actNumber, string name, string subtitle, float hold, Color tint)
+    public static IEnumerator ActTitle(int actNumber, string name, string subtitle, float hold, Color tint, string room = null)
     {
-        return ActTitle("—  ACTE " + actNumber + "  —", name, subtitle, hold, tint);
+        return ActTitle("—  ACTE " + actNumber + "  —", name, subtitle, hold, tint, room);
+    }
+
+    // el títol de la "pel·lícula" de cada sala (el cartell que surt al costat del nom)
+    public static string FilmFor(string room)
+    {
+        switch (room)
+        {
+            case "Sala": return "EL PRIMER SERVEI";
+            case "Barra": return "L'HORA DEL VERMUT";
+            case "Cuina": return "FOCS DE CUINA";
+            case "Terrassa": return "SOL I MOSQUES";
+            case "Teulada": return "ENTRE XEMENEIES";
+            case "Celler": return "EL VI DE MITJANIT";
+            case "Cambra": return "ZERO GRAUS";
+            case "Plato": return "LLUMS, CÀMERA... SERVEI!";
+        }
+        return null;
     }
 
     // el mateix cartell amb una etiqueta qualsevol a dalt (per exemple, "HORES EXTRES · 03:00")
-    public static IEnumerator ActTitle(string header, string name, string subtitle, float hold, Color tint)
+    public static IEnumerator ActTitle(string header, string name, string subtitle, float hold, Color tint, string room = null)
     {
         ActBanner b = Create(240);
         RectTransform root = b.canvasRt;
@@ -69,6 +86,33 @@ public class ActBanner : MonoBehaviour
         sub.fontStyle = FontStyles.Italic;
         UIStyle.Outline(title, 0.25f);
 
+        // el cartell de pel·lícula de la sala, inclinat a l'esquerra: el terra de la sala i el títol del film
+        RectTransform poster = null;
+        Sprite floor = string.IsNullOrEmpty(room) ? null : Resources.Load<Sprite>("Actes/" + room);
+        string film = FilmFor(room);
+        if (floor != null && film != null)
+        {
+            poster = Box(root, edge, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f)).rectTransform;
+            poster.sizeDelta = new Vector2(300f, 420f);
+            Image paper = Box(poster, new Color(0.96f, 0.9f, 0.76f), Vector2.zero, Vector2.one);
+            paper.rectTransform.offsetMin = new Vector2(8f, 8f); paper.rectTransform.offsetMax = new Vector2(-8f, -8f);
+            Image border = Box(paper.rectTransform, new Color(0.1f, 0.06f, 0.05f), new Vector2(0.06f, 0.36f), new Vector2(0.94f, 0.95f));
+            Image pic = Box(border.rectTransform, Color.white, Vector2.zero, Vector2.one);
+            pic.rectTransform.offsetMin = new Vector2(5f, 5f); pic.rectTransform.offsetMax = new Vector2(-5f, -5f);
+            pic.sprite = floor;
+            pic.color = Color.Lerp(Color.white, tint, 0.25f);
+            TextMeshProUGUI ft = MenuScreens.Text(paper.rectTransform, "«" + film + "»", 30f, new Vector2(0.5f, 0.17f), Vector2.zero, new Vector2(260f, 110f), new Color(0.35f, 0.12f, 0.1f), true);
+            ft.enableAutoSizing = true; ft.fontSizeMin = 16f; ft.fontSizeMax = 30f;
+            ft.textWrappingMode = TextWrappingModes.Normal;
+            poster.localRotation = Quaternion.Euler(0f, 0f, 6f);
+            // el nom de la sala es fa una mica a la dreta perquè no trepitgi el cartell
+            title.rectTransform.anchoredPosition += new Vector2(170f, 0f);
+            title.rectTransform.sizeDelta = new Vector2(1300f, 130f);
+            title.enableAutoSizing = true; title.fontSizeMin = 50f; title.fontSizeMax = 110f;
+            sub.rectTransform.anchoredPosition += new Vector2(170f, 0f);
+            act.rectTransform.anchoredPosition += new Vector2(170f, 0f);
+        }
+
         float total = 0.5f + hold + 0.45f;
         for (float t = 0f; t < total; t += Time.unscaledDeltaTime) // el joc pot estar aturat
         {
@@ -81,6 +125,12 @@ public class ActBanner : MonoBehaviour
             title.alpha = kt;
             title.transform.localScale = Vector3.one * Mathf.Lerp(1.8f, 1f, Ease(kt));
             sub.alpha = Mathf.Clamp01((t - 0.7f) / 0.4f);
+            if (poster != null)
+            {
+                // el cartell cau des de dalt i rebota una mica
+                float kp = Ease(Mathf.Clamp01((t - 0.15f) / 0.45f));
+                poster.anchoredPosition = new Vector2(-690f, Mathf.Lerp(900f, 0f, kp) + 900f * kout * kout);
+            }
             yield return null;
         }
         Destroy(b.gameObject);

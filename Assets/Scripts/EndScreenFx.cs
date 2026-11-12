@@ -81,7 +81,7 @@ public class EndScreenFx : MonoBehaviour
         Color titleCol = win ? UIStyle.Gold : new Color(1f, 0.42f, 0.38f);
         title = MenuScreens.Text(root, titleText, 100f, new Vector2(0.5f, 0.84f), Vector2.zero, new Vector2(1700f, 130f), titleCol, true);
         UIStyle.Outline(title, 0.25f);
-        string sub = rush ? (win ? "Els " + BossRush.Bosses + " caps, l'un darrere l'altre, en " + BossRush.Clock(BossRush.Elapsed) + "."
+        string sub = rush ? (win ? BossRush.Name(BossRush.Variant) + ", sencer, en " + BossRush.Clock(BossRush.Elapsed) + "."
                                  : "Has caigut al plat " + Mathf.Min(BossRush.Beaten + 1, BossRush.Bosses) + " de " + BossRush.Bosses + ".")
                    : win ? "Has completat les " + RunStats.wave + " onades. El restaurant ja pot tancar."
                          : "T'han fet fora a l'onada " + RunStats.wave + ". Els clients guanyen... per ara.";
@@ -92,7 +92,7 @@ public class EndScreenFx : MonoBehaviour
         RectTransform prt = MenuScreens.Rect(root, "Xef", new Vector2(0.22f, 0.48f), new Vector2(0.22f, 0.48f), Vector2.zero, Vector2.zero);
         prt.sizeDelta = new Vector2(340f, 340f);
         portrait = prt.gameObject.AddComponent<Image>();
-        portrait.sprite = ChefRoster.LoadSprite(chef, "Down");
+        portrait.sprite = ChefRoster.Portrait(chef); // el retrat gran, amb el vestit
         portrait.preserveAspect = true;
         portrait.raycastTarget = false;
         portrait.enabled = portrait.sprite != null;

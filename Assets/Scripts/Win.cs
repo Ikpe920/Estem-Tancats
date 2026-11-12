@@ -4,12 +4,15 @@ using UnityEngine.SceneManagement;
 // pantalla de victòria: has sobreviscut a totes les onades
 public class Win : MonoBehaviour
 {
-    void Start()
+    System.Collections.IEnumerator Start()
     {
         Time.timeScale = 1f;
 
         Canvas canvas = EndScreenUI.SceneCanvas(); // el de l'escena, no el del filtre ni el del cercle
-        if (canvas == null) return;
+        if (canvas == null) yield break;
+
+        // l'escena final: els clients surten, el xef gira el cartell a TANCAT... (es pot saltar)
+        yield return WinCutscene.Play(canvas);
 
         // títol, retrat del xef, estadístiques que compten cap amunt i confeti
         EndScreenFx.Build(canvas, true);

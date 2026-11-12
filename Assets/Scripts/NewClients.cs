@@ -213,7 +213,7 @@ public class ScreenFlash : MonoBehaviour
     {
         float left = until - Time.time;
         float a = left <= 0f ? 0f : Mathf.Clamp01(left / duration);
-        img.color = new Color(1f, 1f, 0.95f, 0.92f * a * a);
+        img.color = new Color(1f, 1f, 0.95f, 0.92f * a * a * (Accessibility.Flashes ? 1f : 0.3f)); // accessibilitat: flaixos suaus
     }
 }
 

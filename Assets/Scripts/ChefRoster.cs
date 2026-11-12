@@ -75,10 +75,57 @@ public static class ChefRoster
         set { PlayerPrefs.SetInt(SelectedKey, Mathf.Clamp(value, 0, All.Length - 1)); PlayerPrefs.Save(); }
     }
 
+    // ---------- VESTITS (Tools/SpriteGen/characters.py: _V1 i _V2) ----------
+    public class Outfit
+    {
+        public string name, suffix;
+        public int price;
+        public Outfit(string n, string s, int p) { name = n; suffix = s; price = p; }
+    }
+
+    public static readonly Outfit[] Outfits =
+    {
+        new Outfit("CLÀSSIC", "", 0),
+        new Outfit("DE GALA", "_V1", 150),
+        new Outfit("FESTA MAJOR", "_V2", 300),
+    };
+
+    public static int IndexOf(Chef c) { return Array.IndexOf(All, c); }
+    public static int OutfitOf(int chef) { return Mathf.Clamp(PlayerPrefs.GetInt("outfit_" + chef, 0), 0, Outfits.Length - 1); }
+    public static void SetOutfit(int chef, int o) { PlayerPrefs.SetInt("outfit_" + chef, o); PlayerPrefs.Save(); }
+    public static bool OutfitOwned(int chef, int o) { return o == 0 || PlayerPrefs.GetInt("outfit_owned_" + chef + "_" + o, 0) == 1; }
+
+    public static bool BuyOutfit(int chef, int o)
+    {
+        if (OutfitOwned(chef, o)) return true;
+        if (!Progression.SpendTips(Outfits[o].price)) return false;
+        PlayerPrefs.SetInt("outfit_owned_" + chef + "_" + o, 1);
+        PlayerPrefs.Save();
+        return true;
+    }
+
+    // el sprite del xef amb el vestit que porta (si no hi és, el de sempre)
     public static Sprite LoadSprite(Chef c, string dir)
     {
-        return Resources.Load<Sprite>("Chefs/" + c.sprites + "_" + dir);
+        int i = IndexOf(c);
+        return LoadSprite(c, dir, i >= 0 ? OutfitOf(i) : 0);
     }
+
+    public static Sprite LoadSprite(Chef c, string dir, int outfit)
+    {
+        Sprite s = outfit > 0 ? Resources.Load<Sprite>("Chefs/" + c.sprites + Outfits[outfit].suffix + "_" + dir) : null;
+        return s != null ? s : Resources.Load<Sprite>("Chefs/" + c.sprites + "_" + dir);
+    }
+
+    // el retrat gran (Tools/SpriteGen/portraits.py), amb el vestit
+    public static Sprite Portrait(Chef c, int outfit)
+    {
+        Sprite s = outfit > 0 ? Resources.Load<Sprite>("Portraits/" + c.sprites + Outfits[outfit].suffix) : null;
+        if (s == null) s = Resources.Load<Sprite>("Portraits/" + c.sprites);
+        return s != null ? s : LoadSprite(c, "Down", outfit);
+    }
+
+    public static Sprite Portrait(Chef c) { int i = IndexOf(c); return Portrait(c, i >= 0 ? OutfitOf(i) : 0); }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init()

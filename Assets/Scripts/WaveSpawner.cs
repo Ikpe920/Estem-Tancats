@@ -21,7 +21,8 @@ public enum BossType
     Inspector, // espiral de trets i fase enfadada
     TvCritic,  // la Crítica de la tele (onada 40): focus que enlluernen i públic que aplaudeix
     Sommelier, // el Sommelier (onada 30): ampolles que cauen on ets, tolls de vi i cercles de taps
-    Gelater    // el Gelater boig (onada 35): ventalls de gelat, cercles de gel i espiral
+    Gelater,   // el Gelater boig (onada 35): ventalls de gelat, cercles de gel i espiral
+    Ghost      // el Fantasma del Restaurant (secret): surt després de l'onada 40 si trobes prou receptes perdudes
 }
 
 [System.Serializable]
@@ -143,7 +144,9 @@ public class WaveSpawner : MonoBehaviour
         if (actManager == null) actManager = GetComponent<ActManager>();
         if (boonManager == null) boonManager = GetComponent<BoonManager>();
 
-        // caps seguits: només els 8 caps, contra rellotge
+        LostRecipes.ResetRun();
+
+        // caps seguits: només els caps, contra rellotge
         if (BossRush.Active)
         {
             finalWave = BossRush.Bosses;
@@ -184,26 +187,37 @@ public class WaveSpawner : MonoBehaviour
             count = WaveEvents.AdjustCount(count);
             count = Mathf.Max(1, Mathf.RoundToInt(count * Progression.EnemyCountMul)); // dificultat
 
+            // les receptes perdudes: una a cada sala, en alguna onada normal (El Servei)
+            if (!isBossWave && !BossRush.Active && actManager != null)
+                LostRecipes.MaybeSpawn(actManager.currentAct % LostRecipes.All.Length, (currentWave - 1) % bossEveryNWaves + 1);
+
             if (isBossWave)
             {
                 AudioManager.SetBossMusic(true); // la música dels caps, fins que acabi l'onada
-                int index = BossRush.Active ? (currentWave - 1) % bosses.Length : (currentWave / bossEveryNWaves - 1) % bosses.Length;
-                BossInfo info = bosses[index];
-                if (endless) info = info.Furious(); // fent hores extres tornen enfurismats
+                // quins caps surten (al menú infernal, dos alhora)
+                List<BossInfo> infos = new List<BossInfo>();
+                if (BossRush.Active)
+                    foreach (int bi in BossRush.BossesForPlate(currentWave))
+                        infos.Add(bi == BossRush.GhostIndex ? GhostInfo() : bosses[bi % bosses.Length]);
+                else infos.Add(bosses[(currentWave / bossEveryNWaves - 1) % bosses.Length]);
 
-                // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
-                Sprite portrait = info.sprite;
-                if (portrait == null && info.prefab != null)
-                {
-                    SpriteRenderer psr = info.prefab.GetComponentInChildren<SpriteRenderer>();
-                    if (psr != null) portrait = psr.sprite;
-                }
                 int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
-                string bossTag = BossRush.Active ? "— MENÚ DEGUSTACIÓ · PLAT " + currentWave + " DE " + BossRush.Bosses + " —"
+                string bossTag = BossRush.Active ? "— " + BossRush.Name(BossRush.Variant) + " · PLAT " + currentWave + " DE " + BossRush.Bosses + " —"
                                : endless && actManager != null ? "— HORES EXTRES · " + ActManager.Clock(actManager.Hour) + " · ONADA " + currentWave + " —" : null;
-                yield return StartCoroutine(BossIntroScreen.Play(info, portrait, actNumber, currentWave, bossTag));
-
-                SpawnBoss(info);
+                for (int k = 0; k < infos.Count; k++)
+                {
+                    // fent hores extres (o al menú del xef) tornen enfurismats
+                    if (endless || (BossRush.Active && BossRush.Furious)) infos[k] = infos[k].Furious();
+                    // la presentació del cap (estil "versus"): retrat, nom, frase i un consell
+                    yield return StartCoroutine(BossIntroScreen.Play(infos[k], PortraitOf(infos[k]), actNumber, currentWave, bossTag));
+                }
+                foreach (BossInfo info in infos)
+                {
+                    SpawnBoss(info);
+                    // dos caps alhora: cadascun amb menys vida
+                    if (infos.Count > 1 && currentBoss != null)
+                        currentBoss.OverrideStats(Mathf.RoundToInt(currentBoss.maxHealth * 0.65f), currentBoss.speed);
+                }
                 count = 0; // a l'onada del cap només hi ha el cap (i els clients que faci sortir ell)
             }
 
@@ -261,6 +275,13 @@ public class WaveSpawner : MonoBehaviour
                 Iris.LoadScene(SceneNames.Win);
                 yield break;
             }
+            // el cap secret: si en aquesta partida has trobat prou receptes perdudes, el Fantasma desperta
+            if (!BossRush.Active && finalWave > 0 && currentWave >= finalWave && !endless && !ghostDone
+                && LostRecipes.RunFound >= LostRecipes.GhostNeeds)
+            {
+                ghostDone = true;
+                yield return StartCoroutine(GhostFight());
+            }
             if (finalWave > 0 && currentWave >= finalWave && !endless)
             {
                 bool keepGoing = false;
@@ -315,7 +336,7 @@ public class WaveSpawner : MonoBehaviour
                 nextCheck = Time.time + stuckCheckInterval;
                 RescueOutOfBounds();
 
-                bool bossAlive = currentBoss != null;
+                bool bossAlive = AnyBossAlive();
                 if (!bossAlive && stuckWaveTimeout > 0f && Time.time - lastProgress >= stuckWaveTimeout)
                 {
                     RemoveStragglers();
@@ -350,7 +371,7 @@ public class WaveSpawner : MonoBehaviour
     {
         foreach (Enemy e in FindObjectsByType<Enemy>())
         {
-            if (e == currentBoss) continue;
+            if (e == currentBoss || e.isBoss) continue;
             Destroy(e.gameObject);
         }
     }
@@ -563,6 +584,7 @@ public class WaveSpawner : MonoBehaviour
             case BossType.Sommelier: brain = b.AddComponent<BossSommelierBrain>(); break;
             case BossType.Gelater: brain = b.AddComponent<BossGelaterBrain>(); break;
             case BossType.TvCritic: brain = b.AddComponent<BossTvBrain>(); break;
+            case BossType.Ghost: brain = b.AddComponent<BossGhostBrain>(); break;
         }
         if (brain != null)
         {
@@ -627,6 +649,65 @@ public class WaveSpawner : MonoBehaviour
             EnemyVariants.Force(e, prefab, (EnemyVariants.Kind)kinds.GetValue(i));
         }
         return true;
+    }
+
+    bool ghostDone;
+
+    static bool AnyBossAlive()
+    {
+        foreach (Enemy e in Enemy.All) if (e != null && e.isBoss && !e.IsDead) return true;
+        return false;
+    }
+
+    Sprite PortraitOf(BossInfo info)
+    {
+        Sprite portrait = info.sprite;
+        if (portrait == null && info.prefab != null)
+        {
+            SpriteRenderer psr = info.prefab.GetComponentInChildren<SpriteRenderer>();
+            if (psr != null) portrait = psr.sprite;
+        }
+        return portrait;
+    }
+
+    // EL FANTASMA DEL RESTAURANT: el cap secret
+    BossInfo GhostInfo()
+    {
+        return new BossInfo
+        {
+            name = "EL FANTASMA DEL RESTAURANT",
+            subtitle = "Les receptes perdudes l'han despertat. I té gana de servei.",
+            prefab = bosses[0].prefab,
+            type = BossType.Ghost,
+            health = 4000,
+            speed = 2f,
+            scale = 3f,
+            sprite = Resources.Load<Sprite>("Bosses/Fantasma"),
+            tint = Color.white,
+            projectilePrefab = bosses[0].projectilePrefab,
+        };
+    }
+
+    // el combat secret, després de l'onada 40 (abans de triar si continues)
+    IEnumerator GhostFight()
+    {
+        yield return new WaitForSeconds(1f);
+        inWave = true;
+        AudioManager.SetBossMusic(true);
+        BossInfo ghost = GhostInfo();
+        int actNumber = (actManager != null ? actManager.currentAct : 0) + 1;
+        yield return StartCoroutine(BossIntroScreen.Play(ghost, ghost.sprite, actNumber, currentWave, "— CAP SECRET · LES RECEPTES L'HAN DESPERTAT —"));
+        SpawnBoss(ghost);
+        yield return StartCoroutine(WaitForWaveCleared());
+        inWave = false;
+        AudioManager.SetBossMusic(false);
+        if (!PlayerHealth.IsDying)
+        {
+            PlayerPrefs.SetInt("ghost_beaten", 1);
+            PlayerPrefs.Save();
+            Stats.Add("ghosts");
+            if (boonManager != null && boonManager.xpMode) yield return StartCoroutine(boonManager.OpenChest());
+        }
     }
 
     // la Crítica de la tele: es fa amb el prefab d'un altre cap, amb el seu dibuix i el seu comportament

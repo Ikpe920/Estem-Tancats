@@ -89,7 +89,7 @@ public class Fx : MonoBehaviour
     static Sprite One(string name, Sprite fallback)
     {
         Sprite sp;
-        if (!singles.TryGetValue(name, out sp)) { sp = Resources.Load<Sprite>("Fx/" + name); singles[name] = sp; }
+        if (!singles.TryGetValue(name, out sp)) { sp = Resources.Load<Sprite>(name.Contains("/") ? name : "Fx/" + name); singles[name] = sp; } // amb "/" és un camí sencer
         return sp != null ? sp : fallback;
     }
 
@@ -364,6 +364,45 @@ public class Fx : MonoBehaviour
             Emit(EmberSprite(), from + dir * 0.5f, d * range * 3f, Random.Range(0.3f, 0.5f), 0.18f, 0.05f, Color.white, new Color(1f, 0.6f, 0.3f, 0f), 7, 2f, 0f, false, 300f);
         }
         if (Random.value < 0.03f * amount) Scorch(from + dir * range * Random.Range(0.5f, 0.95f), range * 0.25f, 1f);
+    }
+
+    // trossos de gel d'un client glaçat que es trenca
+    public static void IceShatter(Vector2 pos, int n)
+    {
+        Sprite sp = One("IceShard", Spark());
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(3f, 8f);
+            Emit(sp, pos, d, Random.Range(0.4f, 0.7f), Random.Range(0.3f, 0.5f), 0.12f, Color.white, new Color(0.8f, 0.95f, 1f, 0f),
+                 9, 3f, -4f, false, Random.Range(-600f, 600f));
+        }
+    }
+
+    // estelles de vidre que surten disparades (les ampolles de la Barra)
+    public static void Glass(Vector2 pos, int n)
+    {
+        Sprite sp = One("Hazards/Vidre", Spark());
+        for (int i = 0; i < n; i++)
+        {
+            Vector2 d = Random.insideUnitCircle.normalized * Random.Range(4f, 10f);
+            Emit(sp, pos + Vector2.up * 0.3f, d, Random.Range(0.35f, 0.6f), Random.Range(0.25f, 0.4f), 0.1f,
+                 Color.white, new Color(1f, 1f, 1f, 0f), 9, 4f, -3f, false, Random.Range(-720f, 720f));
+        }
+    }
+
+    // una partícula amb un dibuix qualsevol (la decoració de les sales: notes, fulles...)
+    public static void EmitSprite(Sprite sp, Vector2 pos, Vector2 vel, float life, float size0, float size1, Color color, int order, float rotVel)
+    {
+        if (sp == null) return;
+        Emit(sp, pos, vel, life, size0, size1, color, new Color(color.r, color.g, color.b, 0f), order, 0f, 0f, false, rotVel);
+    }
+
+    // vapor o fum que puja (l'olla, la xemeneia, la boira del gel)
+    public static void Steam(Vector2 pos, Color? color = null)
+    {
+        Color c = color ?? new Color(1f, 1f, 1f, 0.6f);
+        Emit(SmokeSprite(), pos + new Vector2(Random.Range(-0.2f, 0.2f), 0f), new Vector2(Random.Range(-0.15f, 0.15f), 0.6f), Random.Range(1.2f, 1.8f),
+             0.3f, 0.9f, c, new Color(c.r, c.g, c.b, 0f), 2, 0.3f, 0.4f, false, Random.Range(-30f, 30f));
     }
 
     // bombolles de cava (Resources/DishFx/Bombolla) que surten i pugen

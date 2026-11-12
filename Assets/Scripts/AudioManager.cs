@@ -30,6 +30,9 @@ public class AudioManager : MonoBehaviour
         { "ui_click", 0.22f }, { "ui_back", 0.22f },
         { "boss_intro", 0.9f }, { "explosion", 0.75f }, { "table", 0.7f }, { "box_break", 0.65f },
         { "bounce", 0.3f }, { "fuse", 0.22f },
+        { "voice_0", 0.3f }, { "voice_1", 0.3f }, { "voice_2", 0.3f }, { "voice_3", 0.3f }, { "phase", 0.7f },
+        { "jingle_0", 0.7f }, { "jingle_1", 0.7f }, { "jingle_2", 0.7f }, { "jingle_3", 0.7f },
+        { "jingle_4", 0.7f }, { "jingle_5", 0.7f }, { "jingle_6", 0.7f }, { "jingle_7", 0.7f }, { "jingle_8", 0.7f }, { "recipe", 0.6f },
     };
 
     // temps mínim entre dues vegades el mateix so (perquè 20 impactes alhora no siguin un soroll)
@@ -196,6 +199,13 @@ public class AudioManager : MonoBehaviour
         Instance.bossMusic = on;
         if (on) Instance.PlayMusic("boss", true);
         else Instance.PlayActMusic();
+    }
+
+    // la 2a fase del cap: el tema del cap més ràpid (boss2); en acabar, torna el normal
+    public static void SetBossPhase2(bool on)
+    {
+        if (Instance == null || !Instance.bossMusic) return;
+        Instance.PlayMusic(on && Instance.Clip("Audio/Music/boss2") != null ? "boss2" : "boss", true);
     }
 
     public void PlayMusic(string name, bool loop)

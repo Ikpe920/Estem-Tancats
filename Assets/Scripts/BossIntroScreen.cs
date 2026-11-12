@@ -43,6 +43,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.TvCritic: return new Color(0.72f, 0.14f, 0.26f);
             case BossType.Sommelier: return new Color(0.45f, 0.08f, 0.20f);
             case BossType.Gelater: return new Color(0.30f, 0.62f, 0.85f);
+            case BossType.Ghost: return new Color(0.30f, 0.62f, 0.52f);
         }
         return new Color(0.5f, 0.2f, 0.2f);
     }
@@ -59,6 +60,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.TvCritic: return "Surt dels focus, aparta't del flaix de la càmera i compte amb el públic";
             case BossType.Sommelier: return "Ampolles que cauen on ets, vi que frena i taps de suro disparats";
             case BossType.Gelater: return "Els gelats et frenen i els cercles et glacen: fes el dash per sortir-ne";
+            case BossType.Ghost: return "Quan es fa invisible costa tocar-lo: aparta't del seu crit i compte amb les còpies";
         }
         return "";
     }
@@ -76,6 +78,7 @@ public class BossIntroScreen : MonoBehaviour
             case BossType.TvCritic: return "EN DIRECTE";
             case BossType.Sommelier: return "UN BON RESERVA";
             case BossType.Gelater: return "SANG FREDA";
+            case BossType.Ghost: return "EL SERVEI ETERN";
         }
         return "EL SERVEI DE LA NIT";
     }
@@ -153,8 +156,30 @@ public class BossIntroScreen : MonoBehaviour
         if (!wasPaused) Time.timeScale = 1f;
     }
 
+    private string jingle;
+    private bool jinglePlayed;
+
+    // el jingle de cada cap (Tools/AudioGen/cartoon_sfx.py)
+    static string JingleFor(BossType t)
+    {
+        switch (t)
+        {
+            case BossType.Critic: return "jingle_0";
+            case BossType.Borratxo: return "jingle_1";
+            case BossType.Cuiner: return "jingle_2";
+            case BossType.Pallas: return "jingle_3";
+            case BossType.Inspector: return "jingle_4";
+            case BossType.Sommelier: return "jingle_5";
+            case BossType.Gelater: return "jingle_6";
+            case BossType.TvCritic: return "jingle_7";
+            case BossType.Ghost: return "jingle_8";
+        }
+        return null;
+    }
+
     void Animate(float t)
     {
+        if (!jinglePlayed && t >= 0.45f && jingle != null) { jinglePlayed = true; AudioManager.Play(jingle); }
         dim.color = new Color(0f, 0f, 0f, 0.7f);
 
         // el cartell cau des de dalt i s'atura amb un petit rebot
@@ -219,6 +244,7 @@ public class BossIntroScreen : MonoBehaviour
 
     void Build(BossInfo info, Sprite sprite, int act, int wave, string tagLine)
     {
+        jingle = JingleFor(info.type);
         GameObject canvasGo = new GameObject("Canvas", typeof(Canvas), typeof(CanvasScaler));
         canvasGo.transform.SetParent(transform, false);
         Canvas canvas = canvasGo.GetComponent<Canvas>();

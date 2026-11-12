@@ -982,14 +982,29 @@ ENEMY_DIRS = {'Enemy': 'Sprites/Enemies', 'EnemyFast': 'Sprites/Enemies', 'Enemy
               'Iaia': 'Resources/Enemies', 'Repartidor': 'Resources/Enemies', 'Mim': 'Resources/Enemies'}
 BOSSES = ['Borratxo', 'ClientVIP', 'Critic', 'Inspectora', 'XefRenegat']
 
+# els vestits dels xefs (es compren amb propines a la pantalla de triar xef): _V1 de gala i _V2 de festa major
+OUTFITS = {
+    'Chef': {'_V1': dict(jacket=(40, 40, 52), jacket_s=(26, 26, 36), pants=(26, 26, 32), shoe=(20, 20, 24), pattern_c=(230, 190, 60), scarf_c=(200, 40, 50)),
+             '_V2': dict(jacket=(220, 50, 50), jacket_s=(170, 30, 36), pants=(250, 250, 245), shoe=(40, 40, 46), pattern_c=(255, 220, 80), scarf_c=(255, 220, 80))},
+    'Carnisser': {'_V1': dict(jacket=(40, 40, 52), pants=(26, 26, 32), shoe=(20, 20, 24), pattern_c=(230, 190, 60)),
+                  '_V2': dict(jacket=(90, 170, 90), pants=(240, 230, 210), shoe=(120, 70, 40), pattern_c=(250, 250, 245))},
+    'Pastisser': {'_V1': dict(jacket=(40, 40, 52), jacket_s=(26, 26, 36), pants=(26, 26, 32), shoe=(200, 160, 60), pattern_c=(230, 190, 60)),
+                  '_V2': dict(jacket=(120, 210, 230), jacket_s=(80, 170, 200), pants=(250, 240, 200), shoe=(240, 120, 40), pattern_c=(255, 255, 255))},
+    'Sushiman': {'_V1': dict(jacket=(30, 30, 38), pants=(26, 26, 32), shoe=(20, 20, 24), belt=(230, 190, 60)),
+                 '_V2': dict(jacket=(230, 120, 40), pants=(250, 245, 230), shoe=(60, 40, 30), belt=(60, 140, 200))},
+    'Pizzer': {'_V1': dict(jacket=(40, 40, 52), jacket_s=(26, 26, 36), pants=(26, 26, 32), shoe=(20, 20, 24), pattern_c=(230, 190, 60), scarf_c=(230, 190, 60)),
+               '_V2': dict(jacket=(250, 220, 60), jacket_s=(220, 180, 40), pants=(200, 50, 50), shoe=(60, 40, 30), pattern_c=(60, 160, 70), scarf_c=(60, 160, 70))},
+}
+
 
 def sprites():
     """Torna una llista de (camí relatiu a Assets/, nom del sprite, funció que el dibuixa per a un pas)."""
     out = []
     for n in CHEF_NAMES:
-        ch = CHARACTERS[n]
-        for d, view, mir in (('Down', 'front', False), ('Up', 'back', False), ('Right', 'side', False), ('Left', 'side', True)):
-            out.append(('Resources/Chefs', n + '_' + d, lambda s, ch=ch, view=view, mir=mir: to_image(character(ch, view, s), mir)))
+        for suffix, over in [('', {})] + sorted(OUTFITS.get(n, {}).items()):
+            ch = dict(CHARACTERS[n], **over)
+            for d, view, mir in (('Down', 'front', False), ('Up', 'back', False), ('Right', 'side', False), ('Left', 'side', True)):
+                out.append(('Resources/Chefs', n + suffix + '_' + d, lambda s, ch=ch, view=view, mir=mir: to_image(character(ch, view, s), mir)))
     for n, folder in ENEMY_DIRS.items():
         ch = CHARACTERS[n]
         for d, view in (('Front', 'front'), ('Back', 'back')):

@@ -4,7 +4,9 @@
 # =====================================================================
 # La façana del restaurant, amb el traç dels anys 30 (contorn negre i colors plans):
 #   GameOver  de nit: plou, el cartell diu TANCAT, els clients s'han quedat el local
-#   Win       a trenc d'alba: surt el sol, el cartell diu OBERT, garlandes i confeti
+#   Win       a trenc d'alba: surt el sol, el servei s'ha acabat i el cartell ja diu TANCAT
+#   WinPorta  el mateix sense cartell (l'escena final anima el xef girant-lo)
+#   CartellObert / CartellTancat  el cartell de la porta, per les dues cares (192x96)
 #   python3 Tools/SpriteGen/backgrounds.py            -> escriu els PNG
 #   python3 Tools/SpriteGen/backgrounds.py full.png   -> i una làmina per veure'ls
 import os, sys, math, random
@@ -122,7 +124,7 @@ def gameover():
     return im
 
 
-def win():
+def win(with_sign=True):
     r = random.Random(9)
     im = Image.new('RGB', (W, H))
     sky(im, (250, 170, 110), (255, 230, 170))
@@ -134,7 +136,8 @@ def win():
                    (480 + math.cos(a + 0.08) * 700, 110 + math.sin(a + 0.08) * 700)], fill=(255, 205, 120))
     d.ellipse([400, 30, 560, 190], fill=(255, 214, 72), outline=INK, width=5)
     facade(d, False, r)
-    sign(d, 480, 280, 'OBERT', (40, 140, 60))
+    if with_sign:
+        sign(d, 480, 280, 'TANCAT', (200, 40, 40))
     # garlandes de banderetes
     cols = [(200, 40, 40), (255, 214, 72), (60, 140, 200), (60, 160, 80)]
     for (x0, x1, sag) in ((130, 480, 40), (480, 840, 40)):
@@ -152,7 +155,17 @@ def win():
     return im
 
 
-BACKGROUNDS = {'GameOver': gameover, 'Win': win}
+def door_sign(txt, col):
+    im = Image.new('RGBA', (192, 96), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle([4, 4, 188, 92], 10, fill=(245, 235, 205), outline=INK, width=6)
+    d.rounded_rectangle([14, 14, 178, 82], 6, outline=col, width=3)
+    text_c(d, 96, 50, txt, 40, col, 3)
+    return im
+
+
+BACKGROUNDS = {'GameOver': gameover, 'Win': win, 'WinPorta': lambda: win(False),
+               'CartellObert': lambda: door_sign('OBERT', (40, 140, 60)), 'CartellTancat': lambda: door_sign('TANCAT', (200, 40, 40))}
 
 
 def main():
@@ -168,7 +181,7 @@ def main():
     if len(sys.argv) > 1:
         sh = Image.new('RGB', (W, H * len(ims) + 10 * (len(ims) - 1)), (0, 0, 0))
         for i, im in enumerate(ims):
-            sh.paste(im, (0, i * (H + 10)))
+            sh.paste(im, (0, i * (H + 10)), im if im.mode == 'RGBA' else None)
         sh.save(sys.argv[1])
 
 

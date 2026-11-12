@@ -210,9 +210,14 @@ public class BossManager : MonoBehaviour
 
     public void TrackBoss(Enemy boss, string bossName) { TrackBoss(boss, bossName, new Color(0.85f, 0.2f, 0.2f)); }
 
+    // tots els caps vius (al menú infernal n'hi ha dos): quan un mor, la barra passa a l'altre
+    private readonly System.Collections.Generic.Dictionary<Enemy, KeyValuePairNameColor> tracked = new System.Collections.Generic.Dictionary<Enemy, KeyValuePairNameColor>();
+    struct KeyValuePairNameColor { public string name; public Color color; }
+
     public void TrackBoss(Enemy boss, string bossName, Color color)
     {
         if (boss == null) return;
+        tracked[boss] = new KeyValuePairNameColor { name = bossName, color = color };
         currentBoss = boss;
         bossMaxHealth = boss.maxHealth;
         healthBarName.text = bossName;
@@ -266,6 +271,10 @@ public class BossManager : MonoBehaviour
     {
         if (currentBoss == null)
         {
+            // si queda un altre cap viu, la barra passa a ell
+            foreach (var kv in tracked)
+                if (kv.Key != null && !kv.Key.IsDead) { Enemy next = kv.Key; var info = kv.Value; TrackBoss(next, info.name, info.color); return; }
+            tracked.Clear();
             if (healthBarRoot.activeSelf) healthBarRoot.SetActive(false);
             return;
         }

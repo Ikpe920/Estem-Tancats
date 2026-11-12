@@ -40,7 +40,7 @@ public class DamageNumber : MonoBehaviour
 
         TextMeshPro t = dn.tmp;
         t.text = isCrit ? amount + "!" : amount.ToString();
-        t.fontSize = isCrit ? 6f : 3.2f;
+        t.fontSize = (isCrit ? 6f : 3.2f) * Accessibility.TextMul;
         t.color = isCrit ? CritColor : NormalColor;
         t.outlineWidth = isCrit ? 0.3f : 0.25f;
 

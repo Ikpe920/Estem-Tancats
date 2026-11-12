@@ -344,6 +344,7 @@ public class ActManager : MonoBehaviour
             FitBackgroundToArena();
         }
         if (cam != null) cam.backgroundColor = TintOf(act) * 0.4f;
+        RoomDecor.Show(act.resourceName); // la decoració animada de la sala
         if (musicSource != null && act.music != null)
         {
             musicSource.clip = act.music;
@@ -430,9 +431,9 @@ public class ActManager : MonoBehaviour
         if (Overtime)
         {
             int h = HourForWave(waveNow + 1);
-            yield return ActBanner.ActTitle("—  HORES EXTRES · " + Clock(h) + "  —", act.name, act.subtitle, titleDuration, TintOf(act));
+            yield return ActBanner.ActTitle("—  HORES EXTRES · " + Clock(h) + "  —", act.name, act.subtitle, titleDuration, TintOf(act), act.resourceName);
         }
-        else yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint);
+        else yield return ActBanner.ActTitle(currentAct + 1, act.name, act.subtitle, titleDuration, act.tint, act.resourceName);
     }
 
     // el segell d'onada completada (o "SERVEI PERFECTE!" si no t'han tocat)

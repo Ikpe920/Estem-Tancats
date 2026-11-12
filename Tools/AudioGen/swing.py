@@ -558,6 +558,16 @@ if __name__ == '__main__':
             compose('night' + name[-1], int(bpm * 1.1), key, HMINOR, night_prog(prog), **kwn)
         print('fet')
         sys.exit(0)
+    # la 2a fase dels caps: el mateix tema del cap, més ràpid, amb crits dels metalls
+    #   python3 swing.py ../../Assets/Resources/Audio/Music boss2   -> només aquest
+    def boss2():
+        compose('boss2', 214, 48, HMINOR, [(0, 'm6'), (0, 'm6'), (8, '7'), (7, '7'), (5, 'm6'), (5, 'm6'), (8, '7'), (7, '7')],
+                bars=32, seed=67, lead='trumpet', answer='clarinet', drums='toms', density=0.95, stabs=True, shout=True,
+                lead_range=(70, 89), form='AB')
+    if len(sys.argv) > 2 and sys.argv[2] == 'boss2':
+        boss2()
+        print('fet')
+        sys.exit(0)
     only_night = len(sys.argv) > 2 and sys.argv[2] == 'night'
     if not only_night:
         # menú: swing tranquil amb piano stride i clarinet
@@ -570,6 +580,7 @@ if __name__ == '__main__':
     if not only_night:
         compose('boss', 184, 48, HMINOR, [(0, 'm6'), (0, 'm6'), (8, '7'), (7, '7')],
             bars=32, seed=66, lead='clarinet', answer='open', drums='toms', density=0.8, stabs=True, lead_range=(67, 86), form='AB')
+        boss2()
         gameover()
         win()
 

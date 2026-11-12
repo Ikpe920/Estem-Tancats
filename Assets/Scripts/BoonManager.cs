@@ -486,6 +486,7 @@ public class BoonManager : MonoBehaviour
             Xp -= XpToNext;
             ChefLevel++;
             pendingLevels++;
+            Stats.Max("best_level", ChefLevel + 1);
             if (health != null)
                 HazardFx.Popup((Vector2)health.transform.position + Vector2.up * 1.8f, "NIVELL " + (ChefLevel + 1) + "!", new Color(1f, 0.85f, 0.35f), 1.2f);
             AudioManager.Play("boon", 0.6f, 1.2f);

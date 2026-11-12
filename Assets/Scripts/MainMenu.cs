@@ -21,14 +21,16 @@ public class MainMenu : MonoBehaviour
     }
 
     // el Menú Degustació: els 8 caps seguits, contra rellotge (sense història)
-    public void PlayBossRush()
+    public void PlayBossRush() { PlayBossRush(BossRush.Menu.Classic); }
+
+    public void PlayBossRush(BossRush.Menu m)
     {
         Time.timeScale = 1f;
         if (ChefSelectScreen.IsOpen) return;
         ChefSelectScreen.Open(() =>
         {
             RunStats.Reset();
-            BossRush.Begin();
+            BossRush.Begin(m);
             Iris.LoadScene(SceneNames.Game);
         });
     }
