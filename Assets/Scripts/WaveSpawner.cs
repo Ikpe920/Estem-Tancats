@@ -178,8 +178,6 @@ public class WaveSpawner : MonoBehaviour
 
 
             int count = startEnemies + (currentWave - 1) * enemiesPerWave;
-            // i en surten més: +3% per nivell de xef
-            if (boonManager != null) count = Mathf.RoundToInt(count * (1f + 0.03f * boonManager.ChefLevel));
             if (actManager != null) count += actManager.ExtraEnemies; // fent hores extres no torna a baixar
 
             bool isBossWave = bosses != null && bosses.Length > 0
@@ -226,6 +224,9 @@ public class WaveSpawner : MonoBehaviour
 
             for (int i = 0; i < count; i++)
             {
+                if (debugAbort) break;
+                // massa clients a la sala: la porta espera que en marxin uns quants
+                while (Enemy.Alive + pendingSpawns >= MaxAlive && !debugAbort && !PlayerHealth.IsDying) yield return null;
                 if (debugAbort) break;
                 SpawnEnemy();
                 // les onades altes surten en un degoteig més ràpid
@@ -506,12 +507,24 @@ public class WaveSpawner : MonoBehaviour
     }
 
     // vida, velocitat i agressivitat dels clients segons l'onada (i l'acte)
+    // creixement amb sostre suau: igual fins a 'knee' i, a partir d'aquí, com l'arrel quadrada del que sobra
+    // (onada 30 -> 19 + 10, onada 40 -> 19 + 14, onada 60 -> 19 + 19...)
+    static float Soft(float x, float knee)
+    {
+        if (x <= knee) return x;
+        return knee + Mathf.Sqrt(x - knee) * 3f;
+    }
+
+    // com a molt tants clients alhora: mentre n'hi hagi tants, no n'entren més (el cap i els seus no compten)
+    public const int MaxAlive = 45;
+
     void ApplyWaveDifficulty(Enemy e)
     {
         if (e == null) return;
 
         int level = Mathf.Max(0, DifficultyWave - 1);
-        float healthMul = 1f + healthPerWave * level;
+        // fins a l'onada 20 creixen com sempre; a partir d'aquí, cada cop menys (si no, es tornen immortals)
+        float healthMul = 1f + healthPerWave * Soft(level, 19f);
         float speedBonus = speedPerWave * level;
 
         if (actManager != null)
@@ -523,8 +536,9 @@ public class WaveSpawner : MonoBehaviour
         healthMul *= Progression.EnemyHealthMul; // dificultat triada
         // com més nivell de xef tens (més plats), més aguanten els clients: +7% de vida i una mica més ràpids per nivell
         int chefLevel = boonManager != null ? boonManager.ChefLevel : 0;
-        healthMul *= 1f + 0.07f * chefLevel;
-        speedBonus += 0.012f * chefLevel;
+        // el mateix sostre suau per al nivell de xef: fins al nivell 12 un 7% per nivell, després cada cop menys
+        healthMul *= 1f + 0.07f * Soft(chefLevel, 12f);
+        speedBonus += 0.012f * Mathf.Min(chefLevel, 15);
         e.ApplyActDifficulty(healthMul, speedBonus);
         e.speed *= Progression.EnemySpeedMul;
 
