@@ -31,6 +31,15 @@ public static class DamageKind
             e.lastBlastTime = Time.time;
         }
         if (kind == DmgKind.Fire && FireMul != 1f) damage = Mathf.Max(1, Mathf.RoundToInt(damage * FireMul));
+        // l'experiència de cuinar: +3% de mal per cada nivell de xef (sense sostre); amb arrodoniment a l'atzar
+        // perquè també es noti als cops petits (amb 1 de mal i +30%, un cop de cada tres en fa 2)
+        if (BoonManager.Instance != null && BoonManager.Instance.ChefLevel > 0)
+        {
+            float exact = damage * (1f + 0.03f * BoonManager.Instance.ChefLevel);
+            int whole = Mathf.FloorToInt(exact);
+            if (Random.value < exact - whole) whole++;
+            damage = Mathf.Max(1, whole);
+        }
         DmgKind prev = Current;
         Current = kind;
         try { e.TakeDamage(damage, crit); }
