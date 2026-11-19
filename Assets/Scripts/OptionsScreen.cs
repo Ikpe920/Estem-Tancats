@@ -308,8 +308,8 @@ public class OptionsScreen : MonoBehaviour
         string text =
             "<size=120%><b><color=#FFCC4D>ESTEM TANCATS</color></b></size>\n" +
             "<i>Un servei que no s'acaba mai</i>\n\n" +
-            "<b>Idea, disseny i direcció</b>\nIkpe920\n\n" +
-            "<b>Programació, gràfics, música i sons</b>\nIkpe920 amb l'ajuda de Claude (Anthropic)\n\n" +
+            "<b>Idea, disseny i direcció</b>\nIker i Sam\n\n" +
+            "<b>Programació, gràfics, música i sons</b>\nIker i Sam\n\n" +
             "<b>Fet amb</b>\nUnity · TextMeshPro · Python (gràfics i música generats amb codi)\n\n" +
             "<i>Gràcies per jugar!</i>";
         TextMeshProUGUI t = EndScreenUI.CreateText(p, "Text", text, 36f, new Vector2(0.5f, 0.5f), new Vector2(1400f, 620f), Color.white);
